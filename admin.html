@@ -1,0 +1,2300 @@
+
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Marché Moboro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+    body { background:#f0f2f5; min-height:100vh; }
+    .login-page { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .login-card { background:white; padding:30px 24px; border-radius:24px; width:100%; max-width:380px; box-shadow:0 8px 30px rgba(0,0,0,.12); }
+    .login-logo { text-align:center; margin-bottom:20px; }
+    .login-logo h1 { font-size:22px; font-weight:700; color:#1677FF; margin-top:8px; }
+    .login-logo p { font-size:13px; color:#888; }
+    .admin-page { display:none; }
+    .admin-header { background:linear-gradient(135deg,#1677FF,#0d5bd1); color:white; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,.15); }
+    .admin-header h1 { font-size:18px; font-weight:700; }
+    .logout-btn { background:rgba(255,255,255,.2); border:none; color:white; padding:8px 14px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; }
+.admin-nav { display:none; }
+.nav-tab { display:none; }
+.nav-tab.active { background:#1677FF; color:white; border-color:#1677FF; }
+    .back-btn { background:none; border:none; color:#1677FF; font-size:15px; font-weight:700; cursor:pointer; padding:0 0 14px; display:flex; align-items:center; gap:6px; }
+    .admin-content { padding:16px; }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .stat-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+    .stat-card { background:white; padding:16px; border-radius:16px; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,.07); }
+    .stat-number { font-size:28px; font-weight:700; color:#1677FF; }
+    .stat-label { font-size:12px; color:#888; margin-top:3px; }
+    .form-card { background:white; padding:16px; border-radius:16px; box-shadow:0 3px 10px rgba(0,0,0,.07); margin-bottom:14px; }
+    .form-card h2 { font-size:17px; font-weight:700; margin-bottom:12px; }
+    input, select, textarea { width:100%; padding:12px; border:1.5px solid #e8e8e8; border-radius:12px; font-size:14px; outline:none; margin-bottom:10px; font-family:Poppins,sans-serif; }
+    input:focus, select:focus { border-color:#1677FF; }
+    .btn-primary { width:100%; background:#1677FF; color:white; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; }
+    .btn-danger { width:100%; background:#ff4d4f; color:white; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
+    .btn-success { width:100%; background:#52c41a; color:white; border:none; padding:14px; border-radius:14px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; background:white; border-radius:14px; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.07); }
+    th { background:#f5f7fb; padding:10px 8px; text-align:left; color:#888; font-size:12px; }
+    td { padding:10px 8px; border-bottom:1px solid #f0f0f0; }
+    .badge-green { background:#f6ffed; color:#52c41a; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+    .badge-red { background:#fff0f0; color:#ff4d4f; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+    .badge-yellow { background:#fffbe6; color:#faad14; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+    .action-btn { border:none; padding:5px 10px; border-radius:8px; font-size:11px; cursor:pointer; font-weight:600; }
+    .block-btn { background:#fff0f0; color:#ff4d4f; }
+    .unblock-btn { background:#f6ffed; color:#52c41a; }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:white; padding:12px 20px; border-radius:12px; font-size:14px; opacity:0; transition:.3s; z-index:9999; pointer-events:none; }
+    .toast.show { opacity:1; }
+    .toast.success { background:#52c41a; }
+    .toast.error { background:#ff4d4f; }
+    .log-item { background:white; padding:12px; border-radius:12px; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,.06); font-size:13px; line-height:1.6; }
+    .log-time { font-size:11px; color:#888; margin-top:4px; }
+    .position-item { display:flex; align-items:center; gap:10px; padding:10px; background:white; border-radius:12px; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+    .pos-number { font-weight:700; color:#1677FF; width:30px; }
+    .pos-name { flex:1; font-size:14px; }
+    .pos-controls { display:flex; gap:5px; }
+    .pos-controls button { background:#f0f0f0; border:none; padding:5px 10px; border-radius:8px; cursor:pointer; font-size:12px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="data:image/jpeg;base64,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" alt="Moboro" style="width:80px;height:80px;border-radius:16px;object-fit:contain;">
+      <h1>Marché Moboro</h1>
+      <p>Espace Administration</p>
+    </div>
+    <input type="text" id="adminCode" placeholder="Code administrateur">
+    <input type="password" id="adminPassword" placeholder="Code PIN" maxlength="12">
+    <button class="btn-primary" onclick="adminLogin()">🔐 Se connecter</button>
+    <p id="loginError" style="color:#ff4d4f;font-size:13px;margin-top:8px;text-align:center;display:none;"></p>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="admin-page" id="adminPage">
+
+  <div class="admin-header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img src="data:image/jpeg;base64,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" alt="Moboro" style="width:36px;height:36px;border-radius:8px;object-fit:contain;background:white;padding:2px;">
+      <h1>Admin Moboro</h1>
+      </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="adminEmailDisplay" style="font-size:12px;opacity:.8;"></span>
+      <button class="logout-btn" onclick="adminLogout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="admin-nav">
+    <div class="nav-tab active" onclick="switchTab('stats', event)">📊 Stats</div>
+    <div class="nav-tab" onclick="switchTab('sellers', event)">👥 Vendeurs</div>
+    <div class="nav-tab" onclick="switchTab('positions', event)">📋 Positions</div>
+    <div class="nav-tab" onclick="switchTab('vip', event)">👑 VIP</div>
+    <div class="nav-tab" onclick="switchTab('livreurs', event)">🚚 Livreurs</div>
+    <div class="nav-tab" onclick="switchTab('badges', event)">🏅 Badges</div>
+        <div class="nav-tab" onclick="switchTab('actions', event)">⚙️ Actions</div>
+        <div class="nav-tab" onclick="switchTab('banner', event)">🖼️ Banner</div>
+    <div class="nav-tab" onclick="switchTab('fournisseurs', event); loadFournisseurs()">🌍 Fournisseurs</div>
+    <div class="nav-tab" onclick="switchTab('logs', event)">📝 Logs</div>
+    <div class="nav-tab" onclick="switchTab('paiements', event); loadSubscriptionToggle(); loadPaiementsDashboard()">💳 Paiements</div>
+    <div class="nav-tab" onclick="switchTab('inscriptions', event); loadInscriptionToggles()">🔒 Inscriptions</div>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- STATS -->
+<div class="tab-panel active" id="tab-stats">
+
+  <!-- GRILLE BOUTONS NAVIGATION -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+    <div onclick="switchTab('sellers')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">👥<br>Vendeurs</div>
+    <div onclick="switchTab('positions')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">📋<br>Positions</div>
+    <div onclick="switchTab('vip')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">👑<br>VIP</div>
+    <div onclick="switchTab('livreurs')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🚚<br>Livreurs</div>
+    <div onclick="switchTab('badges')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🏅<br>Badges</div>
+    <div onclick="switchTab('actions')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">⚙️<br>Actions</div>
+    <div onclick="switchTab('banner')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🖼️<br>Banner</div>
+    <div onclick="switchTab('fournisseurs');loadFournisseurs()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🌍<br>Fournisseurs</div>
+    <div onclick="switchTab('logs')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">📝<br>Logs</div>
+<div onclick="switchTab('paiements');loadSubscriptionToggle();loadPaiementsDashboard()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">💳<br>Paiements</div>
+    <div onclick="switchTab('inscriptions');loadInscriptionToggles()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🔒<br>Inscriptions</div>
+  </div>
+
+  <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:10px;">👁️ Visites</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sTodayVisits">0</div><div class="stat-label">Aujourd'hui</div></div>
+      <div class="stat-card"><div class="stat-number" id="sTotalVisits">0</div><div class="stat-label">Total</div></div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:10px;">👥 Utilisateurs total</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sCountLivreur">0</div><div class="stat-label">🚚 Livreurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountVendeur">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountGrossiste">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountVipVendeur">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountVipGrossiste">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountFournisseur">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
+      <span style="font-size:13px;color:#555;font-weight:600;">Inscrits aujourd'hui</span>
+      <span style="font-size:18px;font-weight:700;color:#1677FF;" id="sTodaySellers">0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#e6f7ff;border-radius:10px;">
+  <span style="font-size:13px;color:#555;font-weight:600;">👥 Utilisateurs total</span>
+  <span style="font-size:18px;font-weight:700;color:#1677FF;" id="sTotalUsers">0</span>
+  </div>
+</div>
+
+  <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:4px;">⚡ Utilisateurs actifs <span style="font-size:11px;font-weight:400;color:#888;">(publication aujourd'hui)</span></h2>
+    <div class="stat-grid" style="margin-top:10px;">
+      <div class="stat-card"><div class="stat-number" id="sActiveVendeur">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveGrossiste">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveVipVendeur">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveVipGrossiste">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveFournisseur">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
+      <span style="font-size:13px;color:#555;font-weight:600;">Total actifs</span>
+      <span style="font-size:18px;font-weight:700;color:#52c41a;" id="sActiveTotal">0</span>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:4px;">📲 Contacts WhatsApp</h2>
+    <p style="font-size:11px;color:#888;margin-bottom:10px;">Aujourd'hui</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sClickLivreurToday">0</div><div class="stat-label">🚚 Livreurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVendeurToday">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickGrossisteToday">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVipVendeurToday">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVipGrossisteToday">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickFournisseurToday">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+    </div>
+    <p style="font-size:11px;color:#888;margin:10px 0 6px;">Total</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sClickLivreurTotal">0</div><div class="stat-label">🚚 Livreurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVendeurTotal">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickGrossisteTotal">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVipVendeurTotal">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickVipGrossisteTotal">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickFournisseurTotal">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
+      <span style="font-size:13px;color:#555;font-weight:600;">Total contacts</span>
+      <span style="font-size:18px;font-weight:700;color:#1677FF;" id="sClickTotal">0</span>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:10px;">📊 Divers</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sActiveProducts">0</div><div class="stat-label">Publications actives</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActivePromos">0</div><div class="stat-label">Promos actives</div></div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="loadStats()">🔄 Actualiser</button>
+</div>
+
+    <!-- VENDEURS -->
+    <div class="tab-panel" id="tab-sellers">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🔍 Rechercher un vendeur</h2>
+        <input type="text" id="searchSeller" placeholder="Code, nom, téléphone...">
+        <button class="btn-primary" onclick="searchSellers()">Rechercher</button>
+      </div>
+      <div id="sellersResults"></div>
+    </div>
+
+    <!-- POSITIONS -->
+    <div class="tab-panel" id="tab-positions">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>📋 Positions par catégorie</h2>
+        <select id="catSelect" onchange="loadPositions(this.value)">
+          <option value="">Choisir catégorie</option>
+          <optgroup label="⭐ Catégorie A — Importateurs & Grossistes">
+            <option value="ig">🌟 Importateurs & Grossistes de Brazzaville</option>
+            <option value="immo">🏠 Immobilier</option>
+            <option value="coiffure">✂️ Grand Salon de Coiffure</option>
+            <option value="hotel">🏨 Hôtel, Jardin & Tourisme</option>
+            <option value="deco-mariage">💍 Décoration Mariage</option>
+            <option value="menage">🧹 Service de Ménage</option>
+            <option value="demenagement">🚛 Service de Déménagement</option>
+            <option value="auto">🚗 Automobile & Dépannage</option>
+            <option value="couture">🧵 Couture & Styliste</option>
+            <option value="pharmacie">💊 Pharmacie</option>
+            <option value="clinique">🏥 Prinsingue</option>
+            <option value="librairie">📚 Librairie & Papeterie</option>
+            <option value="construction">🏗️ Matériaux de Construction</option>
+            <option value="photoshop">📸 Photo Shop</option>
+            <option value="alimentation">🛒 Alimentation</option>
+            <option value="oeufs">🥚 Grossiste Œufs</option>
+          </optgroup>
+          <optgroup label="🛍️ Catégorie B — Boutiques & Vendeurs">
+            <option value="c1">👟 Chaussures & Basket</option>
+            <option value="c2">📱 Accessoires Téléphone</option>
+            <option value="c3">💄 Beauté & Cosmétiques</option>
+            <option value="c4">👗 Vêtements Femme</option>
+            <option value="c5">👠 Chaussures Femme</option>
+            <option value="c6">👜 Sacs & Accessoires Mode</option>
+            <option value="c7">🏠 Maison & Décoration</option>
+            <option value="c8">🧼 Savon Artisanal</option>
+            <option value="c9">🌸 Parfums & Soins Luxe</option>
+            <option value="c10">👶 Bébé & Enfants</option>
+            <option value="c11">💇 Perruques & Mèches</option>
+            <option value="c12">🩱 Lingerie & Rideau</option>
+            <option value="c13">💊 Santé & Bien-être</option>
+            <option value="c14">👔 Friperie & Habit de Travail</option>
+            <option value="c15">🧵 Tissus & Pagnes</option>
+            <option value="c16">🚢 Occasion d'Europe</option>
+            <option value="c17">🎂 Pâtisserie</option>
+            <option value="c18">🕴️ Veste & Chaussures Luxe</option>
+            <option value="c19">🧴 Plastique</option>
+            <option value="c20">📺 Électronique</option>
+            <option value="c21">🎉 Anniversaire & Objet Jetable</option>
+          </optgroup>
+          <optgroup label="🌍 Fournisseurs Export">
+            <option value="fournisseur_export">🌍 Tous les Fournisseurs Export</option>
+          </optgroup>
+        </select>
+      </div>
+      <div id="positionsList"></div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="tab-panel" id="tab-actions">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🚫 Bloquer / Débloquer vendeur</h2>
+        <input type="text" id="blockCode" placeholder="Code vendeur (ex: MBR0001A)">
+        <button class="btn-danger" onclick="blockSeller()">🚫 Bloquer</button>
+        <button class="btn-success" onclick="unblockSeller()">✅ Débloquer</button>
+      </div>
+      <div class="form-card">
+        <h2>🗑 Supprimer un vendeur</h2>
+        <input type="text" id="deleteCode" placeholder="Code vendeur (ex: MBR0001A)">
+        <button class="btn-danger" onclick="deleteSellerAdmin()">🗑 Supprimer définitivement</button>
+      </div>
+      <div class="form-card">
+        <h2>📱 Bloquer un numéro</h2>
+        <input type="text" id="blockPhone" placeholder="Numéro (ex: 242XXXXXXXX)">
+        <input type="text" id="blockReason" placeholder="Raison du blocage">
+        <button class="btn-danger" onclick="blockPhone()">🚫 Bloquer numéro</button>
+      </div>
+    <div class="form-card">
+        <h2>🔄 Changer abonnement</h2>
+        <input type="text" id="subCode" placeholder="Code vendeur">
+        <select id="subStatus">
+          <option value="en_cours">En cours</option>
+          <option value="expire">Expiré</option>
+        </select>
+        <button class="btn-primary" onclick="updateSubscription()">Mettre à jour</button>
+      </div>
+
+      <div class="form-card">
+        <h2>🧹 Nettoyage manuel</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:10px;">
+          Supprime produits/promos inactifs depuis +60 jours,
+          visites et logs depuis +90 jours
+        </p>
+        <button class="btn-danger" onclick="runCleanup()">
+          🗑 Lancer le nettoyage
+        </button>
+      </div>
+<div class="form-card">
+        <h2>🔑 Réinitialiser PIN</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:10px;">
+          Recherchez par code, nom ou numéro — le PIN devient <strong>0000</strong>
+        </p>
+        <input type="text" id="resetPinSearch" placeholder="Code, nom ou numéro de téléphone" onkeyup="searchResetPin()">
+        <div id="resetPinResults" style="margin-top:10px;"></div>
+      </div>
+
+    </div>  <!-- ✅ Fermeture tab-actions ICI -->
+
+
+    <!-- BANNER -->
+    <div class="tab-panel" id="tab-banner">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🖼️ Panneau Publicitaire</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:12px;">Modifiez les photos des 10 positions du banner</p>
+        <div id="bannerSlidesList"></div>
+        <button class="btn-success" onclick="loadBannerSlides()" style="width:100%;margin-top:4px;">🔄 Charger les slides actuels</button>
+      </div>
+    </div>
+
+    <!-- VIP -->
+    <div class="tab-panel" id="tab-vip">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+
+      <!-- Créer compte VIP -->
+      <div class="form-card">
+        <h2>👑 Créer un compte VIP</h2>
+        <select id="vipType">
+          <option value="vip_grossiste">🏭 Importateur &amp; Grossiste VIP — 10 000 FCFA/mois</option>
+          <option value="vip_vendeur">🛍️ Vendeur VIP — 5 000 FCFA/mois</option>
+        </select>
+        <input type="text" id="vipFullName" placeholder="Nom complet *">
+        <input type="tel" id="vipPhone" placeholder="Téléphone *">
+        <input type="text" id="vipQuartier" placeholder="Quartier *">
+        <input type="text" id="vipAddress" placeholder="Adresse *">
+        <select id="vipVille" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;font-size:14px;outline:none;background:#fafafa;">
+        <option value="">Choisir la ville *</option>
+        <option value="Brazzaville">Brazzaville</option>
+        <option value="Pointe-Noire">Pointe-Noire</option>
+        <option value="Dolisie">Dolisie</option>
+        <option value="Nkayi">Nkayi</option>
+        <option value="Oyo">Oyo</option>
+        <option value="Bétou">Bétou</option>
+        <option value="Ouesso">Ouesso</option>
+        <option value="Impfondo">Impfondo</option>
+        <option value="Madingou">Madingou</option>
+        <option value="Owando">Owando</option>
+        <option value="Sibiti">Sibiti</option>
+        <option value="Mossaka">Mossaka</option>
+        <option value="Gamboma">Gamboma</option>
+        <option value="Djambala">Djambala</option>
+        <option value="Makoua">Makoua</option>
+        <option value="Kinkala">Kinkala</option>
+        <option value="Ewo">Ewo</option>
+        <option value="Dongou">Dongou</option>
+<!-- ===== PARTIE 03 | Lignes 301-400 | admin.html ===== -->
+      </select>
+        <select id="vipCategory">
+          <option value="">Choisir la catégorie *</option>
+          <optgroup label="Catégorie A — Importateurs &amp; Grossistes">
+            <option value="ig">Importateurs &amp; Grossistes</option>
+            <option value="immo">Immobilier</option>
+            <option value="coiffure">Grand Salon de Coiffure</option>
+            <option value="hotel">Hôtel, Jardin &amp; Tourisme</option>
+            <option value="deco-mariage">Décoration Mariage</option>
+            <option value="menage">Service de Ménage</option>
+            <option value="demenagement">Déménagement</option>
+            <option value="auto">Automobile &amp; Dépannage</option>
+            <option value="couture">Couture &amp; Styliste</option>
+            <option value="pharmacie">Pharmacie</option>
+            <option value="construction">Matériaux de Construction</option>
+            <option value="alimentation">Alimentation</option>
+          </optgroup>
+          <optgroup label="Catégorie B — Boutiques &amp; Vendeurs">
+            <option value="c1">Chaussures &amp; Basket</option>
+            <option value="c2">Accessoires Téléphone</option>
+            <option value="c3">Beauté &amp; Cosmétiques</option>
+            <option value="c4">Vêtements Femme</option>
+            <option value="c5">Chaussures Femme</option>
+            <option value="c6">Sacs &amp; Mode</option>
+            <option value="c7">Maison &amp; Décoration</option>
+            <option value="c8">Savon Artisanal</option>
+            <option value="c9">Parfums &amp; Soins</option>
+            <option value="c10">Bébé &amp; Enfants</option>
+            <option value="c11">Perruques &amp; Mèches</option>
+            <option value="c12">Lingerie &amp; Rideau</option>
+            <option value="c13">Santé &amp; Bien-être</option>
+            <option value="c14">Friperie</option>
+            <option value="c15">Tissus &amp; Pagnes</option>
+            <option value="c16">Occasion d'Europe</option>
+            <option value="c17">Pâtisserie</option>
+            <option value="c18">Veste &amp; Chaussures Luxe</option>
+            <option value="c19">Plastique</option>
+            <option value="c20">Électronique</option>
+            <option value="c21">Grossiste Œufs</option>
+            <option value="c22">Anniversaire &amp; Jetable</option>
+          </optgroup>
+        </select>
+        <textarea id="vipDescription" placeholder="Description de l'activité *" style="min-height:80px;"></textarea>
+<!-- ===== PARTIE 03 | Lignes 301-400 | admin.html ===== -->
+        <input type="password" id="vipPin" placeholder="PIN du compte (4-6 chiffres) *" maxlength="6">
+        <p style="font-size:12px;color:#888;margin-bottom:10px;">⚠️ Notez le code vendeur généré et le PIN — vous devez les communiquer au client.</p>
+        <button class="btn-primary" style="background:#722ed1;" onclick="adminCreateVIP()">👑 Créer le compte VIP</button>
+        <div id="vipCreateResult" style="display:none;margin-top:12px;background:#f9f0ff;border:1px solid #d3adf7;padding:14px;border-radius:12px;font-size:14px;line-height:1.8;"></div>
+      </div>
+
+      <!-- Liste comptes VIP -->
+      <div class="form-card">
+        <h2>📋 Comptes VIP existants</h2>
+        <button class="btn-primary" onclick="loadVIPAccounts()">🔄 Charger les comptes VIP</button>
+        <div id="vipList" style="margin-top:12px;"></div>
+      </div>
+    
+    <!-- Créer gestionnaire VIP -->
+<div class="form-card" style="margin-top:14px;">
+  <h2>🔑 Créer un Gestionnaire VIP</h2>
+  <input type="text" id="mgrName" placeholder="Nom complet *">
+  <input type="text" id="mgrCode" placeholder="Code gestionnaire (ex: MGR001) *" style="text-transform:uppercase;">
+  <input type="password" id="mgrPin" placeholder="PIN (4-6 chiffres) *" maxlength="6">
+  <p style="font-size:12px;color:#888;margin-bottom:10px;">⚠️ Communiquez le code et le PIN au gestionnaire après création.</p>
+  <button class="btn-primary" style="background:#722ed1;" onclick="adminCreateVIPManager()">🔑 Créer le gestionnaire</button>
+  <div id="mgrCreateResult" style="display:none;margin-top:12px;background:#f9f0ff;border:1px solid #d3adf7;padding:14px;border-radius:12px;font-size:14px;line-height:1.8;"></div>
+</div>
+
+<!-- Liste gestionnaires VIP -->
+<div class="form-card" style="margin-top:14px;">
+  <h2>📋 Gestionnaires VIP</h2>
+  <button class="btn-primary" onclick="loadVIPManagers()">🔄 Charger</button>
+  <div id="mgrList" style="margin-top:12px;"></div>
+</div>
+</div>
+
+    <!-- LIVREURS -->
+    <div class="tab-panel" id="tab-livreurs">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🚚 Agents de livraison inscrits</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <input type="text" id="livreurVilleFilter" placeholder="Filtrer par ville" style="margin-bottom:0;">
+          <button class="btn-primary" onclick="loadLivreurs()" style="margin:0;">Rechercher</button>
+        </div>
+        <div id="livreursResults"></div>
+      </div>
+    </div>
+
+    <!-- BADGES -->
+    <div class="tab-panel" id="tab-badges">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🏅 Gestion des badges</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:14px;">
+          Attribuez ou retirez les badges manuellement.<br>
+          🥈 Argent = 7 étoiles &nbsp;|&nbsp; 🥉 Bronze = 20 étoiles &nbsp;|&nbsp; 🥇 Or = 50 étoiles
+        </p>
+        <button class="btn-primary" onclick="loadSellersForBadge()">🔄 Charger tous les comptes</button>
+        <input type="text" id="badgeSearchInput" placeholder="🔍 Rechercher par nom ou code..."
+          oninput="filterBadgeList(this.value)"
+          style="margin-top:10px;display:none;width:100%;box-sizing:border-box;">
+        <div id="badgeSellerList" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+<!-- FOURNISSEURS EXPORT -->
+<div class="tab-panel" id="tab-fournisseurs">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+  <div class="form-card">
+    <h2>🌍 Fournisseurs Export</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <input type="text" id="fournisseurSearchInput"
+        placeholder="Nom, code, ville..."
+        style="margin-bottom:0;">
+      <button class="btn-primary" onclick="loadFournisseurs()"
+        style="margin:0;">Rechercher</button>
+    </div>
+    <div id="fournisseursResults"></div>
+  </div>
+</div>
+    <!-- LOGS -->
+    <div class="tab-panel" id="tab-logs">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>📝 Journal des actions</h2>
+        <button class="btn-primary" onclick="loadLogs()">🔄 Charger les logs</button>
+      </div>
+      <div id="logsList"></div>
+    </div>
+    
+<!-- ===== TAB PAIEMENTS ===== -->
+    <div class="tab-panel" id="tab-paiements">
+      <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+
+      <div class="form-card" style="margin-bottom:14px;">
+        <h2>⚙️ Système d'abonnement</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:12px;">Activez pour bloquer automatiquement les comptes expirés, filtrer le catalogue et afficher les alertes J-7.</p>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="font-size:14px;">Statut : <span id="subscriptionToggleStatus" style="font-weight:700;">—</span></div>
+          <button id="subscriptionToggleBtn" onclick="toggleSubscriptionSystem()" style="color:white;border:none;padding:11px 22px;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;">Chargement...</button>
+        </div>
+      </div>
+
+      <div class="form-card" style="margin-bottom:14px;">
+        <h2>💳 Enregistrer un paiement</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+          <button onclick="openPaiementModal('livreur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🚚 Livreur<br><span style="font-size:10px;font-weight:400;color:#888;">1 500 · 4 000 · 15 000</span></button>
+          <button onclick="openPaiementModal('vendeur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🛍️ Vendeur Indép.<br><span style="font-size:10px;font-weight:400;color:#888;">2 000 · 5 500 · 20 000</span></button>
+          <button onclick="openPaiementModal('grossiste')" style="background:#fff7e6;border:1.5px solid #faad14;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#d48806;cursor:pointer;">🏭 Grossiste Indép.<br><span style="font-size:10px;font-weight:400;color:#888;">5 000 · 13 500 · 50 000</span></button>
+          <button onclick="openPaiementModal('vip_vendeur')" style="background:#f9f0ff;border:1.5px solid #722ed1;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#722ed1;cursor:pointer;">👑 Vendeur VIP<br><span style="font-size:10px;font-weight:400;color:#888;">5 000 · 13 500 · 50 000</span></button>
+          <button onclick="openPaiementModal('vip_grossiste')" style="background:#f9f0ff;border:1.5px solid #722ed1;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#722ed1;cursor:pointer;">👑 Grossiste VIP<br><span style="font-size:10px;font-weight:400;color:#888;">10 000 · 27 000 · 100 000</span></button>
+          <button onclick="openPaiementModal('fournisseur_export')" style="background:#e6fffb;border:1.5px solid #13c2c2;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#08979c;cursor:pointer;">📦 Fournisseur<br><span style="font-size:10px;font-weight:400;color:#888;">20 000 · 54 000 · 200 000</span></button>
+        </div>
+        <p style="font-size:10px;color:#bbb;margin-top:8px;text-align:center;">Mensuel · Trimestriel · Annuel (FCFA)</p>
+      </div>
+
+      <div class="form-card">
+        <h2>📊 Tableau de bord</h2>
+        <button class="btn-primary" onclick="loadPaiementsDashboard()" style="margin-bottom:14px;">🔄 Actualiser</button>
+        <div id="paiementsDashboard"><p style="color:#888;font-size:13px;">Cliquez sur Actualiser pour charger.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://frvzrorqndozglxczatv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZydnpyb3JxbmRvemdseGN6YXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc0NTEsImV4cCI6MjA5NTQ3MzQ1MX0.g3ETfxBw_i0keZYDrnGYudnbs4m23AJ_dFoxXV0ZJEE';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const TABLES = {
+  SELLERS:         'sellers',
+  PRODUCTS:        'products',
+  ORDERS:          'orders',
+  PROMOS:          'promos',
+  VISITORS:        'visitors',
+  BLOCKED_PHONES:  'blocked_phones',
+  ADMIN_LOGS:      'admin_logs',
+  VIP_MANAGERS:    'vip_managers',
+  PAYMENTS:        'payments',
+  SETTINGS:        'settings',
+  WHATSAPP_CLICKS: 'whatsapp_clicks',
+  DELIVERY_AGENTS: 'delivery_agents'
+};
+
+// Prévisualiser avant upload
+function previewBanner(position) {
+const file = (document.getElementById('file_' + position) && document.getElementById('file_' + position).files)
+    ? document.getElementById('file_' + position).files[0]
+    : null;
+  const preview = document.getElementById('preview_' + position);
+  if (!file || !preview) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// Upload photo + sauvegarder dans Supabase
+async function uploadBannerSlide(position) {
+  try {
+const fileInput = document.getElementById('file_' + position);
+const titleInput = document.getElementById('title_' + position);
+const subtitleInput = document.getElementById('subtitle_' + position);
+
+const file = (fileInput && fileInput.files)
+    ? fileInput.files[0]
+    : null;
+
+const title = (titleInput && titleInput.value)
+    ? titleInput.value.trim()
+    : '';
+
+const subtitle = (subtitleInput && subtitleInput.value)
+    ? subtitleInput.value.trim()
+    : '';
+  if (!file || !title || !subtitle) {
+    showToast('Remplissez tous les champs et choisissez une photo', 'error');
+    return;
+  }
+
+  showToast('Upload en cours...', 'info');
+
+  // Upload vers Supabase Storage bucket "photos"
+  const fileName = `banner/position_${position}_${Date.now()}.jpg`;
+  const { data: uploadData, error: uploadError } = await db.storage
+    .from('photos')
+    .upload(fileName, file, { upsert: true });
+
+  if (uploadError) {
+    showToast('Erreur upload: ' + uploadError.message, 'error');
+    return;
+  }
+
+  // Récupérer URL publique
+  const { data: urlData } = db.storage.from('photos').getPublicUrl(fileName);
+  const url = urlData.publicUrl;
+
+  // Sauvegarder dans banner_slides
+  const { data: existing } = await db.from('banner_slides')
+    .select('id').eq('id', position).maybeSingle();
+
+  if (existing) {
+    await db.from('banner_slides')
+      .update({ url, title, subtitle, updated_at: new Date().toISOString() })
+      .eq('id', position);
+  } else {
+    await db.from('banner_slides').insert({ id: position, url, title, subtitle });
+  }
+
+  await logAdminAction('Modifier banner', 'banner_slides', String(position), `Position ${position} mise à jour`);
+  // ✅ Rafraîchir la preview avec l'URL Supabase après upload
+  const previewEl = document.getElementById('preview_' + position);
+  if (previewEl) {
+    previewEl.src = url;
+    previewEl.style.display = 'block';
+  }
+  showToast(`Position ${position} mise à jour ✓`, 'success');
+  } catch(e) {
+    console.error('uploadBannerSlide error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function hashPin(pin) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + '_mbr_salt_2024');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hashVipManagerPin(pin) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin + '_vip_mbr_2025');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPin(code, pin, table) {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/functions/v1/verify-pin',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        },
+        body: JSON.stringify({ code, pin, table })
+      }
+    );
+    if (!res.ok) return { ok: false, account: null };
+    return await res.json();
+  } catch (e) {
+    return { ok: false, account: null };
+  }
+}
+
+// Photos par défaut
+const defaultBannerSlides = {
+  1:  { url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200', title: '🛍️ Mode & Tendances',          subtitle: 'Les meilleures boutiques vous attendent' },
+  2:  { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=1200', title: '💄 Beauté & Cosmétiques',       subtitle: 'Les meilleures marques à prix imbattables' },
+  3:  { url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200',    title: '👟 Chaussures & Basket',        subtitle: 'Des styles pour toutes les occasions' },
+  4:  { url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200', title: '🔥 Promos Exclusives',          subtitle: 'Des réductions exceptionnelles chaque jour !' },
+  5:  { url: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=1200', title: '👗 Vêtements Femme',            subtitle: 'Robes, ensembles tendance — livraison à domicile' },
+  6:  { url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200',    title: '🚚 Commandez Facilement',      subtitle: 'Recevez vos achats directement chez vous' },
+  7:  { url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?q=80&w=1200',    title: '🏪 Ouvrez Votre Boutique !',   subtitle: 'Inscription 100% gratuite — Gardez 100% de vos ventes' },
+  8:  { url: 'https://images.unsplash.com/photo-1573408301185-9519f94816b5?q=80&w=1200', title: '📈 Développez Votre Activité', subtitle: 'Touchez des milliers de clients au Congo' },
+  9:  { url: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=1200',    title: '💰 Zéro Commission !',          subtitle: 'Vendez plus, gagnez plus — Rejoignez Marché Moboro' },
+  10: { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200', title: '🤝 Rejoignez Notre Communauté', subtitle: 'Inscrivez-vous maintenant !' }
+};
+
+function renderBannerSlidesList() {
+  const container = document.getElementById('bannerSlidesList');
+  if (!container) return;
+  container.innerHTML = Array.from({length: 10}, (_, i) => {
+    const pos = i + 1;
+    return `
+    <div style="border:1.5px solid #e8e8e8;border-radius:12px;padding:12px;margin-bottom:10px;">
+      <p style="font-weight:700;margin-bottom:8px;">📌 Position ${pos}</p>
+      <img id="preview_${pos}" src="" style="width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:none;">
+      <input type="file" id="file_${pos}" accept="image/*" onchange="previewBanner(${pos})">
+      <input type="text" id="title_${pos}" placeholder="Titre" style="width:100%;margin:6px 0;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+      <input type="text" id="subtitle_${pos}" placeholder="Sous-titre" style="width:100%;margin-bottom:8px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+      <button class="btn-primary" onclick="uploadBannerSlide(${pos})">✅ Mettre à jour</button>
+      <button class="btn-danger" onclick="resetBannerSlide(${pos})" style="margin-top:5px;">🔄 Restaurer par défaut</button>
+    </div>`;
+  }).join('');
+}
+
+async function resetBannerSlide(position) {
+  try {
+    if (!confirm(`Supprimer la photo personnalisée de la position ${position} ? L'image par défaut réapparaîtra.`)) return;
+
+    await db.from('banner_slides').delete().eq('id', position);
+
+    const def = defaultBannerSlides[position];
+    const preview = document.getElementById('preview_' + position);
+    if (preview) {
+      preview.src           = def.url;
+      preview.style.display = 'block';
+      preview.style.border  = '2.5px solid #d9d9d9';
+      preview.title         = '⬜ Image par défaut';
+    }
+    const titleEl    = document.getElementById('title_'    + position);
+    const subtitleEl = document.getElementById('subtitle_' + position);
+    if (titleEl)    titleEl.value    = def.title;
+    if (subtitleEl) subtitleEl.value = def.subtitle;
+
+    await logAdminAction('Reset banner', 'banner_slides', String(position), `Position ${position} — image par défaut restaurée`);
+    showToast(`✅ Position ${position} restaurée — image par défaut active`, 'success');
+  } catch(e) {
+    console.error('resetBannerSlide error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+function showToast(message, type = 'info') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.innerText = message;
+  t.className = 'toast show ' + type;
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ===== AUTH =====
+async function adminLogin() {
+  const code = document.getElementById('adminCode').value.trim();
+  const pin  = (document.getElementById('adminPin') || document.getElementById('adminPassword')).value.trim();
+  const errEl = document.getElementById('loginError');
+  if (errEl) errEl.style.display = 'none';
+
+  if (!code || !pin) {
+    showToast('Remplissez tous les champs', 'error');
+    return;
+  }
+
+  try {
+ const result = await verifyPin(code, pin, 'admin_credentials');
+
+if (!result.ok) {
+  if (errEl) { errEl.innerText = 'Code ou PIN incorrect'; errEl.style.display = 'block'; }
+  showToast('Identifiants admin incorrects', 'error');
+      await logAdminAction('login_failed', 'admin', null, 'Tentative connexion échouée');
+      return;
+    }
+
+    // Masquer login, afficher dashboard
+    const lp = document.getElementById('loginPage');
+    const ap = document.getElementById('adminPage');
+    if (lp) lp.style.display = 'none';
+    if (ap) ap.style.display = 'block';
+    const emailEl = document.getElementById('adminEmailDisplay');
+    if (emailEl) emailEl.innerText = code;
+
+    await logAdminAction('login', 'admin', null, 'Connexion admin réussie');
+    loadStats();
+    loadSubscriptionToggle();
+    runAutoBlock();
+
+  } catch(e) {
+    console.error('adminLogin error:', e);
+    if (errEl) { errEl.innerText = 'Erreur de connexion'; errEl.style.display = 'block'; }
+  }
+}
+
+async function adminLogout() {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('adminPage').style.display = 'none';
+}
+
+// ===== TABS =====
+function switchTab(name, event) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (event) event.target.classList.add('active');
+  if (name === 'banner') { renderBannerSlidesList(); loadBannerSlides(); }
+}
+
+async function searchResetPin() {
+  const q = document.getElementById('resetPinSearch').value.trim();
+  if (!q) return;
+  const { data } = await db.from(TABLES.SELLERS)
+    .select('id, full_name, code, phone, account_type')
+    .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
+    .limit(5);
+  const div = document.getElementById('resetPinResults');
+  if (!data || !data.length) { div.innerHTML = '<p style="color:#888;font-size:13px;">Aucun résultat</p>'; return; }
+  div.innerHTML = data.map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#f9f9f9;border-radius:10px;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${escapeHtml(s.full_name)}</div>
+        <div style="font-size:12px;color:#888;">${s.code} · ${s.phone || ''}</div>
+      </div>
+      <button onclick="resetPin('${s.id}', '${escapeHtml(s.full_name)}')"
+        style="background:#ff4d4f;color:white;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;">
+        🔑 Reset
+      </button>
+    </div>
+  `).join('');
+}
+
+async function resetPin(sellerId, name) {
+  if (!confirm(`Réinitialiser le PIN de ${name} à 0000 ?`)) return;
+  try {
+    const { error } = await db.from(TABLES.SELLERS).update({ pin_hash: await hashPin('0000') }).eq('id', sellerId);
+    if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
+    showToast(`PIN de ${name} réinitialisé à 0000 ✓`, 'success');
+    document.getElementById('resetPinResults').innerHTML = '';
+    document.getElementById('resetPinSearch').value = '';
+  } catch(e) {
+    showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ===== STATS =====
+async function loadStats() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Visites
+    const [todayV, totalV] = await Promise.all([
+      db.from(TABLES.VISITORS).select('*', {count:'exact',head:true}).gte('date', today),
+      db.from(TABLES.VISITORS).select('*', {count:'exact',head:true})
+    ]);
+    document.getElementById('sTodayVisits').innerText = todayV.count || 0;
+    document.getElementById('sTotalVisits').innerText = totalV.count || 0;
+
+    // Inscrits aujourd'hui
+    const [todayS, todayL] = await Promise.all([
+  db.from(TABLES.SELLERS).select('*', {count:'exact',head:true}).gte('created_at', today),
+  db.from('delivery_agents').select('*', {count:'exact',head:true}).gte('created_at', today)
+]);
+document.getElementById('sTodaySellers').innerText = (todayS.count || 0) + (todayL.count || 0);
+
+    // Utilisateurs total par type
+const types = [
+{ key: 'independant_vendeur',   id: 'sCountVendeur' },
+{ key: 'independant_grossiste', id: 'sCountGrossiste' },
+  { key: 'vip_vendeur',        id: 'sCountVipVendeur' },
+  { key: 'vip_grossiste',      id: 'sCountVipGrossiste' },
+  { key: 'fournisseur_export', id: 'sCountFournisseur' }
+];
+await Promise.all(types.map(async t => {
+  const { count } = await db.from(TABLES.SELLERS).select('*', {count:'exact',head:true}).eq('account_type', t.key);
+  document.getElementById(t.id).innerText = count || 0;
+}));
+
+// Livreurs (table séparée)
+const { count: countLivreurs } = await db.from('delivery_agents').select('*', {count:'exact',head:true});
+document.getElementById('sCountLivreur').innerText = countLivreurs || 0;
+const [totalSellers, totalAgents] = await Promise.all([
+  db.from(TABLES.SELLERS).select('*', {count:'exact',head:true}),
+  db.from('delivery_agents').select('*', {count:'exact',head:true})
+]);
+const totalEl = document.getElementById('sTotalUsers');
+if (totalEl) totalEl.innerText = (totalSellers.count || 0) + (totalAgents.count || 0);
+
+    // Actifs aujourd'hui
+    const { data: activePubs } = await db.from(TABLES.PRODUCTS).select('seller_id').gte('created_at', today);
+    const activeSellers = [...new Set((activePubs || []).map(p => p.seller_id))];
+    const activeTypes = [
+  { key: 'independant_vendeur',   id: 'sActiveVendeur' },
+  { key: 'independant_grossiste', id: 'sActiveGrossiste' },
+      { key: 'vip_vendeur',        id: 'sActiveVipVendeur' },
+      { key: 'vip_grossiste',      id: 'sActiveVipGrossiste' },
+      { key: 'fournisseur_export', id: 'sActiveFournisseur' }
+    ];
+    let activeTotal = 0;
+    await Promise.all(activeTypes.map(async t => {
+      if (!activeSellers.length) { document.getElementById(t.id).innerText = 0; return; }
+      const { count } = await db.from(TABLES.SELLERS).select('*', {count:'exact',head:true}).in('id', activeSellers).eq('account_type', t.key);
+      document.getElementById(t.id).innerText = count || 0;
+      activeTotal += count || 0;
+    }));
+    document.getElementById('sActiveTotal').innerText = activeTotal;
+
+    // Contacts WhatsApp
+    const clickTypes = [
+      { key: 'livreur',            todayId: 'sClickLivreurToday',     totalId: 'sClickLivreurTotal' },
+   { key: 'independant_vendeur',   todayId: 'sClickVendeurToday', totalId: 'sClickVendeurTotal' },
+  { key: 'independant_grossiste', todayId: 'sClickGrossisteToday', totalId: 'sClickGrossisteTotal' },
+      { key: 'vip_vendeur',        todayId: 'sClickVipVendeurToday',   totalId: 'sClickVipVendeurTotal' },
+      { key: 'vip_grossiste',      todayId: 'sClickVipGrossisteToday', totalId: 'sClickVipGrossisteTotal' },
+      { key: 'fournisseur_export', todayId: 'sClickFournisseurToday',  totalId: 'sClickFournisseurTotal' }
+    ];
+    let clickTotal = 0;
+    await Promise.all(clickTypes.map(async t => {
+      const [resT, resA] = await Promise.all([
+        db.from(TABLES.WHATSAPP_CLICKS).select('*', {count:'exact',head:true}).eq('account_type', t.key).gte('clicked_at', today),
+        db.from(TABLES.WHATSAPP_CLICKS).select('*', {count:'exact',head:true}).eq('account_type', t.key)
+      ]);
+      const cT = resT.error ? 0 : (resT.count || 0);
+      const cA = resA.error ? 0 : (resA.count || 0);
+      document.getElementById(t.todayId).innerText = cT;
+      document.getElementById(t.totalId).innerText = cA;
+      clickTotal += cA;
+    }));
+    document.getElementById('sClickTotal').innerText = clickTotal;
+
+    // Divers
+    const [prods, promos] = await Promise.all([
+      db.from(TABLES.PRODUCTS).select('*', {count:'exact',head:true}).eq('is_active', true),
+      db.from(TABLES.PROMOS).select('*', {count:'exact',head:true}).eq('is_active', true)
+    ]);
+    document.getElementById('sActiveProducts').innerText = prods.count || 0;
+    document.getElementById('sActivePromos').innerText   = promos.count || 0;
+
+  } catch(e) {
+    console.error('loadStats error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+// ===== VENDEURS =====
+async function searchSellers() {
+  try {
+  const q = document.getElementById('searchSeller').value.trim().toUpperCase();
+  if (!q) return;
+
+  const { data: sellers } = await db.from(TABLES.SELLERS)
+    .select('*')
+    .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
+    .order('created_at', { ascending: false });
+
+  const div = document.getElementById('sellersResults');
+  if (!sellers || sellers.length === 0) {
+    div.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucun vendeur trouvé.</p>';
+    return;
+  }
+
+  div.innerHTML = `<div class="table-wrap"><table>
+    <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Cat.</th><th>Statut</th><th>Action</th></tr>
+    ${sellers.map(s => `
+      <tr>
+<td><strong>${escapeHtml(s.code)}</strong></td>
+<td>${escapeHtml(s.full_name)}</td>
+<td>${escapeHtml(s.phone)}</td>
+<td>${escapeHtml(s.category)}</td>
+<td>
+  ${s.is_blocked
+    ? '<span class="badge-red">Bloqué</span>'
+    : s.subscription_status === 'expire'
+      ? '<span class="badge-yellow">Expiré</span>'
+      : '<span class="badge-green">Actif</span>'
+  }
+  <br><small style="color:#888;">
+    ${s.subscription_end
+      ? 'Exp: ' + new Date(s.subscription_end).toLocaleDateString('fr-FR')
+      : '—'}
+  </small>
+</td>
+        <td>
+          <button class="action-btn ${s.is_blocked ? 'unblock-btn' : 'block-btn'}"
+            onclick="toggleBlock('${s.id}', ${s.is_blocked})">
+            ${s.is_blocked ? 'Débloquer' : 'Bloquer'}
+          </button>
+        </td>
+      </tr>
+    `).join('')}
+  </table></div>`;
+  } catch(e) {
+    console.error('searchSellers error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function toggleBlock(sellerId, isBlocked) {
+  try {
+  const action = isBlocked ? 'débloquer' : 'bloquer';
+  if (!confirm(`Voulez-vous ${action} ce vendeur ?`)) return;
+
+  const today = new Date();
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 30);
+
+  const updateData = {
+    is_blocked: !isBlocked,
+    subscription_status: isBlocked ? 'en_cours' : 'expire'
+  };
+
+  if (isBlocked) {
+    updateData.subscription_start = today.toISOString().split('T')[0];
+    updateData.subscription_end   = endDate.toISOString().split('T')[0];
+  }
+
+  const { error } = await db.from(TABLES.SELLERS)
+    .update(updateData).eq('id', sellerId);
+
+  if (error) { showToast('Erreur', 'error'); return; }
+
+  showToast(
+    isBlocked
+      ? `Débloqué ✓ — Expire le ${endDate.toLocaleDateString('fr-FR')}`
+      : `Bloqué ✓`,
+    'success'
+  );
+
+  await logAction(
+    isBlocked ? 'Déblocage vendeur' : 'Blocage vendeur',
+    sellerId, '',
+    isBlocked ? `Abonnement jusqu'au ${endDate.toISOString().split('T')[0]}` : ''
+  );
+
+  searchSellers();
+  } catch(e) {
+    console.error('toggleBlock error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ===== POSITIONS =====
+async function loadPositions(catId) {
+  try {
+  if (!catId) return;
+
+  let query = db.from(TABLES.SELLERS)
+    .select('*')
+    .order('position', { ascending: true });
+
+  if (catId === 'fournisseur_export') {
+    query = query.eq('account_type', 'fournisseur_export');
+  } else {
+    query = query.eq('category', catId).eq('is_blocked', false);
+  }
+
+  const { data: sellers } = await query;
+
+  const list = document.getElementById('positionsList');
+  if (!sellers || sellers.length === 0) {
+    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucun vendeur dans cette catégorie.</p>';
+    return;
+  }
+
+  list.innerHTML = sellers.map((s, i) => `
+    <div class="position-item">
+      <span class="pos-number">#${i+1}</span>
+      <span class="pos-name">${escapeHtml(s.full_name)} (${escapeHtml(s.code)})</span>
+      <div class="pos-controls">
+        <input type="number" min="1" max="${sellers.length}" value="${i+1}"
+          id="pos-input-${s.id}"
+          style="width:52px;padding:4px;border:1.5px solid #d9d9d9;border-radius:8px;
+                 text-align:center;font-size:14px;font-weight:700;">
+        <button onclick="savePosition('${s.id}', '${catId}', ${sellers.length})"
+          style="background:#52c41a;color:white;border:none;padding:6px 11px;
+                 border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;">✓</button>
+      </div>
+    </div>
+  `).join('');
+  } catch(e) {
+    console.error('loadPositions error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function savePosition(sellerId, catId, total) {
+  try {
+    const input = document.getElementById('pos-input-' + sellerId);
+    const newPos = parseInt(input.value);
+    if (!newPos || newPos < 1 || newPos > total) {
+      showToast(`Position invalide (1 à ${total})`, 'error'); return;
+    }
+    let query = db.from(TABLES.SELLERS)
+      .select('id, position').order('position', { ascending: true });
+    if (catId === 'fournisseur_export') {
+      query = query.eq('account_type', 'fournisseur_export');
+    } else {
+      query = query.eq('category', catId).eq('is_blocked', false);
+    }
+    const { data: sellers } = await query;
+    if (!sellers) return;
+    const oldIndex = sellers.findIndex(s => s.id === sellerId);
+    const newIndex = newPos - 1;
+    if (oldIndex === newIndex) return;
+    const reordered = [...sellers];
+    const [moved] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, moved);
+  for (let i = 0; i < reordered.length; i++) {
+      await db.from(TABLES.SELLERS)
+        .update({ position: i + 1 })
+        .eq('id', reordered[i].id);
+    }
+showToast('Position mise à jour ✓', 'success');
+    setTimeout(() => {
+      const catSelect = document.getElementById('catSelect');
+      const currentCat = catSelect ? catSelect.value : catId;
+      loadPositions(currentCat);
+    }, 300);
+  } catch(e) {
+    console.error('savePosition error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || 'inconnue'), 'error');
+  }
+}
+
+// ===== ACTIONS =====
+async function blockSeller() {
+  try {
+  const code = document.getElementById('blockCode').value.trim().toUpperCase();
+  if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
+  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
+await db.from(TABLES.SELLERS).update({ is_blocked: true }).eq('id', seller.id);
+await logAction('Blocage vendeur', code, seller.full_name, 'Bloqué par admin');
+  showToast(`${code} bloqué ✓`, 'success');
+  } catch(e) {
+    console.error('blockSeller error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function unblockSeller() {
+  try {
+  const code = document.getElementById('blockCode').value.trim().toUpperCase();
+  if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
+  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
+  await db.from(TABLES.SELLERS).update({ is_blocked: false }).eq('id', seller.id);
+  await logAction('Déblocage vendeur', code, seller.full_name, 'Débloqué par admin');
+  showToast(`${code} débloqué ✓`, 'success');
+  } catch(e) {
+    console.error('unblockSeller error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function deleteSellerAdmin() {
+  try {
+  const code = document.getElementById('deleteCode').value.trim().toUpperCase();
+  if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
+  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
+  if (!confirm(`Supprimer définitivement ${seller.full_name} (${code}) ?`)) return;
+
+  const { error } = await db.rpc('delete_seller_full', {
+    p_seller_id: seller.id
+  });
+
+  if (error) {
+    showToast("Erreur suppression Supabase", "error");
+    console.error(error);
+    return;
+  }
+
+  await logAction('Suppression compte', code, seller.full_name, 'Compte supprimé définitivement');
+  showToast(`Compte ${code} supprimé ✓`, 'success');
+  document.getElementById('deleteCode').value = '';
+  loadStats();
+  } catch(e) {
+    console.error('deleteSellerAdmin error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function blockPhone() {
+  try {
+  const phone  = document.getElementById('blockPhone').value.trim();
+  const reason = document.getElementById('blockReason').value.trim();
+  if (!phone) { showToast('Entrez un numéro', 'error'); return; }
+  const { error } = await db.from(TABLES.BLOCKED_PHONES).insert({ phone, reason, blocked_by: 'admin' });
+  if (error) { showToast('Erreur ou numéro déjà bloqué', 'error'); return; }
+  await logAction('Blocage numéro', phone, '', reason);
+  showToast(`${phone} bloqué ✓`, 'success');
+  document.getElementById('blockPhone').value = '';
+  document.getElementById('blockReason').value = '';
+  } catch(e) {
+    console.error('blockPhone error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function updateSubscription() {
+  try {
+  const code   = document.getElementById('subCode').value.trim().toUpperCase();
+  const status = document.getElementById('subStatus').value;
+  if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
+  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
+  const updateData = { subscription_status: status };
+  if (status === 'en_cours') {
+    const today = new Date();
+    const end30 = new Date(today);
+    end30.setDate(end30.getDate() + 30);
+    updateData.subscription_start = today.toISOString().split('T')[0];
+    updateData.subscription_end   = end30.toISOString().split('T')[0];
+    updateData.is_blocked         = false;
+  }
+  await db.from(TABLES.SELLERS).update(updateData).eq('id', seller.id);
+  await logAction('Modification abonnement', code, seller.full_name, `Statut: ${status}`);
+  showToast(`Abonnement ${code} mis à jour ✓`, 'success');
+  } catch(e) {
+    console.error('updateSubscription error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ===== LOGS =====
+async function loadLogs() {
+  try {
+  const { data: logs } = await db.from(TABLES.ADMIN_LOGS)
+    .select('*').order('created_at', { ascending: false }).limit(50);
+
+  const list = document.getElementById('logsList');
+  if (!logs || logs.length === 0) {
+    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucun log.</p>';
+    return;
+  }
+
+  list.innerHTML = logs.map(l => `
+    <div class="log-item">
+      <strong>${l.action}</strong> — ${l.target_table||''} <span style="color:#1677FF;">${l.target_id||''}</span><br>
+      ${l.details||''}
+      <div class="log-time">⏰ ${new Date(l.created_at).toLocaleString('fr-FR')}</div>
+    </div>
+  `).join('');
+  } catch(e) {
+    console.error('loadLogs error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function runCleanup() {
+  if (!confirm('Lancer le nettoyage automatique ?')) return;
+  try {
+    const { error } = await db.rpc('clean_old_data');
+    if (error) {
+      showToast('Erreur nettoyage: ' + error.message, 'error');
+      return;
+    }
+    showToast('Nettoyage effectué ✓', 'success');
+    await logAction('Nettoyage automatique', '', '', 'Données nettoyées');
+    loadStats();
+  } catch(e) {
+    showToast('Erreur nettoyage', 'error');
+  }
+}
+// ✅ logAction() → wrapper de logAdminAction() (définie dans supabase.js)
+// Conserve la signature locale utilisée partout dans admin.html
+async function logAction(action, targetCode, targetName, details) {
+  
+  
+await logAdminAction(
+    action,
+    'sellers',
+    targetCode || null,
+    `${targetName ? targetName + ' ' : ''}(${targetCode || ''}) — ${details}`
+  );
+}
+
+// ================================================================
+// FONCTIONS BANNER — À ajouter dans admin.html
+// ================================================================
+
+// Charger les slides actuels depuis Supabase
+// ================================================================
+// GESTION COMPTES VIP — admin.html (code séparé de index.html)
+// ================================================================
+
+function generateAdminVIPCode(count) {
+  const number = String(count + 1).padStart(4, '0');
+  return 'VIP' + number + 'M';
+}
+
+async function adminCreateVIP() {
+  const type        = document.getElementById('vipType').value;
+  const fullName    = document.getElementById('vipFullName').value.trim();
+  const phone       = document.getElementById('vipPhone').value.trim();
+  const quartier    = document.getElementById('vipQuartier').value.trim();
+  const address     = document.getElementById('vipAddress').value.trim();
+  const ville       = document.getElementById('vipVille').value.trim();
+  const category    = document.getElementById('vipCategory').value;
+  const description = document.getElementById('vipDescription').value.trim();
+  const pin         = document.getElementById('vipPin').value.trim();
+
+  if (!fullName || !phone || !quartier || !address || !ville || !category || !description || !pin) {
+    showToast('Remplissez tous les champs', 'error'); return;
+  }
+  if (pin.length < 4) { showToast('PIN minimum 4 chiffres', 'error'); return; }
+
+  const { data: existing } = await db.from(TABLES.SELLERS)
+    .select('id').eq('phone', phone).maybeSingle();
+  if (existing) { showToast('Ce numéro a déjà un compte', 'error'); return; }
+
+  try {
+    const { count } = await db.from(TABLES.SELLERS)
+      .select('*', { count: 'exact', head: true });
+
+    const sellerCode = 'MBR' + String((count||0)+1).padStart(4,'0') +
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random()*26)];
+
+    const { data: sysSetting } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
+    const sysOn = sysSetting && sysSetting.value === 'on';
+    const today = new Date();
+    const end30 = new Date(today); end30.setDate(end30.getDate() + 30);
+    const subEnd   = sysOn ? end30.toISOString().split('T')[0] : null;
+    const subStart = sysOn ? today.toISOString().split('T')[0] : null;
+
+    const { data: created, error } = await db.from(TABLES.SELLERS).insert({
+      code:                sellerCode,
+      full_name:           fullName,
+      phone:               phone,
+      quartier:            quartier,
+      address:             address,
+      ville:               ville,
+      category:            category,
+      description:         description,
+      pin_hash:            await hashPin(pin),
+      photo:               '',
+      is_blocked:          false,
+      is_active:           true,
+      position:            0,
+      account_type:        type,
+      subscription_status: 'en_cours',
+      subscription_start:  subStart,
+      subscription_end:    subEnd,
+      created_at:          new Date().toISOString()
+    }).select().single();
+
+    if (error || !created) {
+showToast(
+    'Erreur création: ' + ((error && error.message) ? error.message : ''),
+    'error'
+);
+return;
+    }
+
+    await logAction('Création compte VIP', sellerCode, fullName,
+      `Type: ${type} | Catégorie: ${category}`);
+
+    // Email admin via Edge Function Supabase → Brevo
+    try {
+      await fetch(
+        'https://frvzrorqndozglxczatv.supabase.co/functions/v1/bright-service',
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ seller: created })
+        }
+      );
+    } catch(e) { console.warn('Email non envoyé:', e); }
+
+    const resultDiv = document.getElementById('vipCreateResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = `
+      ✅ <strong>Compte VIP créé avec succès !</strong><br><br>
+      👤 <strong>Nom :</strong> ${escapeHtml(fullName)}<br>
+      📱 <strong>Code vendeur :</strong> <span style="color:#722ed1;font-size:16px;font-weight:700;letter-spacing:2px;">${sellerCode}</span><br>
+      🔒 <strong>PIN :</strong> ${pin}<br>
+      🏷️ <strong>Type :</strong> ${type === 'vip_grossiste' ? 'Importateur & Grossiste VIP' : 'Vendeur VIP'}<br><br>
+      <span style="color:#ff4d4f;font-size:12px;">⚠️ Communiquez ces informations au client maintenant.</span>
+    `;
+
+    showToast(`Compte VIP ${sellerCode} créé ✓`, 'success');
+
+    // Vider le formulaire
+    ['vipFullName','vipPhone','vipQuartier','vipAddress','vipVille','vipDescription','vipPin']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('vipCategory').value = '';
+
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
+async function loadVIPAccounts() {
+  try {
+  const div = document.getElementById('vipList');
+  div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+
+  const { data: sellers } = await db.from(TABLES.SELLERS)
+    .select('*')
+    .or('account_type.eq.vip_vendeur,account_type.eq.vip_grossiste')
+    .order('created_at', { ascending: false });
+
+  if (!sellers || sellers.length === 0) {
+    div.innerHTML = '<p style="color:#888;font-size:13px;padding:12px;">Aucun compte VIP.</p>';
+    return;
+  }
+
+  div.innerHTML = `<div class="table-wrap"><table>
+    <tr>
+      <th>Code</th><th>Nom</th><th>Type</th><th>Catégorie</th><th>Statut</th><th>Action</th>
+    </tr>
+    ${sellers.map(s => `
+      <tr>
+        <td><strong style="color:#722ed1;">${escapeHtml(s.code)}</strong></td>
+        <td>${escapeHtml(s.full_name)}<br><small style="color:#888;">${escapeHtml(s.phone)}</small></td>
+        <td><span style="font-size:11px;background:#f9f0ff;color:#722ed1;padding:3px 7px;border-radius:6px;font-weight:700;">
+          ${s.account_type === 'vip_grossiste' ? '🏭 Grossiste VIP' : '🛍️ Vendeur VIP'}
+        </span></td>
+        <td style="font-size:12px;">${escapeHtml(s.category)}</td>
+        <td>
+          ${s.is_blocked
+            ? '<span class="badge-red">Bloqué</span>'
+            : '<span class="badge-green">Actif</span>'}
+        </td>
+        <td>
+          <button class="action-btn ${s.is_blocked ? 'unblock-btn' : 'block-btn'}"
+            onclick="toggleBlock('${s.id}', ${s.is_blocked})">
+            ${s.is_blocked ? 'Débloquer' : 'Bloquer'}
+          </button>
+        </td>
+      </tr>
+    `).join('')}
+  </table></div>`;
+  } catch(e) {
+    console.error('loadVIPAccounts error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ================================================================
+// GESTION LIVREURS — admin.html
+// ================================================================
+
+async function loadLivreurs() {
+  try {
+  const ville = document.getElementById('livreurVilleFilter').value.trim();
+  const div   = document.getElementById('livreursResults');
+  div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+
+  let query = db.from('delivery_agents').select('*').order('created_at', { ascending: false });
+  if (ville) query = query.ilike('ville', `%${ville}%`);
+
+  const { data: agents, error } = await query;
+
+  if (error || !agents || agents.length === 0) {
+    div.innerHTML = '<p style="color:#888;font-size:13px;padding:12px;">Aucun agent livreur trouvé.</p>';
+    return;
+  }
+
+  div.innerHTML = `<div class="table-wrap"><table>
+    <tr>
+      <th>Nom</th><th>Téléphone</th><th>Ville</th><th>Quartiers</th><th>Moyen</th><th>Statut</th><th>Action</th>
+    </tr>
+    ${agents.map(a => `
+      <tr>
+        <td>${escapeHtml(a.full_name)}</td>
+        <td>${escapeHtml(a.phone)}</td>
+        <td>${escapeHtml(a.ville)}</td>
+        <td style="font-size:12px;">${escapeHtml(a.quartier)}</td>
+        <td>${escapeHtml(a.moyen||'')}</td>
+        <td>
+          ${a.is_blocked
+            ? '<span class="badge-red">Bloqué</span>'
+            : a.subscription_status === 'expire'
+              ? '<span class="badge-yellow">Expiré</span>'
+              : '<span class="badge-green">Actif</span>'}
+        </td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="action-btn ${a.is_blocked ? 'unblock-btn' : 'block-btn'}"
+            onclick="toggleLivreur('${a.id}', ${a.is_blocked})">
+            ${a.is_blocked ? 'Débloquer' : 'Bloquer'}
+          </button>
+          <button class="action-btn block-btn"
+            onclick="deleteLivreur('${a.id}', '${escapeHtml(a.full_name)}')">
+            🗑
+          </button>
+        </td>
+      </tr>
+    `).join('')}
+  </table></div>`;
+  } catch(e) {
+    console.error('loadLivreurs error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function toggleLivreur(id, isBlocked) {
+  try {
+  if (!confirm(`${isBlocked ? 'Débloquer' : 'Bloquer'} ce livreur ?`)) return;
+  const { error } = await db.from('delivery_agents')
+    .update({ is_blocked: !isBlocked }).eq('id', id);
+  if (error) { showToast('Erreur', 'error'); return; }
+  showToast(isBlocked ? 'Livreur débloqué ✓' : 'Livreur bloqué ✓', 'success');
+  loadLivreurs();
+  } catch(e) {
+    console.error('toggleLivreur error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function deleteLivreur(id, name) {
+  try {
+  if (!confirm(`Supprimer définitivement ${name} ?`)) return;
+  const { error } = await db.from('delivery_agents').delete().eq('id', id);
+  if (error) { showToast('Erreur suppression', 'error'); return; }
+  await logAction('Suppression livreur', id, name, 'Compte livreur supprimé');
+  showToast('Livreur supprimé ✓', 'success');
+  loadLivreurs();
+  } catch(e) {
+    console.error('deleteLivreur error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ✅ escapeHtml() → définie dans supabase.js (version complète avec protection apostrophe)
+
+async function loadBannerSlides() {
+  try {
+    const { data: slides, error } = await db
+      .from('banner_slides')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) { showToast('Erreur chargement slides', 'error'); return; }
+
+    const supaMap = {};
+    (slides || []).forEach(s => { supaMap[s.id] = s; });
+
+    for (let pos = 1; pos <= 10; pos++) {
+      const titleEl    = document.getElementById('title_'    + pos);
+      const subtitleEl = document.getElementById('subtitle_' + pos);
+      const previewEl  = document.getElementById('preview_'  + pos);
+      const slide = supaMap[pos] || null;
+      const def   = defaultBannerSlides[pos];
+
+      if (previewEl) {
+        const imgUrl        = (slide && slide.url) ? slide.url : def.url;
+        previewEl.src           = imgUrl;
+        previewEl.style.display = 'block';
+        previewEl.style.border  = slide ? '2.5px solid #52c41a' : '2.5px solid #d9d9d9';
+        previewEl.title         = slide ? '✅ Image personnalisée' : '⬜ Image par défaut';
+        previewEl.onerror       = () => previewEl.style.display = 'none';
+      }
+      if (titleEl)    titleEl.value    = (slide && slide.title)    ? slide.title    : def.title;
+      if (subtitleEl) subtitleEl.value = (slide && slide.subtitle) ? slide.subtitle : def.subtitle;
+    }
+
+    showToast('Slides chargés ✓', 'success');
+  } catch(e) {
+    console.error('loadBannerSlides error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+// ================================================================
+// GESTION BADGES — ADMIN UNIQUEMENT (argent / bronze / or en 1 clic)
+// ================================================================
+let _allBadgeEntities = [];
+
+function filterBadgeList(q) {
+  const div = document.getElementById('badgeSellerList');
+  if (!div || !_allBadgeEntities.length) return;
+  const search = q.trim().toLowerCase();
+  const filtered = search
+    ? _allBadgeEntities.filter(e => e.searchText && e.searchText.includes(search))
+    : _allBadgeEntities;
+  renderBadgeList(filtered, div);
+}
+
+function renderBadgeList(all, div) {
+  if (!all.length) { div.innerHTML = '<p style="color:#888;padding:12px;">Aucun résultat.</p>'; return; }
+  const bi = { silver: { e:'🥈', l:'Argent', c:'#a0aec0' }, bronze: { e:'🥉', l:'Bronze', c:'#c07b3a' }, gold: { e:'🥇', l:'Or', c:'#f6c90e' } };
+  div.innerHTML = all.map(e => {
+    const s = e.stars || 0;
+    const auto = s>=50?'gold':s>=20?'bronze':s>=7?'silver':null;
+    const cur  = e.badge || auto;
+    const bHtml = cur ? `<span style="background:${bi[cur].c}30;color:${bi[cur].c};border:1px solid ${bi[cur].c};padding:2px 7px;border-radius:20px;font-size:11px;font-weight:700;">${bi[cur].e} ${bi[cur].l}</span>` : '<span style="color:#ccc;font-size:11px;">Aucun badge</span>';
+    return `<div style="background:white;border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,.07);">
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${escapeHtml(e.label)}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px;">${e.typeDisplay || ''} &nbsp;|&nbsp; ⭐ ${s} étoile${s>1?'s':''} &nbsp; ${bHtml}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+        <button onclick="adminGiveBadge('${e.id}','${e.entityType}','silver')" style="background:#a0aec0;color:white;border:none;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🥈 Argent</button>
+        <button onclick="adminGiveBadge('${e.id}','${e.entityType}','bronze')" style="background:#c07b3a;color:white;border:none;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🥉 Bronze</button>
+        <button onclick="adminGiveBadge('${e.id}','${e.entityType}','gold')"   style="background:#f6c90e;color:#333;border:none;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🥇 Or</button>
+        <button onclick="adminRemoveBadge('${e.id}','${e.entityType}')"        style="background:#f5f5f5;color:#666;border:1px solid #ddd;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✕ Retirer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadSellersForBadge() {
+  try {
+  const div = document.getElementById('badgeSellerList');
+  if (!div) return;
+  div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+
+  const { data: sellers  } = await db.from(TABLES.SELLERS)
+    .select('id,code,full_name,stars,badge,account_type')
+    .eq('is_blocked', false).order('stars', { ascending: false });
+
+  const { data: livreurs } = await db.from('delivery_agents')
+    .select('id,code,full_name,phone,stars,badge')
+    .eq('is_blocked', false).order('stars', { ascending: false });
+
+const typeLabel = {
+    independant_vendeur:   '👤 Vendeur',
+    independant_grossiste: '📦 Grossiste',
+    vip_vendeur:           '👑 VIP Vendeur',
+    vip_grossiste:         '👑 VIP Grossiste',
+    fournisseur_export:    '🌍 Fournisseur'
+  };
+  const all = [
+    ...(sellers  || []).map(s => ({ ...s, entityType: 'seller',
+      label:       `${s.full_name} (${s.code})`,
+      typeDisplay: typeLabel[s.account_type] || s.account_type,
+      searchText:  `${s.full_name} ${s.code} ${s.phone || ''}`.toLowerCase()
+    })),
+    ...(livreurs || []).map(l => ({ ...l, entityType: 'livreur',
+      label:       `${l.full_name} (${l.code || 'Livreur'})`,
+      typeDisplay: '🚚 Livreur',
+      searchText:  `${l.full_name} ${l.code || ''} ${l.phone || ''}`.toLowerCase()
+    }))
+  ];
+  
+  if (!all.length) { div.innerHTML = '<p style="color:#888;padding:12px;">Aucun compte.</p>'; return; }
+
+  _allBadgeEntities = all;
+  const searchInput = document.getElementById('badgeSearchInput');
+  if (searchInput) { searchInput.style.display = 'block'; searchInput.value = ''; }
+  renderBadgeList(all, div);
+  } catch(e) {
+    console.error('loadSellersForBadge error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function adminGiveBadge(id, entityType, badge) {
+  try {
+    const table = entityType === 'livreur' ? 'delivery_agents' : TABLES.SELLERS;
+    const { error } = await db.from(table).update({ badge }).eq('id', id);
+    if (error) { showToast('Erreur badge', 'error'); return; }
+    await logAction('Badge attribué', id, badge, `Badge ${badge} attribué`);
+    showToast(`Badge ${badge} attribué ✓`, 'success');
+    loadSellersForBadge();
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
+async function adminRemoveBadge(id, entityType) {
+  try {
+    const table = entityType === 'livreur' ? 'delivery_agents' : TABLES.SELLERS;
+    await db.from(table).update({ badge: null }).eq('id', id);
+    await logAction('Badge retiré', id, '', 'Badge retiré');
+    showToast('Badge retiré ✓', 'success');
+    loadSellersForBadge();
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
+// ================================================================
+// SYSTÈME ABONNEMENT — ON/OFF
+// ================================================================
+async function loadSubscriptionToggle() {
+  try {
+    const { data } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
+    updateSubscriptionToggleUI(data && data.value === 'on');
+  } catch(e) { console.error(e); }
+}
+function updateSubscriptionToggleUI(isOn) {
+  const btn = document.getElementById('subscriptionToggleBtn');
+  const st  = document.getElementById('subscriptionToggleStatus');
+  if (!btn || !st) return;
+  if (isOn) {
+    st.innerHTML = '<span style="color:#52c41a;font-weight:700;">🟢 ACTIF</span>';
+    btn.innerText = '🔴 Désactiver'; btn.style.background = '#ff4d4f';
+  } else {
+    st.innerHTML = '<span style="color:#ff4d4f;font-weight:700;">🔴 DÉSACTIVÉ</span>';
+    btn.innerText = '🟢 Activer'; btn.style.background = '#52c41a';
+  }
+}
+async function toggleSubscriptionSystem() {
+  const btn = document.getElementById('subscriptionToggleBtn');
+  const st  = document.getElementById('subscriptionToggleStatus');
+  if (btn) { btn.disabled = true; btn.innerText = '⏳ En cours...'; }
+  try {
+    const { data } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
+const newVal = (data && data.value === 'on') ? 'off' : 'on';
+    const { error: saveError } = await db.from('settings')
+  .upsert({ key: 'subscription_system', value: newVal }, { onConflict: 'key' });
+
+if (saveError) {
+  console.error('toggleSubscriptionSystem save error:', saveError);
+  showToast('Erreur sauvegarde: ' + saveError.message, 'error');
+  await loadSubscriptionToggle(); // remet l'UI à l'état réel
+  return;
+}
+
+    if (newVal === 'on') {
+      // Activation : donner 30 jours à tous les comptes sans subscription_end
+      const today = new Date();
+      const end30 = new Date(today); end30.setDate(end30.getDate() + 30);
+      const endStr = end30.toISOString().split('T')[0];
+      const startStr = today.toISOString().split('T')[0];
+
+      await db.from('sellers')
+        .update({ subscription_end: endStr, subscription_start: startStr, subscription_status: 'en_cours' })
+        .is('subscription_end', null);
+
+      await db.from('delivery_agents')
+        .update({ subscription_end: endStr, subscription_start: startStr, subscription_status: 'en_cours' })
+        .is('subscription_end', null);
+
+      await runAutoBlock();
+
+      if (st)  st.innerHTML = '<span style="color:#52c41a;font-weight:700;">🟢 ACTIF</span>';
+      if (btn) { btn.innerText = '🔴 Désactiver'; btn.style.background = '#ff4d4f'; }
+      showToast('🟢 Système activé — 30 jours attribués à tous les comptes', 'success');
+
+    } else {
+      // Désactivation : rien ne change, juste le flag
+      if (st)  st.innerHTML = '<span style="color:#ff4d4f;font-weight:700;">🔴 DÉSACTIVÉ</span>';
+      if (btn) { btn.innerText = '🟢 Activer'; btn.style.background = '#52c41a'; }
+      showToast('🔴 Système abonnement désactivé', 'success');
+    }
+
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+    await loadSubscriptionToggle();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ================================================================
+// BLOQUAGE AUTOMATIQUE + ALERTES J-7
+// ================================================================
+async function runAutoBlock() {
+  try {
+    const { data: setting } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
+    if (!setting || setting.value !== 'on') return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Bloquer sellers expirés
+    const { data: expiredSellers } = await db.from('sellers')
+      .select('id,full_name,code')
+      .lt('subscription_end', today)
+      .eq('is_blocked', false)
+      .not('subscription_end', 'is', null);
+
+    for (const s of (expiredSellers || [])) {
+      await db.from('sellers').update({ is_blocked: true, subscription_status: 'expire' }).eq('id', s.id);
+      await logAdminAction('Bloquage automatique', s.code, s.full_name, `Abonnement expiré le ${s.subscription_end || '?'}`);
+    }
+
+    // Bloquer livreurs expirés
+    const { data: expiredAgents } = await db.from('delivery_agents')
+      .select('id,full_name,code')
+      .lt('subscription_end', today)
+      .eq('is_blocked', false)
+      .not('subscription_end', 'is', null);
+
+    for (const a of (expiredAgents || [])) {
+      await db.from('delivery_agents').update({ is_blocked: true, subscription_status: 'expire' }).eq('id', a.id);
+      await logAdminAction('Bloquage automatique livreur', a.code, a.full_name, `Abonnement expiré`);
+    }
+
+    const total = (expiredSellers || []).length + (expiredAgents || []).length;
+    if (total > 0) showToast(`🔒 ${total} compte(s) bloqué(s) automatiquement`, 'error');
+
+  } catch(e) { console.error('runAutoBlock error:', e); }
+}
+
+// ================================================================
+// MODULE PAIEMENT
+// ================================================================
+const TARIFS_ADMIN = {
+  livreur:            { label:'🚚 Livreur',              mensuel:1500,  trimestriel:4000,  annuel:15000,  table:'delivery_agents', db_type:null },
+  vendeur:            { label:'🛍️ Vendeur Indépendant',  mensuel:2000,  trimestriel:5500,  annuel:20000,  table:'sellers',         db_type:'independant_vendeur' },
+  vip_vendeur:        { label:'👑 Vendeur VIP',           mensuel:5000,  trimestriel:13500, annuel:50000,  table:'sellers',         db_type:'vip_vendeur' },
+  grossiste:          { label:'🏭 Grossiste Indépendant', mensuel:5000,  trimestriel:13500, annuel:50000,  table:'sellers',         db_type:'independant_grossiste' },
+  vip_grossiste:      { label:'👑 Grossiste VIP',         mensuel:10000, trimestriel:27000, annuel:100000, table:'sellers',         db_type:'vip_grossiste' },
+  fournisseur_export: { label:'📦 Fournisseur Export',    mensuel:20000, trimestriel:54000, annuel:200000, table:'sellers',         db_type:'fournisseur_export' }
+};
+let _paiementSeller = null;
+
+function openPaiementModal(accountType) {
+  _paiementSeller = null;
+  const tarif = TARIFS_ADMIN[accountType];
+  if (!tarif) return;
+  document.getElementById('paiementModalTitle').innerText = `Paiement — ${tarif.label}`;
+  document.getElementById('paiementAccountType').value    = accountType;
+  document.getElementById('paiementSellerInfo').innerHTML = '';
+  document.getElementById('paiementSearchInput').value    = '';
+  document.getElementById('paiementMontant').value        = tarif.mensuel;
+  document.getElementById('paiementMoyen').value          = 'momo_mtn';
+  document.getElementById('paiementReference').value      = '';
+  document.getElementById('paiementDuree').value          = 'mensuel';
+  document.getElementById('paiementTarifs').innerHTML = `
+    <div style="background:#f0f7ff;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;">
+      📋 <strong>${tarif.label}</strong> — Mensuel: <strong>${tarif.mensuel.toLocaleString('fr-FR')} FCFA</strong> · Trimestriel: <strong>${tarif.trimestriel.toLocaleString('fr-FR')} FCFA</strong> · Annuel: <strong>${tarif.annuel.toLocaleString('fr-FR')} FCFA</strong>
+    </div>`;
+  document.getElementById('paiementModal').style.display = 'flex';
+}
+function closePaiementModal() {
+  document.getElementById('paiementModal').style.display = 'none';
+  _paiementSeller = null;
+}
+function autoFillMontant() {
+  const type  = document.getElementById('paiementAccountType').value;
+  const duree = document.getElementById('paiementDuree').value;
+  const tarif = TARIFS_ADMIN[type];
+  if (tarif && duree) document.getElementById('paiementMontant').value = tarif[duree] || '';
+}
+async function searchPaiementSeller() {
+  const q    = document.getElementById('paiementSearchInput').value.trim();
+  const type = document.getElementById('paiementAccountType').value;
+  const tarif = TARIFS_ADMIN[type];
+  if (!q) return;
+  const div = document.getElementById('paiementSellerInfo');
+  div.innerHTML = '<p style="color:#888;font-size:13px;">Recherche...</p>';
+  try {
+    let data, error;
+if (tarif.table === 'delivery_agents') {
+      ({ data, error } = await db.from('delivery_agents')
+        .select('id,full_name,code,phone,subscription_end,subscription_status')
+        .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
+        .limit(5));
+    } else {
+      ({ data, error } = await db.from('sellers')
+        .select('id,full_name,code,phone,subscription_end,subscription_status,account_type')
+        .filter('account_type', 'eq', tarif.db_type)
+        .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
+        .limit(5));
+    }
+    if (error) { div.innerHTML = `<p style="color:#ff4d4f;font-size:13px;">Erreur: ${error.message}</p>`; return; }
+    if (!data || !data.length) { div.innerHTML = '<p style="color:#888;font-size:13px;">Aucun résultat.</p>'; return; }
+    div.innerHTML = data.map(s => {
+      const exp = s.subscription_end ? new Date(s.subscription_end).toLocaleDateString('fr-FR') : 'Non défini';
+      return `<div onclick='selectPaiementSeller(${JSON.stringify(s)})' style="background:#f9f9f9;border:1.5px solid #e8e8e8;border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;">
+        <div style="font-weight:700;">${s.full_name}</div>
+        <div style="font-size:12px;color:#888;">${s.code||''} · ${s.phone||''}</div>
+        <div style="font-size:12px;color:#1677FF;">📅 Expire : ${exp}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { div.innerHTML = `<p style="color:#ff4d4f;font-size:13px;">Erreur: ${e.message}</p>`; }
+}
+function selectPaiementSeller(seller) {
+  _paiementSeller = seller;
+  const exp = seller.subscription_end ? new Date(seller.subscription_end).toLocaleDateString('fr-FR') : 'Non défini';
+  document.getElementById('paiementSellerInfo').innerHTML = `
+    <div style="background:#f6ffed;border:1.5px solid #52c41a;border-radius:10px;padding:10px;margin-bottom:8px;">
+      ✅ <strong>${seller.full_name}</strong> (${seller.code||''})<br>
+      <span style="font-size:12px;color:#888;">📞 ${seller.phone||''} · Expire : ${exp}</span>
+    </div>`;
+  document.getElementById('paiementSearchInput').value = seller.full_name;
+}
+async function validerPaiement() {
+  if (!_paiementSeller) { showToast('Sélectionnez un compte', 'error'); return; }
+  const type      = document.getElementById('paiementAccountType').value;
+  const duree     = document.getElementById('paiementDuree').value;
+  const montant   = parseInt(document.getElementById('paiementMontant').value);
+  const moyen     = document.getElementById('paiementMoyen').value;
+  const reference = document.getElementById('paiementReference').value.trim();
+  const tarif     = TARIFS_ADMIN[type];
+  if (!montant || montant <= 0) { showToast('Montant invalide', 'error'); return; }
+  const moisMap = { mensuel:1, trimestriel:3, annuel:12 };
+  const mois    = moisMap[duree] || 1;
+  const base    = (_paiementSeller.subscription_end && new Date(_paiementSeller.subscription_end) > new Date())
+    ? new Date(_paiementSeller.subscription_end) : new Date();
+  base.setMonth(base.getMonth() + mois);
+  const newEnd = base.toISOString().split('T')[0];
+  try {
+    await db.from('payments').insert({
+      seller_id: _paiementSeller.id, seller_code: _paiementSeller.code||'',
+      account_type: type, table_source: tarif.table, montant, duree_mois: mois,
+      moyen, reference: reference||null,
+      subscription_end_avant: _paiementSeller.subscription_end||null,
+      subscription_end_apres: newEnd, created_at: new Date().toISOString()
+    });
+    await db.from(tarif.table).update({
+      subscription_end: newEnd, subscription_status: 'en_cours',
+      subscription_start: new Date().toISOString().split('T')[0], is_blocked: false
+    }).eq('id', _paiementSeller.id);
+    await logAdminAction('Paiement enregistré', _paiementSeller.code||'', _paiementSeller.full_name,
+      `${montant.toLocaleString('fr-FR')} FCFA · ${duree} · ${moyen}${reference?' · Réf:'+reference:''} · Expire: ${newEnd}`);
+    showToast(`✅ Paiement validé — expire le ${new Date(newEnd).toLocaleDateString('fr-FR')}`, 'success');
+    closePaiementModal();
+    if (typeof loadStats === 'function') loadStats();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+// ================================================================
+// TABLEAU DE BORD PAIEMENTS
+// ================================================================
+async function loadPaiementsDashboard() {
+  const div   = document.getElementById('paiementsDashboard');
+  if (!div) return;
+  div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+  try {
+    const today    = new Date();
+    const moisDeb  = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+    const j7       = new Date(); j7.setDate(j7.getDate() + 7);
+    const todayStr = today.toISOString().split('T')[0];
+    const j7Str    = j7.toISOString().split('T')[0];
+    const [{ data: pays }, { data: expS }, { data: expL }, { data: expirés }] = await Promise.all([
+      db.from('payments').select('montant,account_type,moyen,created_at,seller_code').gte('created_at', moisDeb).order('created_at',{ascending:false}),
+      db.from('sellers').select('full_name,code,subscription_end,account_type').lte('subscription_end', j7Str).gte('subscription_end', todayStr).eq('is_blocked',false),
+      db.from('delivery_agents').select('full_name,code,subscription_end').lte('subscription_end', j7Str).gte('subscription_end', todayStr).eq('is_blocked',false),
+      db.from('sellers').select('full_name,code,subscription_end,account_type').lt('subscription_end', todayStr).eq('is_blocked',false)
+    ]);
+    const total     = (pays||[]).reduce((s,p) => s+(p.montant||0), 0);
+    const expBientot = [...(expS||[]), ...(expL||[])];
+    div.innerHTML = `
+      <div style="background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;">💰 Revenus ${today.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</div>
+        <div style="font-size:26px;font-weight:700;color:#1677FF;">${total.toLocaleString('fr-FR')} FCFA</div>
+        <div style="font-size:12px;color:#888;">${(pays||[]).length} paiement(s)</div>
+        <div style="margin-top:10px;max-height:160px;overflow-y:auto;">
+          ${(pays||[]).map(p=>`<div style=lm"display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #f5f5f5;">
+            <span>${p.seller_code||''} · ${p.account_type||''} · ${p.moyen||''}</span>
+            <strong>${(p.montant||0).toLocaleString('fr-FR')} F</strong></div>`).join('')||'<p style="color:#888;font-size:12px;">Aucun paiement.</p>'}
+        </div>
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;">⚠️ Expirent dans 7 jours (${expBientot.length})</div>
+        ${expBientot.map(s=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #f5f5f5;">
+          <span><strong>${s.full_name}</strong> (${s.code||''})</span>
+          <span style="color:#faad14;font-weight:700;">${s.subscription_end?new Date(s.subscription_end).toLocaleDateString('fr-FR'):'—'}</span></div>`).join('')||'<p style="color:#888;font-size:12px;">Aucune.</p>'}
+      </div>
+      <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);">
+        <div style="font-weight:700;font-size:15px;margin-bottom:8px;">🔴 Expirés non bloqués (${(expirés||[]).length})</div>
+        ${(expirés||[]).map(s=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #f5f5f5;">
+          <span><strong>${s.full_name}</strong> (${s.code||''})</span>
+          <span style="color:#ff4d4f;font-weight:700;">${s.subscription_end?new Date(s.subscription_end).toLocaleDateString('fr-FR'):'—'}</span></div>`).join('')||'<p style="color:#888;font-size:12px;">Aucun.</p>'}
+      </div>`;
+  } catch(e) {
+    console.error('loadPaiementsDashboard error:', e);
+    div.innerHTML = `<div style="background:#fff1f0;border:1.5px solid #ff4d4f;border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">⚠️</div>
+      <div style="font-weight:700;color:#ff4d4f;margin-bottom:6px;">Erreur de chargement</div>
+      <div style="font-size:12px;color:#888;">${e.message || 'Vérifiez que les tables payments et settings existent dans Supabase.'}</div>
+    </div>`;
+  }
+}
+async function logAdminAction(action, targetTable, targetId, details) {
+  try {
+    await db.from(TABLES.ADMIN_LOGS).insert({
+      action,
+      target_table: targetTable || 'admin',
+      target_id:    targetId    || null,
+      details:      details     || '',
+      created_at:   new Date().toISOString()
+    });
+  } catch(e) { console.warn('logAdminAction error:', e); }
+}
+// ================================================================
+// FOURNISSEURS EXPORT
+// ================================================================
+async function loadFournisseurs() {
+  try {
+    const q   = (document.getElementById('fournisseurSearchInput').value || '').trim();
+    const div = document.getElementById('fournisseursResults');
+    div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+
+    let query = db.from(TABLES.SELLERS)
+      .select('id,code,full_name,phone,ville,category,is_blocked,subscription_end,subscription_status')
+      .eq('account_type', 'fournisseur_export')
+      .order('created_at', { ascending: false });
+
+    if (q) query = query.or(`code.ilike.%${q}%,full_name.ilike.%${q}%,ville.ilike.%${q}%,phone.ilike.%${q}%`);
+
+    const { data: fournisseurs, error } = await query;
+    if (error || !fournisseurs || !fournisseurs.length) {
+      div.innerHTML = '<p style="color:#888;font-size:13px;padding:12px;">Aucun fournisseur trouvé.</p>';
+      return;
+    }
+
+    div.innerHTML = `<div class="table-wrap"><table>
+      <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Ville</th><th>Statut</th><th>Action</th></tr>
+      ${fournisseurs.map(f => `
+        <tr>
+          <td><strong style="color:#13c2c2;">${escapeHtml(f.code)}</strong></td>
+          <td>${escapeHtml(f.full_name)}</td>
+          <td>${escapeHtml(f.phone)}</td>
+          <td>${escapeHtml(f.ville||'')}</td>
+          <td>
+            ${f.is_blocked
+              ? '<span class="badge-red">Bloqué</span>'
+              : f.subscription_status === 'expire'
+                ? '<span class="badge-yellow">Expiré</span>'
+                : '<span class="badge-green">Actif</span>'}
+            <br><small style="color:#888;">
+              ${f.subscription_end ? 'Exp: ' + new Date(f.subscription_end).toLocaleDateString('fr-FR') : '—'}
+            </small>
+          </td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="action-btn ${f.is_blocked ? 'unblock-btn' : 'block-btn'}"
+              onclick="toggleBlockFournisseur('${f.id}', ${f.is_blocked})">
+              ${f.is_blocked ? 'Débloquer' : 'Bloquer'}
+            </button>
+            <button class="action-btn block-btn"
+              onclick="deleteFournisseur('${f.id}', '${escapeHtml(f.full_name)}')">🗑</button>
+          </td>
+        </tr>`).join('')}
+    </table></div>`;
+  } catch(e) {
+    console.error('loadFournisseurs error:', e);
+    showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+async function toggleBlockFournisseur(id, isBlocked) {
+  try {
+    if (!confirm(`${isBlocked ? 'Débloquer' : 'Bloquer'} ce fournisseur ?`)) return;
+    const today = new Date();
+    const end   = new Date(today); end.setDate(end.getDate() + 30);
+    const upd   = { is_blocked: !isBlocked, subscription_status: isBlocked ? 'en_cours' : 'expire' };
+    if (isBlocked) { upd.subscription_start = today.toISOString().split('T')[0]; upd.subscription_end = end.toISOString().split('T')[0]; }
+    await db.from(TABLES.SELLERS).update(upd).eq('id', id);
+    showToast(isBlocked ? 'Fournisseur débloqué ✓' : 'Fournisseur bloqué ✓', 'success');
+    await logAction(isBlocked ? 'Déblocage fournisseur' : 'Blocage fournisseur', id, '', '');
+    loadFournisseurs();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function deleteFournisseur(id, name) {
+  try {
+    if (!confirm(`Supprimer définitivement ${name} ?`)) return;
+    if (!confirm(`CONFIRMATION FINALE — Supprimer ${name} et tous ses produits ?`)) return;
+    const { error } = await db.rpc('delete_seller_full', { p_seller_id: id });
+    if (error) { showToast('Erreur suppression', 'error'); return; }
+    await logAction('Suppression fournisseur', id, name, 'Compte supprimé définitivement');
+    showToast('Fournisseur supprimé ✓', 'success');
+    loadFournisseurs();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+// ================================================================
+// GESTIONNAIRE VIP
+// ================================================================
+async function adminCreateVIPManager() {
+  try {
+    const name = document.getElementById('mgrName').value.trim();
+    const code = document.getElementById('mgrCode').value.trim().toUpperCase();
+    const pin  = document.getElementById('mgrPin').value.trim();
+    if (!name || !code || !pin) { showToast('Remplissez tous les champs', 'error'); return; }
+    if (pin.length < 4) { showToast('PIN minimum 4 chiffres', 'error'); return; }
+
+    const { data: existing, error: existErr } = await db.from('vip_managers').select('id').eq('code', code).maybeSingle();
+    if (existing) { showToast('Ce code gestionnaire existe déjà', 'error'); return; }
+
+const encoder = new TextEncoder();
+const data = encoder.encode(pin + '_vip_mbr_2025');
+const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+const hashArray = Array.from(new Uint8Array(hashBuffer));
+const pinHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+const { error } = await db.from('vip_managers').insert({
+      code, full_name: name, pin_hash: pinHash, created_at: new Date().toISOString()
+    });
+    
+    if (error) { showToast('Erreur création: ' + error.message, 'error'); return; }
+
+    await logAdminAction('Création gestionnaire VIP', code, name, `Gestionnaire VIP créé`);
+
+    const res = document.getElementById('mgrCreateResult');
+    if (res) {
+      res.style.display = 'block';
+      res.innerHTML = `✅ <strong>Gestionnaire VIP créé !</strong><br>
+        👤 <strong>Nom :</strong> ${escapeHtml(name)}<br>
+        🔑 <strong>Code :</strong> <span style="color:#722ed1;font-weight:700;">${code}</span><br>
+        🔒 <strong>PIN :</strong> ${pin}<br>
+        <span style="color:#ff4d4f;font-size:12px;">⚠️ Communiquez ces identifiants maintenant.</span>`;
+    }
+    showToast(`Gestionnaire ${code} créé ✓`, 'success');
+    ['mgrName','mgrCode','mgrPin'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function loadVIPManagers() {
+  try {
+    const div = document.getElementById('mgrList');
+    if (!div) return;
+    div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
+    const { data: managers } = await db.from('vip_managers').select('*').order('created_at', { ascending: false });
+    if (!managers || !managers.length) {
+      div.innerHTML = '<p style="color:#888;font-size:13px;padding:12px;">Aucun gestionnaire VIP.</p>';
+      return;
+    }
+    div.innerHTML = `<div class="table-wrap"><table>
+      <tr><th>Code</th><th>Nom</th><th>Date</th><th>Action</th></tr>
+      ${managers.map(m => `
+        <tr>
+          <td><strong style="color:#722ed1;">${escapeHtml(m.code)}</strong></td>
+          <td>${escapeHtml(m.full_name)}</td>
+          <td style="font-size:12px;">${new Date(m.created_at).toLocaleDateString('fr-FR')}</td>
+          <td><button class="action-btn block-btn" onclick="deleteVIPManager('${m.id}','${escapeHtml(m.full_name)}')">🗑 Supprimer</button></td>
+        </tr>`).join('')}
+    </table></div>`;
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function deleteVIPManager(id, name) {
+  try {
+    if (!confirm(`Supprimer le gestionnaire ${name} ?`)) return;
+    await db.from('vip_managers').delete().eq('id', id);
+    await logAction('Suppression gestionnaire VIP', id, name, 'Gestionnaire supprimé');
+    showToast('Gestionnaire supprimé ✓', 'success');
+    loadVIPManagers();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+</script>
+
+<!-- Modal paiement -->
+<div id="paiementModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:white;border-radius:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 id="paiementModalTitle" style="font-size:17px;font-weight:700;">Paiement</h2>
+      <button onclick="closePaiementModal()" style="background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
+    </div>
+    <div id="paiementTarifs"></div>
+    <label style="font-size:13px;font-weight:600;color:#555;">Rechercher le compte</label>
+    <div style="display:flex;gap:8px;margin:6px 0 10px;">
+      <input id="paiementSearchInput" type="text" placeholder="Code, nom ou téléphone..." style="flex:1;padding:10px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;outline:none;">
+      <button onclick="searchPaiementSeller()" style="background:#1677FF;color:white;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;">🔍</button>
+    </div>
+    <div id="paiementSellerInfo"></div>
+    <label style="font-size:13px;font-weight:600;color:#555;">Durée</label>
+    <select id="paiementDuree" onchange="autoFillMontant()" style="width:100%;padding:10px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;margin:6px 0 10px;">
+      <option value="mensuel">1 mois</option>
+      <option value="trimestriel">3 mois</option>
+      <option value="annuel">12 mois</option>
+    </select>
+    <label style="font-size:13px;font-weight:600;color:#555;">Montant reçu (FCFA)</label>
+    <input id="paiementMontant" type="number" placeholder="Montant..." style="width:100%;padding:10px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;margin:6px 0 10px;">
+    <label style="font-size:13px;font-weight:600;color:#555;">Moyen de paiement</label>
+    <select id="paiementMoyen" style="width:100%;padding:10px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;margin:6px 0 10px;">
+      <option value="momo_mtn">📱 Mobile Money MTN</option>
+      <option value="airtel_money">📱 Airtel Money</option>
+      <option value="cash">💵 Espèces (Cash)</option>
+    </select>
+    <label style="font-size:13px;font-weight:600;color:#555;">Référence transaction (optionnel)</label>
+    <input id="paiementReference" type="text" placeholder="Code transaction MoMo..." style="width:100%;padding:10px;border:1.5px solid #e8e8e8;border-radius:10px;font-size:13px;margin:6px 0 14px;">
+    <input type="hidden" id="paiementAccountType">
+    <button onclick="validerPaiement()" style="width:100%;background:#52c41a;color:white;border:none;padding:14px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;">✅ Valider le paiement</button>
+  </div>
+</div>
+
+<!-- TAB INSCRIPTIONS -->
+<div class="tab-panel" id="tab-inscriptions">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+  <div class="form-card">
+    <h2>🔒 Contrôle des inscriptions</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:16px;">
+      Bloquez ou ouvrez les inscriptions par type de compte. Quand bloqué, un message avec lien WhatsApp s'affiche à l'utilisateur.
+    </p>
+
+    <!-- Livreur -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#fff7e6;border-radius:14px;margin-bottom:10px;border:1.5px solid #ffd591;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">🚚 Livreurs</div>
+        <div style="font-size:12px;color:#888;">Inscription agent livreur</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="statusLivreur" style="font-size:12px;font-weight:700;">—</span>
+        <button id="btnLivreur" onclick="toggleInscription('inscription_livreur','btnLivreur','statusLivreur')"
+          style="border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:white;">
+          ...
+        </button>
+      </div>
+    </div>
+
+    <!-- Vendeur indépendant -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f0f7ff;border-radius:14px;margin-bottom:10px;border:1.5px solid #91caff;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">👤 Vendeurs indépendants</div>
+        <div style="font-size:12px;color:#888;">Catégories B + services (hors ig)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="statusVendeur" style="font-size:12px;font-weight:700;">—</span>
+        <button id="btnVendeur" onclick="toggleInscription('inscription_vendeur_independant','btnVendeur','statusVendeur')"
+          style="border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:white;">
+          ...
+        </button>
+      </div>
+    </div>
+
+    <!-- Grossiste indépendant -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#f6ffed;border-radius:14px;margin-bottom:10px;border:1.5px solid #b7eb8f;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">📦 Grossistes indépendants</div>
+        <div style="font-size:12px;color:#888;">Catégorie Importateurs & Grossistes (ig)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="statusGrossiste" style="font-size:12px;font-weight:700;">—</span>
+        <button id="btnGrossiste" onclick="toggleInscription('inscription_grossiste_independant','btnGrossiste','statusGrossiste')"
+          style="border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:white;">
+          ...
+        </button>
+      </div>
+    </div>
+
+    <!-- Fournisseur -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:#e6fffb;border-radius:14px;margin-bottom:10px;border:1.5px solid #87e8de;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">🌍 Fournisseurs Export</div>
+        <div style="font-size:12px;color:#888;">Inscription fournisseur importateur</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="statusFournisseur" style="font-size:12px;font-weight:700;">—</span>
+        <button id="btnFournisseur" onclick="toggleInscription('inscription_fournisseur','btnFournisseur','statusFournisseur')"
+          style="border:none;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;color:white;">
+          ...
+        </button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="loadInscriptionToggles()" style="margin-top:6px;">🔄 Actualiser</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONTRÔLE DES INSCRIPTIONS
+// ================================================================
+const INSCRIPTION_KEYS = [
+  { key: 'inscription_livreur',              btnId: 'btnLivreur',    statusId: 'statusLivreur'    },
+  { key: 'inscription_vendeur_independant',  btnId: 'btnVendeur',    statusId: 'statusVendeur'    },
+  { key: 'inscription_grossiste_independant',btnId: 'btnGrossiste',  statusId: 'statusGrossiste'  },
+  { key: 'inscription_fournisseur',          btnId: 'btnFournisseur',statusId: 'statusFournisseur'}
+];
+
+async function loadInscriptionToggles() {
+  for (const item of INSCRIPTION_KEYS) {
+    try {
+      const { data } = await db.from('settings').select('value').eq('key', item.key).maybeSingle();
+      const isOpen = !data || data.value !== 'off';
+      updateInscriptionUI(item.btnId, item.statusId, isOpen);
+    } catch(e) { console.error('loadInscriptionToggles error:', e); }
+  }
+}
+
+function updateInscriptionUI(btnId, statusId, isOpen) {
+  const btn    = document.getElementById(btnId);
+  const status = document.getElementById(statusId);
+  if (!btn || !status) return;
+  if (isOpen) {
+    status.innerHTML = '<span style="color:#52c41a;">🟢 Ouvert</span>';
+    btn.innerText    = '🔴 Bloquer';
+    btn.style.background = '#ff4d4f';
+  } else {
+    status.innerHTML = '<span style="color:#ff4d4f;">🔴 Bloqué</span>';
+    btn.innerText    = '🟢 Ouvrir';
+    btn.style.background = '#52c41a';
+  }
+}
+
+async function toggleInscription(key, btnId, statusId) {
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+  try {
+    const { data } = await db.from('settings').select('value').eq('key', key).maybeSingle();
+    const isOpen   = !data || data.value !== 'off';
+    const newVal   = isOpen ? 'off' : 'on';
+    await db.from('settings').upsert({ key, value: newVal }, { onConflict: 'key' });
+    updateInscriptionUI(btnId, statusId, !isOpen);
+    await logAdminAction(
+      isOpen ? 'Blocage inscription' : 'Ouverture inscription',
+      'settings', key,
+      `Inscription ${key} → ${newVal}`
+    );
+    showToast(isOpen ? '🔴 Inscription bloquée' : '🟢 Inscription ouverte', isOpen ? 'error' : 'success');
+  } catch(e) {
+    showToast('Erreur: ' + (e.message || ''), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
+}
+</script>
+
+<div id="toast" class="toast"></div>
+
+<!-- NE PAS AJOUTER — admin.js contient des doublons avec admin.html -->
+<!-- admin.html est autonome et n'a pas besoin de admin.js -->
+
+</body>
+</html>
