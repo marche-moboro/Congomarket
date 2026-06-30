@@ -185,7 +185,7 @@ async function confirmOrder() {
   message += `%0ATOTAL: ${formatPrice(total)} FCFA`;
 
   // Ouvrir WhatsApp vendeur
-  window.open(`https://wa.me/${seller.phone}?text=${message}`, '_blank');
+  window.open(`https://wa.me/${formatWhatsApp(seller.phone)}?text=${message}`, '_blank');
 
   showToast('Commande envoyée !', 'success');
 

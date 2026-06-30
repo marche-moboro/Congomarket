@@ -348,7 +348,125 @@
           <option value="vip_vendeur">🛍️ Vendeur VIP — 5 000 FCFA/mois</option>
         </select>
         <input type="text" id="vipFullName" placeholder="Nom complet *">
-        <input type="tel" id="vipPhone" placeholder="Téléphone *">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+<select id="vipCountryCode"
+ style="width:145px;padding:13px 10px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:13px;outline:none;background:#fafafa;">
+    <optgroup label="🌍 Afrique Centrale">
+      <option value="242" selected>🇨🇬 +242 Congo</option>
+      <option value="243">🇨🇩 +243 RD Congo</option>
+      <option value="237">🇨🇲 +237 Cameroun</option>
+      <option value="236">🇨🇫 +236 Centrafrique</option>
+      <option value="235">🇹🇩 +235 Tchad</option>
+      <option value="241">🇬🇦 +241 Gabon</option>
+      <option value="240">🇬🇶 +240 Guinée Éq.</option>
+      <option value="239">🇸🇹 +239 São Tomé</option>
+      <option value="257">🇧🇮 +257 Burundi</option>
+      <option value="250">🇷🇼 +250 Rwanda</option>
+    </optgroup>
+    <optgroup label="🌍 Afrique de l'Ouest">
+      <option value="225">🇨🇮 +225 Côte d'Ivoire</option>
+      <option value="221">🇸🇳 +221 Sénégal</option>
+      <option value="229">🇧🇯 +229 Bénin</option>
+      <option value="226">🇧🇫 +226 Burkina Faso</option>
+      <option value="223">🇲🇱 +223 Mali</option>
+      <option value="227">🇳🇪 +227 Niger</option>
+      <option value="228">🇹🇬 +228 Togo</option>
+      <option value="224">🇬🇳 +224 Guinée</option>
+      <option value="245">🇬🇼 +245 Guinée-Bissau</option>
+      <option value="232">🇸🇱 +232 Sierra Leone</option>
+      <option value="231">🇱🇷 +231 Libéria</option>
+      <option value="234">🇳🇬 +234 Nigeria</option>
+      <option value="233">🇬🇭 +233 Ghana</option>
+      <option value="220">🇬🇲 +220 Gambie</option>
+      <option value="238">🇨🇻 +238 Cap-Vert</option>
+      <option value="222">🇲🇷 +222 Mauritanie</option>
+    </optgroup>
+    <optgroup label="🌍 Afrique de l'Est">
+      <option value="254">🇰🇪 +254 Kenya</option>
+      <option value="255">🇹🇿 +255 Tanzanie</option>
+      <option value="256">🇺🇬 +256 Ouganda</option>
+      <option value="251">🇪🇹 +251 Éthiopie</option>
+      <option value="252">🇸🇴 +252 Somalie</option>
+      <option value="253">🇩🇯 +253 Djibouti</option>
+      <option value="291">🇪🇷 +291 Érythrée</option>
+      <option value="249">🇸🇩 +249 Soudan</option>
+      <option value="211">🇸🇸 +211 Soudan du Sud</option>
+      <option value="261">🇲🇬 +261 Madagascar</option>
+      <option value="263">🇿🇼 +263 Zimbabwe</option>
+      <option value="265">🇲🇼 +265 Malawi</option>
+      <option value="266">🇱🇸 +266 Lesotho</option>
+      <option value="267">🇧🇼 +267 Botswana</option>
+      <option value="268">🇸🇿 +268 Eswatini</option>
+      <option value="269">🇰🇲 +269 Comores</option>
+      <option value="262">🇷🇪 +262 Réunion</option>
+    </optgroup>
+    <optgroup label="🌍 Afrique du Nord">
+      <option value="212">🇲🇦 +212 Maroc</option>
+      <option value="213">🇩🇿 +213 Algérie</option>
+      <option value="216">🇹🇳 +216 Tunisie</option>
+      <option value="218">🇱🇾 +218 Libye</option>
+      <option value="20">🇪🇬 +20 Égypte</option>
+    </optgroup>
+    <optgroup label="🌍 Afrique Australe">
+      <option value="27">🇿🇦 +27 Afrique du Sud</option>
+      <option value="258">🇲🇿 +258 Mozambique</option>
+      <option value="260">🇿🇲 +260 Zambie</option>
+      <option value="264">🇳🇦 +264 Namibie</option>
+      <option value="230">🇲🇺 +230 Maurice</option>
+      <option value="248">🇸🇨 +248 Seychelles</option>
+      <option value="244">🇦🇴 +244 Angola</option>
+    </optgroup>
+    <optgroup label="🌍 Europe">
+      <option value="33">🇫🇷 +33 France</option>
+      <option value="32">🇧🇪 +32 Belgique</option>
+      <option value="41">🇨🇭 +41 Suisse</option>
+      <option value="352">🇱🇺 +352 Luxembourg</option>
+      <option value="34">🇪🇸 +34 Espagne</option>
+      <option value="351">🇵🇹 +351 Portugal</option>
+      <option value="39">🇮🇹 +39 Italie</option>
+      <option value="49">🇩🇪 +49 Allemagne</option>
+      <option value="44">🇬🇧 +44 Royaume-Uni</option>
+      <option value="31">🇳🇱 +31 Pays-Bas</option>
+      <option value="46">🇸🇪 +46 Suède</option>
+      <option value="47">🇳🇴 +47 Norvège</option>
+      <option value="45">🇩🇰 +45 Danemark</option>
+      <option value="358">🇫🇮 +358 Finlande</option>
+      <option value="48">🇵🇱 +48 Pologne</option>
+      <option value="380">🇺🇦 +380 Ukraine</option>
+      <option value="7">🇷🇺 +7 Russie</option>
+      <option value="30">🇬🇷 +30 Grèce</option>
+      <option value="36">🇭🇺 +36 Hongrie</option>
+      <option value="40">🇷🇴 +40 Roumanie</option>
+      <option value="420">🇨🇿 +420 Tchéquie</option>
+      <option value="43">🇦🇹 +43 Autriche</option>
+    </optgroup>
+    <optgroup label="🌎 Amériques">
+      <option value="1">🇺🇸 +1 États-Unis / Canada</option>
+      <option value="55">🇧🇷 +55 Brésil</option>
+      <option value="52">🇲🇽 +52 Mexique</option>
+      <option value="57">🇨🇴 +57 Colombie</option>
+      <option value="54">🇦🇷 +54 Argentine</option>
+      <option value="56">🇨🇱 +56 Chili</option>
+      <option value="51">🇵🇪 +51 Pérou</option>
+      <option value="509">🇭🇹 +509 Haïti</option>
+    </optgroup>
+    <optgroup label="🌏 Asie & Moyen-Orient">
+      <option value="86">🇨🇳 +86 Chine</option>
+      <option value="91">🇮🇳 +91 Inde</option>
+      <option value="81">🇯🇵 +81 Japon</option>
+      <option value="82">🇰🇷 +82 Corée du Sud</option>
+      <option value="971">🇦🇪 +971 Émirats</option>
+      <option value="966">🇸🇦 +966 Arabie Saoudite</option>
+      <option value="961">🇱🇧 +961 Liban</option>
+      <option value="90">🇹🇷 +90 Türkiye</option>
+      <option value="62">🇮🇩 +62 Indonésie</option>
+      <option value="65">🇸🇬 +65 Singapour</option>
+      <option value="61">🇦🇺 +61 Australie</option>
+      <option value="64">🇳🇿 +64 Nouvelle-Zélande</option>
+    </optgroup>
+  </select>
+<input type="tel" id="indepPhone" placeholder="Numéro complet avec le 0 *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+</div>
         <input type="text" id="vipQuartier" placeholder="Quartier *">
         <input type="text" id="vipAddress" placeholder="Adresse *">
         <select id="vipVille" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;font-size:14px;outline:none;background:#fafafa;">
@@ -1293,7 +1411,9 @@ function generateAdminVIPCode(count) {
 async function adminCreateVIP() {
   const type        = document.getElementById('vipType').value;
   const fullName    = document.getElementById('vipFullName').value.trim();
-  const phone       = document.getElementById('vipPhone').value.trim();
+const countryCode = document.getElementById('vipCountryCode').value;
+const rawPhone = document.getElementById('vipPhone').value.trim();
+const phone = countryCode + rawPhone;
   const quartier    = document.getElementById('vipQuartier').value.trim();
   const address     = document.getElementById('vipAddress').value.trim();
   const ville       = document.getElementById('vipVille').value.trim();

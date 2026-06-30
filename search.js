@@ -258,7 +258,7 @@ function _appendSearchSellers() {
         <p class="seller-desc">${escapeHtml(s.description)}</p>
         <div class="seller-actions">
           <button class="view-btn" onclick="openSellerProductsFromSearch('${s.id}')">Voir publications</button>
-          <a href="https://wa.me/${s.phone}" target="_blank" class="contact-btn">Contacter</a>
+          <a href="https://wa.me/${formatWhatsApp(s.phone)}" target="_blank" class="contact-btn">Contacter</a>
         </div>
       </div>
     </div>
@@ -295,7 +295,7 @@ function _appendSearchProducts() {
         <h3>${escapeHtml(p.name)}</h3>
         <p class="seller-location">Par: ${escapeHtml((p.sellers && p.sellers.full_name) || p.seller_name || '')}</p>
         <p class="product-price">${formatPrice(p.price)} FCFA</p>
-        <a href="https://wa.me/${(p.sellers && p.sellers.phone) || p.seller_phone}"
+        <a href="https://wa.me/${formatWhatsApp((p.sellers && p.sellers.phone) || p.seller_phone)}"
            target="_blank" class="contact-btn-product">Contacter le vendeur</a>
       </div>
     </div>

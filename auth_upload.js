@@ -40,7 +40,9 @@ function initRegisterPage() {
 // ================================================================
 async function registerSeller() {
   const fullName    = document.getElementById('regFullName').value.trim();
-  const phone       = document.getElementById('regPhone').value.trim();
+  const countryCode = document.getElementById('regCountryCode').value.trim();
+  const rawPhone    = document.getElementById('regPhone').value.trim().replace(/^0+/, '');
+  const phone       = countryCode + rawPhone;
   const quartier    = document.getElementById('regQuartier').value.trim();
   const address     = document.getElementById('regAddress').value.trim();
   const ville       = document.getElementById('regVille').value.trim();
@@ -54,22 +56,28 @@ const photoFile = photoInput && photoInput.files ? photoInput.files[0] : undefin
     return;
   }
 
-  // Bug 8 fix — validation format téléphone
-  if (!/^\d{9,15}$/.test(phone.replace(/\s/g, ''))) {
-    showToast('Numéro de téléphone invalide (9 à 15 chiffres)', 'error');
+  // Validation format téléphone international (indicatif + numéro)
+  if (!countryCode) {
+    showToast('Veuillez sélectionner votre indicatif pays', 'error');
     return;
   }
+  const phoneClean = phone.replace(/[\s\-().]/g, '');
+  if (!/^\d{11,15}$/.test(phoneClean)) {
+    showToast('Numéro invalide. Entrez votre numéro sans le 0 initial.', 'error');
+    return;
+  }
+  const phoneNorm = phoneClean;
 
   try {
     const { data: blocked } = await db.from(TABLES.BLOCKED_PHONES)
-      .select('id').eq('phone', phone).maybeSingle();
+      .select('id').eq('phone', phoneNorm).maybeSingle();
     if (blocked) {
       showToast('Ce numéro est banni de la plateforme.', 'error');
       return;
     }
 
     const { data: existing } = await db.from(TABLES.SELLERS)
-      .select('id').eq('phone', phone).maybeSingle();
+      .select('id').eq('phone', phoneNorm).maybeSingle();
     if (existing) {
       showToast('Ce numéro a déjà un compte.', 'error');
       return;
@@ -82,7 +90,7 @@ const photoFile = photoInput && photoInput.files ? photoInput.files[0] : undefin
     }
 
     window._pendingSellerData = {
-      fullName, phone, quartier, address,
+      fullName, phone: phoneNorm, quartier, address,
       ville, category, description, photoUrl
     };
     showPage('pinPage');
