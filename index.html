@@ -3378,11 +3378,14 @@ let pageHistory = [];
 // Mémorisation du scroll par page
 const _scrollMemory = {};
 
-function showPage(pageId) {
+function showPage(pageId, fromPopState = false) {
   if (pageId !== 'homePage') {
     pageHistory.push(pageId);
   } else {
     pageHistory = [];
+  }
+  if (!fromPopState) {
+    history.pushState({ pageId }, '', '#' + pageId);
   }
 
   // Sauvegarder scroll de la page actuelle avant de quitter
@@ -3425,6 +3428,37 @@ function goBack() {
   const prev = pageHistory.pop() || 'homePage';
   showPage(prev);
 }
+
+// Bouton retour physique du téléphone
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.pageId) {
+    showPage(e.state.pageId, true);
+  } else {
+    showPage('homePage', true);
+  }
+});
+
+// Touche Enter du clavier
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  const active = document.querySelector('.page[style*="display: block"]');
+  if (!active) return;
+  const id = active.id;
+
+  if (id === 'loginPage') return sellerLogin();
+  if (id === 'registerPage')                   return goToPinStep();
+  if (id === 'pinPage')                        return registerSeller();
+  if (id === 'registerIndepPage')              return registerIndependant();
+  if (id === 'registerLivreurPage')            return goToPinLivreur();
+  if (id === 'pinLivreurPage')                 return registerDeliveryAgent();
+  if (id === 'registerVIPPage')                return goToPinVIP();
+  if (id === 'pinVIPPage')                     return submitVIPRegistration();
+  if (id === 'registerFournisseurExportPage')  return registerFournisseurExport();
+  if (id === 'homePage') {
+    const searchInput = document.getElementById('searchInput');
+    if (document.activeElement === searchInput) return performSearch();
+  }
+});
 
 // ================================================================
 // FOURNISSEUR EXPORT — Inscription
