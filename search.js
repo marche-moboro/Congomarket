@@ -79,7 +79,12 @@ async function performSearch(query, villeFilter = '') {
     'hôtel': 'hotel', 'hotel': 'hotel',
     'mariage': 'deco-mariage',
     'ménage': 'menage', 'menage': 'menage',
-    'grossiste': 'ig', 'importateur': 'ig'
+    'grossiste': 'ig', 'importateur': 'ig',
+'ambulance': 'ambulance', 'taxi': 'ambulance',
+'moto': 'moto-taxi', 'moto taxi': 'moto-taxi',
+'chambre froide': 'chambre-froide', 'froide': 'chambre-froide',
+'hopital': 'hopital', 'hôpital': 'hopital', 'clinique': 'hopital',
+'meuble': 'meubles', 'meubles': 'meubles'
   };
 
   let results = { sellers: [], products: [] };

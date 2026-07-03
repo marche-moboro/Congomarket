@@ -130,8 +130,13 @@ const CATEGORIES_A = {
   'construction': 'Matériaux de Construction',
   'photoShop':    'Photo Shop',
   'alimentation': 'Alimentation',
-  'oeufs':        'Grossiste Œufs'
-};
+  'oeufs':      'Grossiste Œufs',
+  'ambulance':      'Contactez Taxi ou Ambulances',
+  'moto-taxi':      'Véhicule Moto & Taxi',
+  'chambre-froide': 'Chambre Froide',
+  'hopital':        'Hôpital',
+  
+}
 
 // ================================================================
 // CATÉGORIES B (Vendeurs individuels)
@@ -156,7 +161,10 @@ const CATEGORIES_B = {
   'c17': 'Pâtisserie',
   'c18': 'Veste & Chaussures de Luxe',
   'c19': 'Plastique',
-  'c20': 'Électronique'
+  'c20': 'Électronique',
+  'c21': 'Grossiste Œufs',
+  'c22': 'Anniversaire & Objet Jetable',
+  'meubles': 'Meubles',
 };
 
 // Toutes les catégories

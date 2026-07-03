@@ -213,6 +213,13 @@ header p { font-size: 12px; opacity: .85; }
   display: flex; align-items: center; justify-content: center; gap: 4px;
 }
 
+.call-btn {
+  flex: 0 0 40px; background: linear-gradient(135deg,#4b7bec,#3867d6);
+  color: white; padding: 9px 0; border-radius: 10px;
+  text-align: center; text-decoration: none;
+  display: flex; align-items: center; justify-content: center;
+}
+
 /* ==================== PRODUCTS ==================== */
 .product-card {
   background: white;

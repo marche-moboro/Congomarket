@@ -835,6 +835,10 @@ header p { font-size: 12px; opacity: .80; }
     <button class="cat-btn cat-btn-lg" onclick="openCategory('construction','A')"> 🏗️ Matériaux de Construction</button>
     <button class="cat-btn cat-btn-lg" onclick="openCategory('photoShop','A')">📸 Photo Shop</button>
     <button class="cat-btn cat-btn-lg" onclick="openCategory('alimentation','A')">🛒 Alimentation</button>
+<button class="cat-btn cat-btn-lg" onclick="openCategory('ambulance','A')">🚑 Contactez Taxi ou Ambulances</button>
+<button class="cat-btn cat-btn-lg" onclick="openCategory('moto-taxi','A')">🏍️ Véhicule Moto & Taxi</button>
+<button class="cat-btn cat-btn-lg" onclick="openCategory('chambre-froide','A')">❄️ Chambre Froide</button>
+<button class="cat-btn cat-btn-lg" onclick="openCategory('hopital','A')">🏥 Hôpital</button>
   </div>
 
   <!-- CATÉGORIE B -->
@@ -862,6 +866,7 @@ header p { font-size: 12px; opacity: .80; }
     <button class="cat-btn cat-btn-lg" onclick="openCategory('c20','B')">📺 Électronique</button>
     <button class="cat-btn cat-btn-lg" onclick="openCategory('c21','B')">🥚 Grossiste Œufs</button>
     <button class="cat-btn cat-btn-lg" onclick="openCategory('c22','B')">🎉 Anniversaire & Jetable</button>
+<button class="cat-btn cat-btn-lg" onclick="openCategory('meubles','B')">🛋️ Meubles</button>
   </div>
 
   <!-- PROMOS + CONNEXION -->
@@ -1354,6 +1359,10 @@ header p { font-size: 12px; opacity: .80; }
           <option value="demenagement">Service de Déménagement</option>
           <option value="auto">Automobile & Dépannage</option>
           <option value="couture">Couture & Styliste</option>
+<option value="ambulance">Contactez Taxi ou Ambulances</option>
+<option value="moto-taxi">Véhicule Moto & Taxi</option>
+<option value="chambre-froide">Chambre Froide</option>
+<option value="hopital">Hôpital</option>
         </optgroup>
         <optgroup label="Catégorie B - Boutiques & Vendeurs">
           <option value="c1">Chaussures & Basket</option>
@@ -1378,6 +1387,7 @@ header p { font-size: 12px; opacity: .80; }
           <option value="c20">Électronique</option>
           <option value="c21">Grossiste Œufs</option>
           <option value="c22">Anniversaire & Objet Jetable</option>
+<option value="meubles">Meubles</option>
         </optgroup>
       </select>
       <textarea id="regDescription" placeholder="Description de votre activité *"></textarea>
@@ -2378,6 +2388,10 @@ header p { font-size: 12px; opacity: .80; }
     <option value="pharmacie">Pharmacie</option>
     <option value="construction">Matériaux de Construction</option>
     <option value="alimentation">Alimentation</option>
+<option value="ambulance">Contactez Taxi ou Ambulances</option>
+<option value="moto-taxi">Véhicule Moto &amp; Taxi</option>
+<option value="chambre-froide">Chambre Froide</option>
+<option value="hopital">Hôpital</option>
   </optgroup>
   <optgroup label="Catégorie B - Boutiques &amp; Vendeurs">
     <option value="c1">Chaussures &amp; Basket</option>
@@ -2402,6 +2416,7 @@ header p { font-size: 12px; opacity: .80; }
     <option value="c20">Électronique</option>
     <option value="c21">Grossiste Œufs</option>
     <option value="c22">Anniversaire &amp; Objet Jetable</option>
+<option value="meubles">Meubles</option>
   </optgroup>
 </select>
 
@@ -4492,7 +4507,12 @@ const VIP_CATEGORIES_GROSSISTE = {
   'couture':      'Couture & Styliste',
   'pharmacie':    'Pharmacie',
   'construction': 'Matériaux de Construction',
-  'alimentation': 'Alimentation'
+  'alimentation':   'Alimentation',
+'ambulance':      'Contactez Taxi ou Ambulances',
+'moto-taxi':      'Véhicule Moto & Taxi',
+'chambre-froide': 'Chambre Froide',
+'hopital':        'Hôpital',
+'meubles':        'Meubles'
 };
 
 const VIP_CATEGORIES_VENDEUR = { ...CATEGORIES_A, ...CATEGORIES_B };
