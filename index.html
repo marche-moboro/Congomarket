@@ -5105,9 +5105,22 @@ async function saveLivreurGrille() {
 <!-- Service Worker PWA -->
 <script>
   if ('serviceWorker' in navigator) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./service-worker.js')
-        .then(() => console.log('SW enregistré ✓'))
+        .then(reg => {
+          console.log('SW enregistré ✓');
+          reg.update();
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') reg.update();
+          });
+        })
         .catch(err => console.error('SW erreur:', err));
     });
   }
