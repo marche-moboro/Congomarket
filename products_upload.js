@@ -205,6 +205,105 @@ function openPublishProduct() {
   openPublishPage(); // ✅ affiche/masque pubQteSection selon account_type
 }
 
+// ================================================================
+// Fiche produit guidée — gabarit de titre "Nom + Caractéristique + Usage"
+// ================================================================
+function buildGuidedTitle(nom, carac, usage) {
+  let title = (nom || '').trim();
+  if (carac && carac.trim()) title += ' ' + carac.trim();
+  if (usage && usage.trim()) title += ' - ' + usage.trim();
+  return title.trim();
+}
+
+function updatePubTitlePreview() {
+  const nom     = document.getElementById('pubName')?.value || '';
+  const carac   = document.getElementById('pubCaracteristique')?.value || '';
+  const usage   = document.getElementById('pubUsage')?.value || '';
+  const preview = document.getElementById('pubTitlePreview');
+  if (!preview) return;
+  const title = buildGuidedTitle(nom, carac, usage);
+  if (title) {
+    preview.style.display = 'block';
+    preview.innerText = '👁️ Aperçu : ' + title;
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// ================================================================
+// Statut de commande — visible côté vendeur (Mes commandes)
+// ================================================================
+const ORDER_STATUS_LABELS = {
+  en_preparation: { label: '🟡 En préparation', color: '#faad14' },
+  expedie:        { label: '🔵 Expédié',        color: '#1677FF' },
+  livre:          { label: '🟢 Livré',          color: '#52c41a' }
+};
+
+async function viewMyOrders() {
+  markOrdersNotificationsRead();
+  try {
+    if (!currentSeller) { showPage('loginPage'); return; }
+    const { data: orders, error } = await db.from(TABLES.ORDERS)
+      .select('*')
+      .eq('seller_id', currentSeller.id)
+      .order('created_at', { ascending: false });
+
+    if (error) { showToast('Erreur chargement commandes', 'error'); return; }
+
+    const container = document.getElementById('myOrdersResults');
+    if (!container) return;
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `<p style="text-align:center;color:#888;padding:30px 0;">Aucune commande pour le moment.</p>`;
+      showPage('myOrdersPage');
+      return;
+    }
+
+    container.innerHTML = orders.map(o => {
+      const status  = ORDER_STATUS_LABELS[o.status || 'en_preparation'];
+      const dateStr = new Date(o.created_at).toLocaleDateString('fr-FR');
+      const itemsList = (o.items || []).map(it => `${it.quantity} x ${escapeHtml(it.name)}`).join(', ');
+
+      let nextBtn = '';
+      if ((o.status || 'en_preparation') === 'en_preparation') {
+        nextBtn = `<button class="action-btn" style="background:#1677FF;color:white;" onclick="updateOrderStatus('${o.id}','expedie')">🔵 Marquer expédié</button>`;
+      } else if (o.status === 'expedie') {
+        nextBtn = `<button class="action-btn" style="background:#52c41a;color:white;" onclick="updateOrderStatus('${o.id}','livre')">🟢 Marquer livré</button>`;
+      }
+
+      return `<div style="background:white;border:1px solid #eee;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <strong style="font-size:14px;">${escapeHtml(o.client_name)}</strong>
+          <span style="font-size:11px;color:#999;">${dateStr}</span>
+        </div>
+        <div style="font-size:12px;color:#666;margin-bottom:4px;">📞 ${escapeHtml(o.client_phone)} · 📍 ${escapeHtml(o.client_quartier)}</div>
+        <div style="font-size:12px;color:#666;margin-bottom:6px;">${itemsList}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:${status.color};">${status.label}</span>
+          <strong style="font-size:13px;color:#1677FF;">${formatPrice(o.total)} FCFA</strong>
+        </div>
+        ${nextBtn ? `<div style="margin-top:8px;">${nextBtn}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    showPage('myOrdersPage');
+  } catch (e) {
+    console.error('viewMyOrders error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+  try {
+    const { error } = await db.from(TABLES.ORDERS).update({ status: newStatus }).eq('id', orderId);
+    if (error) { showToast('Erreur mise à jour statut', 'error'); return; }
+    showToast('Statut mis à jour ✓', 'success');
+    viewMyOrders();
+  } catch (e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
 let _publishingProduct = false;
 let _transferring  = false;
 let _promosAll     = [];
@@ -239,7 +338,10 @@ async function publishProduct() {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
   try {
-const name        = document.getElementById('pubName').value.trim();
+const pubNameVal  = document.getElementById('pubName').value.trim();
+const pubCaracVal = document.getElementById('pubCaracteristique')?.value.trim() || '';
+const pubUsageVal = document.getElementById('pubUsage')?.value.trim() || '';
+const name        = buildGuidedTitle(pubNameVal, pubCaracVal, pubUsageVal);
 const price       = document.getElementById('pubPrice').value.trim();
 const description = document.getElementById('pubDescription').value.trim();
 const qte_min     = document.getElementById('pubQteMin')?.value.trim() || null;
@@ -317,10 +419,12 @@ const prix_max    = document.getElementById('pubPrixMax')?.value.trim() || null;
     showToast(`Produit publié avec ${imageUrls.length} photo(s) ✓`, 'success');
 
     // Réinitialiser le formulaire
-    ['pubName','pubPrice','pubDescription','pubQteMin','pubPrixMin','pubQteMax','pubPrixMax'].forEach(id => {
+    ['pubName','pubCaracteristique','pubUsage','pubPrice','pubDescription','pubQteMin','pubPrixMin','pubQteMax','pubPrixMax'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.value = '';
 });
+    const titlePreview = document.getElementById('pubTitlePreview');
+    if (titlePreview) titlePreview.style.display = 'none';
 
     // Vider les photos
     window.pubPhotosFiles = [];
@@ -389,8 +493,7 @@ function _appendMyProducts() {
       <div class="my-product-info">
         <strong>${escapeHtml(p.name)}</strong>
         <span>${formatPrice(p.price)} FCFA / unité</span>
-        ${isGrossiste && p.qte_min ? `<span style="font-size:12px;color:#52c41a;font-weight:600;">Qté min : ${p.qte_min} → ${formatPrice(p.prix_min)} FCFA</span>` : ''}
-        ${isGrossiste && p.qte_max ? `<span style="font-size:12px;color:#1677FF;font-weight:600;">Qté max : ${p.qte_max} → ${formatPrice(p.prix_max)} FCFA</span>` : ''}
+        ${isGrossiste ? renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max) : ''}
         <div style="display:flex;gap:8px;margin-top:6px;">
           <button class="edit-btn" onclick="openEditProduct('${p.id}')">✏️ Modifier</button>
           <button class="delete-btn" onclick="deleteProduct('${p.id}')">🗑 Supprimer</button>
@@ -924,3 +1027,7 @@ window.openEditProduct             = openEditProduct;
 window.openProfile             = openProfile;
 window.transferToPromoFromBtn  = transferToPromoFromBtn;
 window.openPublishProduct      = openPublishProduct;
+window.updatePubTitlePreview   = updatePubTitlePreview;
+window.buildGuidedTitle        = buildGuidedTitle;
+window.viewMyOrders            = viewMyOrders;
+window.updateOrderStatus       = updateOrderStatus;

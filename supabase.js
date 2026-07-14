@@ -42,13 +42,16 @@ const TABLES = {
 // TARIFS D'ABONNEMENT PAR TYPE DE COMPTE
 // ================================================================
 const TARIFS = {
-  livreur:            { label: '🚚 Livreur',              mensuel: 1500,  trimestriel: 4000,  annuel: 15000  },
-  independant_vendeur:   { label: '🛍️ Vendeur Indépendant',  mensuel: 2000,  trimestriel: 5500,  annuel: 20000  },
-  vip_vendeur:        { label: '👑 Vendeur VIP',           mensuel: 5000,  trimestriel: 13500, annuel: 50000  },
-  independant_grossiste: { label: '🏭 Grossiste Indépendant', mensuel: 5000,  trimestriel: 13500, annuel: 50000  },
-  vip_grossiste:      { label: '👑 Grossiste VIP',         mensuel: 10000, trimestriel: 27000, annuel: 100000 },
-  fournisseur_export: { label: '📦 Fournisseur Export',    mensuel: 20000, trimestriel: 54000, annuel: 200000 }
+  livreur:               { label: '🚚 Livreur',                 mensuel: 1000, trimestriel: 2700, annuel: 10000 },
+  independant_vendeur:   { label: '🛍️ Vendeur Indépendant',      mensuel: 1000, trimestriel: 2700, annuel: 10000 },
+  vip_vendeur:           { label: '👑 Vendeur VIP',               mensuel: 1000, trimestriel: 2700, annuel: 10000, commission: 3 },
+  independant_grossiste: { label: '🏭 Grossiste Indépendant',     mensuel: 1000, trimestriel: 2700, annuel: 10000 },
+  vip_grossiste:         { label: '👑 Grossiste VIP',              mensuel: 1000, trimestriel: 2700, annuel: 10000, commission: 3 },
+  fournisseur_export:    { label: '📦 Fournisseur Export',        commission: 10 }
 };
+// Note : "commission" = % prélevé par vente/transaction, en plus (VIP) ou à la place (fournisseur_export)
+// de l'abonnement mensuel. Le prélèvement de la commission n'est pas automatisé — à gérer manuellement
+// ou via un futur module de paiement.
 
 const DUREES = {
   mensuel:      { label: '1 mois',   mois: 1  },

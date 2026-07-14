@@ -589,6 +589,8 @@
           🥈 Argent = 7 étoiles &nbsp;|&nbsp; 🥉 Bronze = 20 étoiles &nbsp;|&nbsp; 🥇 Or = 50 étoiles
         </p>
         <button class="btn-primary" onclick="loadSellersForBadge()">🔄 Charger tous les comptes</button>
+        <button class="btn-primary" style="background:#08979c;margin-top:8px;" onclick="recalculateReliableBadges()">✅ Recalculer "Vendeur fiable"</button>
+        <p style="font-size:11px;color:#aaa;margin-top:4px;">Critères : au moins 5 commandes ET 80% livrées.</p>
         <input type="text" id="badgeSearchInput" placeholder="🔍 Rechercher par nom ou code..."
           oninput="filterBadgeList(this.value)"
           style="margin-top:10px;display:none;width:100%;box-sizing:border-box;">
@@ -1706,9 +1708,10 @@ function renderBadgeList(all, div) {
     const auto = s>=50?'gold':s>=20?'bronze':s>=7?'silver':null;
     const cur  = e.badge || auto;
     const bHtml = cur ? `<span style="background:${bi[cur].c}30;color:${bi[cur].c};border:1px solid ${bi[cur].c};padding:2px 7px;border-radius:20px;font-size:11px;font-weight:700;">${bi[cur].e} ${bi[cur].l}</span>` : '<span style="color:#ccc;font-size:11px;">Aucun badge</span>';
+    const relHtml = e.is_reliable ? '<span style="background:#e6fffb;color:#08979c;border:1px solid #08979c;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:700;margin-left:4px;">✅ Fiable</span>' : '';
     return `<div style="background:white;border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:0 1px 6px rgba(0,0,0,.07);">
       <div style="font-weight:700;font-size:13px;margin-bottom:4px;">${escapeHtml(e.label)}</div>
-      <div style="font-size:12px;color:#888;margin-bottom:8px;">${e.typeDisplay || ''} &nbsp;|&nbsp; ⭐ ${s} étoile${s>1?'s':''} &nbsp; ${bHtml}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:8px;">${e.typeDisplay || ''} &nbsp;|&nbsp; ⭐ ${s} étoile${s>1?'s':''} &nbsp; ${bHtml}${relHtml}</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
         <button onclick="adminGiveBadge('${e.id}','${e.entityType}','silver')" style="background:#a0aec0;color:white;border:none;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🥈 Argent</button>
         <button onclick="adminGiveBadge('${e.id}','${e.entityType}','bronze')" style="background:#c07b3a;color:white;border:none;padding:7px 2px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🥉 Bronze</button>
@@ -1726,7 +1729,7 @@ async function loadSellersForBadge() {
   div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
 
   const { data: sellers  } = await db.from(TABLES.SELLERS)
-    .select('id,code,full_name,stars,badge,account_type')
+    .select('id,code,full_name,stars,badge,account_type,is_reliable')
     .eq('is_blocked', false).order('stars', { ascending: false });
 
   const { data: livreurs } = await db.from('delivery_agents')
@@ -1774,6 +1777,44 @@ async function adminGiveBadge(id, entityType, badge) {
     showToast(`Badge ${badge} attribué ✓`, 'success');
     loadSellersForBadge();
   } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+// ================================================================
+// BADGE "VENDEUR FIABLE" — critères objectifs (commandes honorées)
+// Seuils : au moins 5 commandes ET au moins 80% livrées
+// ================================================================
+async function recalculateReliableBadges() {
+  try {
+    showToast('Calcul en cours...', 'success');
+    const { data: sellers } = await db.from(TABLES.SELLERS)
+      .select('id, is_blocked')
+      .eq('is_blocked', false);
+
+    if (!sellers || !sellers.length) { showToast('Aucun vendeur à évaluer', 'error'); return; }
+
+    const MIN_ORDERS = 5;
+    const MIN_RATE   = 0.8;
+    let countReliable = 0;
+
+    for (const seller of sellers) {
+      const { data: orders } = await db.from(TABLES.ORDERS)
+        .select('status').eq('seller_id', seller.id);
+
+      const total   = orders ? orders.length : 0;
+      const livrees = orders ? orders.filter(o => o.status === 'livre').length : 0;
+      const taux    = total > 0 ? livrees / total : 0;
+      const isReliable = total >= MIN_ORDERS && taux >= MIN_RATE;
+
+      if (isReliable) countReliable++;
+      await db.from(TABLES.SELLERS).update({ is_reliable: isReliable }).eq('id', seller.id);
+    }
+
+    await logAction('Recalcul badges fiables', '', '', `${countReliable} vendeur(s) fiable(s) sur ${sellers.length}`);
+    showToast(`✅ ${countReliable} vendeur(s) marqué(s) fiable(s)`, 'success');
+    loadSellersForBadge();
+  } catch(e) {
+    console.error('recalculateReliableBadges error:', e);
     showToast('Erreur: ' + e.message, 'error');
   }
 }
@@ -2097,7 +2138,7 @@ async function loadFournisseurs() {
     div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
 
     let query = db.from(TABLES.SELLERS)
-      .select('id,code,full_name,phone,ville,category,is_blocked,subscription_end,subscription_status')
+    .select('id,code,full_name,phone,ville,category,is_blocked,subscription_end,subscription_status,is_verified')
       .eq('account_type', 'fournisseur_export')
       .order('created_at', { ascending: false });
 
@@ -2110,7 +2151,7 @@ async function loadFournisseurs() {
     }
 
     div.innerHTML = `<div class="table-wrap"><table>
-      <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Ville</th><th>Statut</th><th>Action</th></tr>
+      <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Ville</th><th>Statut</th><th>Vérifié</th><th>Action</th></tr>
       ${fournisseurs.map(f => `
         <tr>
           <td><strong style="color:#13c2c2;">${escapeHtml(f.code)}</strong></td>
@@ -2127,10 +2168,17 @@ async function loadFournisseurs() {
               ${f.subscription_end ? 'Exp: ' + new Date(f.subscription_end).toLocaleDateString('fr-FR') : '—'}
             </small>
           </td>
+          <td>
+            ${f.is_verified ? '<span class="badge-green">✔️ Vérifié</span>' : '<span style="color:#ccc;font-size:11px;">Non vérifié</span>'}
+          </td>
           <td style="display:flex;gap:4px;flex-wrap:wrap;">
             <button class="action-btn ${f.is_blocked ? 'unblock-btn' : 'block-btn'}"
               onclick="toggleBlockFournisseur('${f.id}', ${f.is_blocked})">
               ${f.is_blocked ? 'Débloquer' : 'Bloquer'}
+            </button>
+            <button class="action-btn ${f.is_verified ? 'block-btn' : 'unblock-btn'}"
+              onclick="toggleVerifyFournisseur('${f.id}', ${f.is_verified ? 'true' : 'false'})">
+              ${f.is_verified ? 'Retirer vérif.' : '✔️ Vérifier'}
             </button>
             <button class="action-btn block-btn"
               onclick="deleteFournisseur('${f.id}', '${escapeHtml(f.full_name)}')">🗑</button>
@@ -2153,6 +2201,17 @@ async function toggleBlockFournisseur(id, isBlocked) {
     await db.from(TABLES.SELLERS).update(upd).eq('id', id);
     showToast(isBlocked ? 'Fournisseur débloqué ✓' : 'Fournisseur bloqué ✓', 'success');
     await logAction(isBlocked ? 'Déblocage fournisseur' : 'Blocage fournisseur', id, '', '');
+    loadFournisseurs();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function toggleVerifyFournisseur(id, isVerified) {
+  try {
+    if (!confirm(`${isVerified ? 'Retirer la vérification de' : 'Marquer comme "Fournisseur vérifié"'} ce fournisseur ?`)) return;
+    const { error } = await db.from(TABLES.SELLERS).update({ is_verified: !isVerified }).eq('id', id);
+    if (error) { showToast('Erreur vérification', 'error'); return; }
+    showToast(isVerified ? 'Vérification retirée' : 'Fournisseur vérifié ✓', 'success');
+    await logAction(isVerified ? 'Retrait vérification fournisseur' : 'Vérification fournisseur', id, '', '');
     loadFournisseurs();
   } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
 }

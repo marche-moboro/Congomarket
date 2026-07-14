@@ -132,3 +132,32 @@ self.addEventListener('message', event => {
     });
   }
 });
+
+// ── Notifications Push (Option B) ──────────────────────────────
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+
+  const title = data.title || '🛒 Nouvelle commande !';
+  const options = {
+    body: data.body || 'Vous avez reçu une nouvelle commande sur Marché Moboro.',
+    icon: '/Congomarket/icon-192.png',
+    badge: '/Congomarket/icon-192.png',
+    data: { url: data.url || '/Congomarket/' }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/Congomarket/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('/Congomarket/') && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});

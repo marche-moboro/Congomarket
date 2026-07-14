@@ -929,6 +929,7 @@ header p { font-size: 12px; opacity: .80; }
   <div class="section-label">🔥 Promotions & Connexion</div>
   <div class="categories">
     <button class="cat-btn cat-btn-lg promo-btn" onclick="loadAllPromos()">🔥 Toutes les Promos</button>
+    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#52c41a,#389e0d);color:white;" onclick="showPage('trackOrderPage')">📦 Suivre ma commande</button>
     <button class="cat-btn cat-btn-lg login-cat-btn" onclick="openSellerLogin()">🔑 Se connecter</button>
   </div>
 
@@ -950,6 +951,21 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
+<!-- ========== SUIVI DE COMMANDE (CLIENT, sans compte) ========== -->
+<div class="page" id="trackOrderPage">
+  <div class="register-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="showPage('homePage')">←</button>
+      <div><div class="section-title">Suivre ma commande</div></div>
+    </div>
+    <div class="form-card">
+      <p style="font-size:12px;color:#888;margin-bottom:8px;">Entrez le numéro de téléphone utilisé lors de votre commande.</p>
+      <input type="tel" id="trackPhoneInput" placeholder="Votre numéro de téléphone *">
+      <button class="primary-btn" onclick="trackMyOrders()">🔍 Rechercher mes commandes</button>
+    </div>
+    <div id="trackOrdersResults" style="padding:0 16px;"></div>
+  </div>
+</div>
 <!-- ========== SEARCH RESULTS PAGE ========== -->
 <div class="page" id="searchResultsPage">
   <div class="sellers-page">
@@ -1568,7 +1584,14 @@ header p { font-size: 12px; opacity: .80; }
         <span class="icon">💥</span>Mes promos
       </button>
       <button class="dash-btn" onclick="viewMyStats()">
-        <span class="icon">📊</span>Mes statistiques
+       <span class="icon">📊</span>Mes statistiques
+      </button>
+    <button class="dash-btn" style="background:#722ed1;color:white;position:relative;" onclick="viewMyOrders()">
+        <span class="icon">📦</span>Mes commandes
+        <span class="orders-notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#ff4d4f;color:white;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+      </button>
+      <button class="dash-btn" style="background:#13c2c2;color:white;" onclick="subscribeSellerPush(currentSeller.id)">
+        <span class="icon">🔔</span>Activer les notifications
       </button>
       <button class="dash-btn" style="background:#fa8c16;color:white;" onclick="openContactDelivery()">
         <span class="icon">🚚</span>Contacter un livreur
@@ -1679,7 +1702,15 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title">Publier un produit</div></div>
     </div>
     <div class="form-card">
-      <input type="text" id="pubName" placeholder="Nom du produit *">
+      <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Titre du produit (guidé)</label>
+      <div style="background:#f0f7ff;border:1px solid #d6e8ff;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#555;line-height:1.5;">
+        💡 Astuce : un bon titre suit le format <strong>Nom + Caractéristique + Usage</strong>.<br>
+        Ex : "Robe" + "rouge taille L" + "pour soirée/mariage"
+      </div>
+      <input type="text" id="pubName" placeholder="Nom du produit * (ex: Robe)" oninput="updatePubTitlePreview()">
+      <input type="text" id="pubCaracteristique" placeholder="Caractéristique (couleur, taille, modèle...)" style="margin-top:8px;" oninput="updatePubTitlePreview()">
+      <input type="text" id="pubUsage" placeholder="Usage (pour qui, quand, occasion...)" style="margin-top:8px;" oninput="updatePubTitlePreview()">
+      <div id="pubTitlePreview" style="font-size:12px;color:#1677FF;font-weight:600;margin:8px 0 4px;padding:6px 10px;background:#f5f7fb;border-radius:8px;display:none;"></div>
 
 <label style="font-size:13px;color:#555;font-weight:600;margin-top:4px;display:block;">💰 Prix unitaire (FCFA) *</label>
 <input type="number" id="pubPrice" placeholder="Prix unitaire *" min="0">
@@ -1813,6 +1844,17 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
 </div>
+<!-- ========== MES COMMANDES (VENDEUR) ========== -->
+<div class="page" id="myOrdersPage">
+  <div style="padding:15px;">
+    <div class="page-header">
+      <button class="back-btn" onclick="goBackToDashboard()">←</button>
+      <div><div class="section-title">Mes commandes</div></div>
+    </div>
+    <div id="myOrdersResults"></div>
+  </div>
+</div>
+
 <!-- ========== MY PROMOS PAGE ========== -->
 <div class="page" id="myPromosPage">
   <div class="register-page">
@@ -1941,6 +1983,13 @@ header p { font-size: 12px; opacity: .80; }
       </button>
       <button class="dash-btn" onclick="viewMyStats()">
         <span class="icon">📊</span>Statistiques
+      </button>
+     <button class="dash-btn" style="background:#722ed1;color:white;position:relative;" onclick="viewMyOrders()">
+        <span class="icon">📦</span>Mes commandes
+        <span class="orders-notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#ff4d4f;color:white;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+      </button>
+      <button class="dash-btn" style="background:#13c2c2;color:white;" onclick="subscribeSellerPush(currentSeller.id)">
+        <span class="icon">🔔</span>Activer les notifications
       </button>
       <button class="dash-btn" style="background:#fa8c16;color:white;" onclick="openContactDelivery()">
         <span class="icon">🚚</span>Contacter un livreur
@@ -2153,7 +2202,14 @@ header p { font-size: 12px; opacity: .80; }
   <span class="icon">💥</span>Voir mes promos
 </button>
       <button class="dash-btn" onclick="viewMyStats()">
-        <span class="icon">📊</span>Statistiques
+       <span class="icon">📊</span>Statistiques
+      </button>
+     <button class="dash-btn" style="background:#722ed1;color:white;position:relative;" onclick="viewMyOrders()">
+        <span class="icon">📦</span>Mes commandes
+        <span class="orders-notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#ff4d4f;color:white;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
+      </button>
+      <button class="dash-btn" style="background:#13c2c2;color:white;" onclick="subscribeSellerPush(currentSeller.id)">
+        <span class="icon">🔔</span>Activer les notifications
       </button>
       <button class="dash-btn full" onclick="openProfile()">
         <span class="icon">👤</span>Mon profil & informations
@@ -3183,8 +3239,7 @@ const list = document.getElementById('promosList');
           <span class="new-price">${formatPrice(p.promo_price)} FCFA</span>
           <span class="discount">-${Math.round((1 - p.promo_price / p.original_price) * 100)}%</span>
         </div>
-        ${p.qte_min ? `<p style="font-size:12px;color:#52c41a;margin:4px 0;">Qté min : ${p.qte_min} → ${formatPrice(p.prix_min !== null ? p.prix_min : p.qte_min * p.promo_price)} FCFA</p>` : ''}
-        ${p.qte_max ? `<p style="font-size:12px;color:#1677FF;margin:4px 0;">Qté max : ${p.qte_max} → ${formatPrice(p.prix_max !== null ? p.prix_max : p.qte_max * p.promo_price)} FCFA</p>` : ''}
+    ${renderQuantityTiers(p.promo_price, p.qte_min, p.prix_min, p.qte_max, p.prix_max)}
         <a href="https://wa.me/${p.seller_phone}?text=Bonjour, je suis intéressé(e) par: ${encodeURIComponent(p.name)}"
            target="_blank" class="whatsapp-promo-btn">
           Commander via WhatsApp
@@ -3700,7 +3755,7 @@ async function openFournisseursExportList() {
 
   try {
     const { data: fournisseurs, error } = await db.from(TABLES.SELLERS)
-      .select('id, full_name, code, phone, quartier, ville, category, description, photo, stars, badge')
+      .select('id, full_name, code, phone, quartier, ville, category, description, photo, stars, badge, is_verified')
       .eq('account_type', 'fournisseur_export')
       .eq('is_blocked', false)
       .eq('is_active', true)
@@ -3759,7 +3814,10 @@ function _appendFournisseurs() {
           style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #13c2c2;flex-shrink:0;"
           onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100'">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:700;color:#222;">${escapeHtml(f.full_name)}</div>
+          <div style="font-size:15px;font-weight:700;color:#222;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            ${escapeHtml(f.full_name)}
+            ${f.is_verified ? `<span style="background:#e6fffb;border:1px solid #13c2c2;color:#08979c;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">✔️ Fournisseur vérifié</span>` : ''}
+          </div>
           <div style="font-size:12px;color:#13c2c2;font-weight:600;">${escapeHtml(f.category || '')}</div>
           <div style="font-size:12px;color:#888;">📍 ${escapeHtml(f.quartier || '')} · ${escapeHtml(f.ville || '')}</div>
         </div>
@@ -3894,8 +3952,7 @@ function _appendAllPromos() {
           <span class="new-price">${formatPrice(p.promo_price)} FCFA</span>
           <span class="discount">-${Math.round((1 - p.promo_price / p.original_price) * 100)}%</span>
         </div>
-        ${p.qte_min ? `<p style="font-size:12px;color:#52c41a;margin:4px 0;">Qté min : ${p.qte_min} → ${formatPrice(p.prix_min !== null ? p.prix_min : p.qte_min * p.promo_price)} FCFA</p>` : ''}
-        ${p.qte_max ? `<p style="font-size:12px;color:#1677FF;margin:4px 0;">Qté max : ${p.qte_max} → ${formatPrice(p.prix_max !== null ? p.prix_max : p.qte_max * p.promo_price)} FCFA</p>` : ''}
+        ${renderQuantityTiers(p.promo_price, p.qte_min, p.prix_min, p.qte_max, p.prix_max)}
         <a href="https://wa.me/${p.seller_phone}?text=Bonjour, je suis intéressé(e) par: ${encodeURIComponent(p.name)}"
            target="_blank" class="whatsapp-promo-btn">Commander via WhatsApp</a>
       </div>

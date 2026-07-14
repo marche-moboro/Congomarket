@@ -41,6 +41,38 @@ function getBadgeHtml(stars = 0, badge = null) {
     display:inline-flex;align-items:center;gap:3px;">${b.emoji} ${b.label}</span>`;
 }
 
+// ================================================================
+// TARIFS DÉGRESSIFS PAR QUANTITÉ — tableau clair type "1-9 = X, 10+ = Y"
+// basePrice = prix unitaire normal, tier1Price = prix dès qteMin,
+// tier2Price = prix dès qteMax (tier2Price optionnel)
+// ================================================================
+function renderQuantityTiers(basePrice, qteMin, tier1Price, qteMax, tier2Price) {
+  if (!qteMin && !qteMax) return '';
+  const base = Number(basePrice) || 0;
+  const rows = [];
+
+  if (qteMin && qteMax && Number(qteMax) > Number(qteMin)) {
+    rows.push([`1 – ${qteMin - 1}`, base]);
+    rows.push([`${qteMin} – ${qteMax - 1}`, tier1Price != null ? tier1Price : base]);
+    rows.push([`${qteMax}+`, tier2Price != null ? tier2Price : base]);
+  } else if (qteMin) {
+    rows.push([`1 – ${qteMin - 1}`, base]);
+    rows.push([`${qteMin}+`, tier1Price != null ? tier1Price : base]);
+  } else if (qteMax) {
+    rows.push([`1 – ${qteMax - 1}`, base]);
+    rows.push([`${qteMax}+`, tier2Price != null ? tier2Price : base]);
+  }
+
+  return `<div class="qty-tiers" style="margin:6px 0;border:1px solid #e8e8e8;border-radius:10px;overflow:hidden;">
+    <div style="background:#f5f7fb;padding:4px 8px;font-size:11px;font-weight:700;color:#555;">📦 Tarifs par quantité</div>
+    ${rows.map(([range, price]) => `
+      <div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:12px;border-top:1px solid #f0f0f0;">
+        <span style="color:#333;">${range} unités</span>
+        <span style="color:#1677FF;font-weight:700;">${formatPrice(price)} FCFA</span>
+      </div>`).join('')}
+  </div>`;
+}
+
 function getStarHtml(sellerId, entityType = 'seller', stars = 0, badge = null) {
   const storageKey = `star_${entityType}_${sellerId}`;
   const alreadyGiven = !!localStorage.getItem(storageKey);
@@ -169,7 +201,7 @@ async function loadSellers(catId, append = false) {
   try {
 let query = db
   .from(TABLES.SELLERS)
-  .select('id, full_name, photo, category, quartier, ville, description, stars, badge, phone, position, dynamisme_score, account_type', { count: 'exact' })
+  .select('id, full_name, photo, category, quartier, ville, description, stars, badge, phone, position, dynamisme_score, account_type, is_reliable', { count: 'exact' })
   .eq('category', catId)
   .eq('is_blocked', false)
   .eq('is_active', true);
@@ -215,7 +247,7 @@ const { data: sellers, error, count } = await query
             class="seller-image"
             onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'">
           <div class="seller-info">
-            <h3>${escapeHtml(seller.full_name)}</h3>
+            <h3>${escapeHtml(seller.full_name)} ${seller.is_reliable ? '<span style="background:#e6fffb;border:1px solid #08979c;color:#08979c;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;vertical-align:middle;">✅ Vendeur fiable</span>' : ''}</h3>
             <p class="seller-location">📍 ${escapeHtml(seller.quartier)}, ${escapeHtml(seller.ville)}</p>
             <p class="seller-desc">${escapeHtml(seller.description)}</p>
             ${getStarHtml(seller.id, 'seller', seller.stars || 0, seller.badge || null)}
@@ -348,12 +380,7 @@ function _appendProducts(type) {
         <h3>${escapeHtml(p.name)}</h3>
         <p class="product-price">${formatPrice(p.price)} FCFA</p>
         ${p.description ? `<p class="product-desc">${escapeHtml(p.description)}</p>` : ''}
-        ${p.qte_min
-          ? `<p style="font-size:12px;color:#52c41a;margin:2px 0;">Qté min : ${p.qte_min} → ${formatPrice(p.prix_min)} FCFA</p>`
-          : ''}
-        ${p.qte_max
-          ? `<p style="font-size:12px;color:#1677FF;margin:2px 0;">Qté max : ${p.qte_max} → ${formatPrice(p.prix_max)} FCFA</p>`
-          : ''}
+        ${renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max)}
         ${type === 'B'
           ? `<button class="add-btn"
                data-id="${p.id}"
@@ -433,6 +460,106 @@ async function trackWhatsappClick(sellerId, accountType) {
     console.error('trackWhatsappClick error:', e);
   }
 }
+
+// ================================================================
+// NOTIFICATIONS VENDEUR — Option A : badge temps réel (Supabase Realtime)
+// ================================================================
+let _ordersChannel = null;
+
+function updateOrdersBadge(count) {
+  document.querySelectorAll('.orders-notif-badge').forEach(el => {
+    if (count > 0) {
+      el.innerText = count > 9 ? '9+' : count;
+      el.style.display = 'inline-flex';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
+function subscribeSellerOrderNotifications(sellerId) {
+  if (!sellerId || _ordersChannel) return;
+  const unreadKey = `orders_unread_${sellerId}`;
+  updateOrdersBadge(parseInt(localStorage.getItem(unreadKey) || '0', 10));
+
+  _ordersChannel = db.channel('orders-seller-' + sellerId)
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'orders', filter: `seller_id=eq.${sellerId}` },
+      () => {
+        const current = parseInt(localStorage.getItem(unreadKey) || '0', 10) + 1;
+        localStorage.setItem(unreadKey, current);
+        updateOrdersBadge(current);
+        showToast('🛒 Nouvelle commande reçue !', 'success');
+      }
+    )
+    .subscribe();
+}
+
+function markOrdersNotificationsRead() {
+  if (typeof currentSeller === 'undefined' || !currentSeller) return;
+  localStorage.setItem(`orders_unread_${currentSeller.id}`, '0');
+  updateOrdersBadge(0);
+}
+
+function unsubscribeSellerOrderNotifications() {
+  if (_ordersChannel) { db.removeChannel(_ordersChannel); _ordersChannel = null; }
+}
+
+// ================================================================
+// NOTIFICATIONS VENDEUR — Option B : push navigateur
+// ================================================================
+const VAPID_PUBLIC_KEY = 'BETaKCUXbi_24cmp2qv-8v5xHrhW-gMCYlWCxNljiqO_Cp5TjZmxgLPYcymD4m21aypPaqlrq5eJn8FFuFrlp7k';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribeSellerPush(sellerId) {
+  if (!sellerId) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    showToast('Notifications non supportées sur ce navigateur', 'error');
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('Notifications refusées', 'error');
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const subJson = sub.toJSON();
+    const { error } = await db.from('push_subscriptions').upsert({
+      seller_id: sellerId,
+      endpoint:  subJson.endpoint,
+      p256dh:    subJson.keys.p256dh,
+      auth:      subJson.keys.auth
+    }, { onConflict: 'endpoint' });
+
+    if (error) {
+      console.error('subscribeSellerPush save error:', error);
+      showToast('Erreur activation notifications', 'error');
+      return;
+    }
+
+    showToast('🔔 Notifications activées !', 'success');
+  } catch (e) {
+    console.error('subscribeSellerPush error:', e);
+    showToast('Erreur activation notifications', 'error');
+  }
+}
 // Bug 3 fix — Exposer les fonctions de sellers.js sur window
 window.openCategory                = openCategory;
 window.loadSellers                 = loadSellers;
@@ -441,3 +568,4 @@ window.giveStar                    = giveStar;
 window.trackWhatsappClick          = trackWhatsappClick;
 window.addToCartFromBtn            = addToCartFromBtn;
 window.loadMoreProducts            = loadMoreProducts;
+window.subscribeSellerPush = subscribeSellerPush;

@@ -155,14 +155,30 @@ async function confirmOrder() {
       client_address:  address,
       items:           cart,
       total:           total,
+      status:          'en_preparation',
       created_at:      new Date().toISOString()
     });
 
-    if (error) {
+  if (error) {
       console.error('confirmOrder insert error:', JSON.stringify(error));
       showToast('Erreur enregistrement commande', 'error');
       return;
     }
+
+    // Notification push au vendeur (Option B) — ne bloque pas la commande si ça échoue
+    fetch(`${SUPABASE_URL}/functions/v1/send-order-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({
+        seller_id: seller.id,
+        title: '🛒 Nouvelle commande !',
+        body: `${name} vient de passer une commande de ${total.toLocaleString()} FC.`,
+        url: '/Congomarket/'
+      })
+    }).catch(e => console.error('send-order-push error:', e));
 
   } catch (e) {
     console.error('confirmOrder exception:', e);
@@ -200,6 +216,71 @@ async function confirmOrder() {
     if (el) el.value = '';
   });
 }
+
+// ================================================================
+// Suivi de commande — côté client (sans compte, recherche par téléphone)
+// ================================================================
+async function trackMyOrders() {
+  try {
+    const phone = document.getElementById('trackPhoneInput').value.trim();
+    if (!phone || phone.length < 8) {
+      showToast('Entrez un numéro de téléphone valide', 'error');
+      return;
+    }
+
+    const { data: orders, error } = await db.from(TABLES.ORDERS)
+      .select('*')
+      .eq('client_phone', phone)
+      .order('created_at', { ascending: false });
+
+    const container = document.getElementById('trackOrdersResults');
+    if (!container) return;
+
+    if (error) { showToast('Erreur recherche', 'error'); return; }
+
+    if (!orders || orders.length === 0) {
+      container.innerHTML = `<p style="text-align:center;color:#888;padding:20px 0;">Aucune commande trouvée pour ce numéro.</p>`;
+      return;
+    }
+
+    const sellerIds = [...new Set(orders.map(o => o.seller_id).filter(Boolean))];
+    let sellersMap = {};
+    if (sellerIds.length > 0) {
+      const { data: sellersData } = await db.from(TABLES.SELLERS)
+        .select('id, full_name').in('id', sellerIds);
+      (sellersData || []).forEach(s => { sellersMap[s.id] = s.full_name; });
+    }
+
+    const STATUS = {
+      en_preparation: { label: '🟡 En préparation', color: '#faad14' },
+      expedie:        { label: '🔵 Expédié',        color: '#1677FF' },
+      livre:          { label: '🟢 Livré',          color: '#52c41a' }
+    };
+
+    container.innerHTML = orders.map(o => {
+      const status     = STATUS[o.status || 'en_preparation'];
+      const dateStr     = new Date(o.created_at).toLocaleDateString('fr-FR');
+      const sellerName  = sellersMap[o.seller_id] || 'Vendeur';
+      const itemsList   = (o.items || []).map(it => `${it.quantity} x ${escapeHtml(it.name)}`).join(', ');
+
+      return `<div style="background:white;border:1px solid #eee;border-radius:12px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <strong style="font-size:13px;">${escapeHtml(sellerName)}</strong>
+          <span style="font-size:11px;color:#999;">${dateStr}</span>
+        </div>
+        <div style="font-size:12px;color:#666;margin-bottom:6px;">${itemsList}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:${status.color};">${status.label}</span>
+          <strong style="font-size:13px;color:#1677FF;">${formatPrice(o.total)} FCFA</strong>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('trackMyOrders error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + e.message, 'error');
+  }
+}
+window.trackMyOrders = trackMyOrders;
 
 // ================================================================
 // Fermer modals en cliquant dehors

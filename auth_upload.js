@@ -125,6 +125,12 @@ async function validatePin() {
   .select('*', { count: 'exact', head: true });
 const sellerCode = generateSellerCode(_sellerCount || 0);
 
+    const { data: sysSetting } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
+    const sysOn = sysSetting && sysSetting.value === 'on';
+    const today = new Date();
+    const freeMonthEnd = new Date(today);
+    freeMonthEnd.setDate(freeMonthEnd.getDate() + 30);
+
     const newSeller = {
       code:                sellerCode,
       full_name:           data.fullName,
@@ -142,6 +148,8 @@ const sellerCode = generateSellerCode(_sellerCount || 0);
       dynamisme_score:     0,
       last_published:      null,
       subscription_status: 'en_cours',
+   subscription_start:  sysOn ? today.toISOString().split('T')[0] : null,
+      subscription_end:    sysOn ? freeMonthEnd.toISOString().split('T')[0] : null, // 🎉 30 jours offerts si système actif
       created_at:          new Date().toISOString()
     };
 
@@ -261,6 +269,7 @@ const seller = selRes.account;
 
     currentSeller = seller;
 _loggedSellerCode = seller.code; // ← mémoriser le code du compte connecté
+subscribeSellerOrderNotifications(seller.id);
 localStorage.setItem('seller_code', code);
     showToast('Bienvenue ' + seller.full_name, 'success');
 
@@ -335,11 +344,13 @@ async function checkSession() {
             currentSeller = seller;
          _loggedSellerCode = seller.code; // ← sync au rechargement
             updateProfileIcon();
+            subscribeSellerOrderNotifications(seller.id);
           }
         } else {
-          currentSeller = seller;
+           currentSeller = seller;
           _loggedSellerCode = seller.code; // ← sync au rechargement
           updateProfileIcon();
+          subscribeSellerOrderNotifications(seller.id);
         }
       } else {
         localStorage.removeItem('seller_code');
@@ -393,6 +404,7 @@ async function checkSession() {
 }
 
 function logoutSeller() {
+  unsubscribeSellerOrderNotifications();
   currentSeller = null;
   _loggedSellerCode = null; // ← reset
   localStorage.removeItem('seller_code');
