@@ -1,15 +1,13 @@
-// ==================== CART.JS ====================
+// ==================== CART.JS — Panier multi-vendeurs ====================
 
 let cart = [];
 
 // ================================================================
-// Charger panier depuis localStorage
-// ✅ CORRECTION : JSON.parse dans try/catch — évite crash si corrompu
+// Charger le panier global (tous vendeurs confondus)
 // ================================================================
-function loadCart(sellerId) {
-  const key = 'cart_' + sellerId;
+function loadCart() {
   try {
-    cart = JSON.parse(localStorage.getItem(key)) || [];
+    cart = JSON.parse(localStorage.getItem('cart_global')) || [];
   } catch (e) {
     console.warn('Panier corrompu, réinitialisation:', e);
     cart = [];
@@ -17,40 +15,54 @@ function loadCart(sellerId) {
   updateCartUI();
 }
 
-// Sauvegarder panier
 function saveCart() {
-  if (!window.currentViewedSeller) return;
-  const key = 'cart_' + window.currentViewedSeller.id;
-  localStorage.setItem(key, JSON.stringify(cart));
+  localStorage.setItem('cart_global', JSON.stringify(cart));
 }
 
 // ================================================================
-// Ajouter au panier
+// Ajouter au panier — simplifié : incrémente silencieusement
+// product = {id, name, price} / seller = {id, full_name, phone, account_type}
 // ================================================================
-function addToCart(productId, name, price) {
-  const existing = cart.find(item => item.id === productId);
-
-  if (existing) {
-    showConfirmDialog(
-      `"${name}" est déjà dans votre panier. Voulez-vous l'ajouter à nouveau ?`,
-      () => {
-        existing.quantity += 1;
-        saveCart();
-        updateCartUI();
-        showToast(name + ' ajouté (' + existing.quantity + '×)', 'success');
-      }
-    );
+function addToCartQuick(product, seller) {
+  if (!product || !seller || !seller.id) {
+    showToast('Erreur : boutique introuvable', 'error');
     return;
   }
+  const key = product.id + '_' + seller.id;
+  const existing = cart.find(item => item._key === key);
 
-  cart.push({ id: productId, name, price, quantity: 1 });
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({
+      _key: key,
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      sellerId: seller.id,
+      sellerName: seller.full_name || 'Vendeur',
+      sellerPhone: seller.phone || '',
+      sellerAccountType: seller.account_type || ''
+    });
+  }
   saveCart();
   updateCartUI();
-  showToast(name + ' ajouté au panier', 'success');
+  showToast((product.name || 'Produit') + ' ajouté au panier 🛒', 'success');
+}
+
+// Compat avec d'anciens boutons data-id/data-name/data-price liés à une seule boutique
+function addToCartFromBtn(btn) {
+  const seller = window.currentViewedSeller;
+  if (!seller) { showToast('Erreur : boutique introuvable', 'error'); return; }
+  addToCartQuick(
+    { id: btn.dataset.id, name: btn.dataset.name, price: Number(btn.dataset.price) },
+    seller
+  );
 }
 
 // ================================================================
-// Supprimer du panier
+// Supprimer un article
 // ================================================================
 function removeFromCart(index) {
   cart.splice(index, 1);
@@ -60,7 +72,7 @@ function removeFromCart(index) {
 }
 
 // ================================================================
-// Mettre à jour UI panier
+// Mettre à jour la barre panier flottante (persiste sur toutes les pages)
 // ================================================================
 function updateCartUI() {
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -70,10 +82,23 @@ function updateCartUI() {
   const totalEl = document.getElementById('cartTotalPreview');
   if (countEl) countEl.innerText = count;
   if (totalEl) totalEl.innerText = formatPrice(total) + ' FCFA';
+
+  const bar = document.getElementById('cartBar');
+  if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
+
+  const lbBadge = document.getElementById('lbCartBadge');
+  if (lbBadge) {
+    if (count > 0) {
+      lbBadge.innerText = count;
+      lbBadge.style.display = 'flex';
+    } else {
+      lbBadge.style.display = 'none';
+    }
+  }
 }
 
 // ================================================================
-// Ouvrir / fermer modal panier
+// Ouvrir / fermer le panier
 // ================================================================
 function openCart() {
   if (cart.length === 0) {
@@ -81,6 +106,7 @@ function openCart() {
     return;
   }
   renderCartModal();
+  prefillClientInfo();
   document.getElementById('cartModal').style.display = 'flex';
 }
 
@@ -89,13 +115,44 @@ function closeCart() {
 }
 
 // ================================================================
-// Afficher contenu panier
-// ✅ CORRECTION : escapeHtml sur item.name
+// Infos de livraison client — mémorisées après la 1ère commande
+// ================================================================
+function prefillClientInfo() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('moboro_client_info') || 'null');
+    if (saved) {
+      document.getElementById('clientName').value     = saved.name     || '';
+      document.getElementById('clientPhone').value    = saved.phone    || '';
+      document.getElementById('clientQuartier').value = saved.quartier || '';
+      document.getElementById('clientAddress').value  = saved.address  || '';
+    }
+  } catch (e) {}
+}
+
+function getClientInfoFromForm() {
+  const name     = document.getElementById('clientName').value.trim();
+  const phone    = document.getElementById('clientPhone').value.trim();
+  const quartier = document.getElementById('clientQuartier').value.trim();
+  const address  = document.getElementById('clientAddress').value.trim();
+
+  if (!name || !phone || !quartier || !address) {
+    showToast('Veuillez remplir vos informations de livraison', 'error');
+    return null;
+  }
+  if (phone.length < 9) {
+    showToast('Numéro de téléphone invalide', 'error');
+    return null;
+  }
+  localStorage.setItem('moboro_client_info', JSON.stringify({ name, phone, quartier, address }));
+  return { name, phone, quartier, address };
+}
+
+// ================================================================
+// Afficher le panier — groupé par boutique, un bouton Commander par groupe
 // ================================================================
 function renderCartModal() {
   const itemsEl = document.getElementById('cartItems');
   const totalEl = document.getElementById('totalPrice');
-  let total = 0;
 
   if (cart.length === 0) {
     itemsEl.innerHTML = '<p style="text-align:center;padding:20px;">🛒 Panier vide</p>';
@@ -103,49 +160,196 @@ function renderCartModal() {
     return;
   }
 
-  itemsEl.innerHTML = cart.map((item, i) => {
-    const subtotal = item.price * item.quantity;
-    total += subtotal;
-    return `
-      <div class="cart-item">
-        <div class="cart-item-info">
-          <strong>${escapeHtml(item.name)}</strong>
-          <span>${item.quantity} × ${formatPrice(item.price)} FCFA</span>
-          <span class="cart-subtotal">${formatPrice(subtotal)} FCFA</span>
+  const groups = [];
+  const groupMap = {};
+  cart.forEach((item, i) => {
+    if (!groupMap[item.sellerId]) {
+      groupMap[item.sellerId] = { sellerId: item.sellerId, sellerName: item.sellerName, items: [] };
+      groups.push(groupMap[item.sellerId]);
+    }
+    groupMap[item.sellerId].items.push({ ...item, _index: i });
+  });
+
+  let grandTotal = 0;
+
+  itemsEl.innerHTML = groups.map(g => {
+    let subTotal = 0;
+    const rows = g.items.map(item => {
+      const lineTotal = item.price * item.quantity;
+      subTotal += lineTotal;
+      return `
+        <div class="cart-item">
+          <div class="cart-item-info">
+            <strong>${escapeHtml(item.name)}</strong>
+            <span>${item.quantity} × ${formatPrice(item.price)} FCFA</span>
+            <span class="cart-subtotal">${formatPrice(lineTotal)} FCFA</span>
+          </div>
+          <button class="remove-btn" onclick="removeFromCart(${item._index})">✕</button>
         </div>
-        <button class="remove-btn" onclick="removeFromCart(${i})">✕</button>
+      `;
+    }).join('');
+    grandTotal += subTotal;
+
+    return `
+      <div class="cart-seller-group" style="margin-bottom:16px;border:1px solid #eee;border-radius:12px;padding:10px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px;">🏪 Boutique ${escapeHtml(g.sellerName)}</div>
+        ${rows}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <strong style="font-size:13px;color:#1677FF;">${formatPrice(subTotal)} FCFA</strong>
+          <button class="command-btn" style="width:auto;padding:8px 18px;font-size:13px;margin:0;"
+            onclick="confirmOrderForSeller('${g.sellerId}')">
+            🛍️ Commander
+          </button>
+        </div>
       </div>
     `;
   }).join('');
 
-  totalEl.innerText = formatPrice(total);
+  totalEl.innerText = formatPrice(grandTotal);
 }
 
 // ================================================================
-// Confirmer commande
+// Valider la commande pour UNE boutique (une partie du panier)
+// → enregistre la commande + notifie le vendeur + ouvre WhatsApp
 // ================================================================
-async function confirmOrder() {
-  const name     = document.getElementById('clientName').value.trim();
-  const phone    = document.getElementById('clientPhone').value.trim();
-  const quartier = document.getElementById('clientQuartier').value.trim();
-  const address  = document.getElementById('clientAddress').value.trim();
+async function confirmOrderForSeller(sellerId) {
+  const info = getClientInfoFromForm();
+  if (!info) return;
 
-  if (!name || !phone || !quartier || !address) {
-    showToast('Veuillez remplir tous les champs', 'error');
+  const items = cart.filter(item => item.sellerId === sellerId);
+  if (items.length === 0) return;
+
+  const sellerPhone = items[0].sellerPhone;
+  const sellerName  = items[0].sellerName;
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  try {
+    const { error } = await db.from(TABLES.ORDERS).insert({
+      seller_id:       sellerId,
+      client_name:     info.name,
+      client_phone:    info.phone,
+      client_quartier: info.quartier,
+      client_address:  info.address,
+      items:           items.map(it => ({ id: it.id, name: it.name, price: it.price, quantity: it.quantity })),
+      total:           total,
+      status:          'en_preparation',
+      created_at:      new Date().toISOString()
+    });
+
+    if (error) {
+      console.error('confirmOrderForSeller insert error:', JSON.stringify(error));
+      showToast('Erreur enregistrement commande', 'error');
+      return;
+    }
+
+    fetch(`${SUPABASE_URL}/functions/v1/send-order-push`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: JSON.stringify({
+        seller_id: sellerId,
+        title: '🛒 Nouvelle commande !',
+        body: `${info.name} vient de passer une commande de ${total.toLocaleString()} FC.`,
+        url: '/Congomarket/'
+      })
+    }).catch(e => console.error('send-order-push error:', e));
+  } catch (e) {
+    console.error('confirmOrderForSeller exception:', e);
+    showToast('Erreur réseau. Réessayez.', 'error');
     return;
   }
 
+  let message = `COMMANDE CLIENT 🛒%0A%0A`;
+  message += `Client: ${info.name}%0A`;
+  message += `Téléphone: ${info.phone}%0A`;
+  message += `Quartier: ${info.quartier}%0A`;
+  message += `Adresse: ${info.address}%0A%0A`;
+  message += `Produits:%0A`;
+  items.forEach(item => {
+    message += `• ${item.name} × ${item.quantity} = ${formatPrice(item.price * item.quantity)} FCFA%0A`;
+  });
+  message += `%0ATOTAL: ${formatPrice(total)} FCFA`;
+
+  window.open(`https://wa.me/${formatWhatsApp(sellerPhone)}?text=${message}`, '_blank');
+  showToast(`Commande envoyée à ${sellerName} !`, 'success');
+
+  cart = cart.filter(item => item.sellerId !== sellerId);
+  saveCart();
+  updateCartUI();
+
+  if (cart.length === 0) {
+    closeCart();
+  } else {
+    renderCartModal();
+  }
+}
+
+// ================================================================
+// "Commander" dans le zoom → ferme le zoom, ouvre la page "Ma commande"
+// ================================================================
+function quickOrderProduct(product, seller) {
+  if (typeof closeLightbox === 'function') closeLightbox();
+  openQuickOrderPage(product, seller);
+}
+
+let _quickOrderProduct = null;
+let _quickOrderSeller  = null;
+let _quickOrderQty     = 1;
+
+function openQuickOrderPage(product, seller) {
+  _quickOrderProduct = product;
+  _quickOrderSeller  = seller;
+  _quickOrderQty     = 1;
+
+  document.getElementById('quickOrderImg').src           = product.image || '';
+  document.getElementById('quickOrderName').innerText     = product.name;
+  document.getElementById('quickOrderSeller').innerText   = '🏪 Boutique ' + (seller.full_name || '');
+  document.getElementById('quickOrderUnitPrice').innerText = formatPrice(product.price) + ' FCFA / unité';
+  document.getElementById('quickOrderQty').innerText      = _quickOrderQty;
+  document.getElementById('quickOrderTotal').innerText    = formatPrice(product.price * _quickOrderQty);
+
+  prefillQuickOrderClientInfo();
+  showPage('quickOrderPage');
+}
+
+function changeQuickOrderQty(delta) {
+  _quickOrderQty = Math.max(1, _quickOrderQty + delta);
+  document.getElementById('quickOrderQty').innerText   = _quickOrderQty;
+  document.getElementById('quickOrderTotal').innerText = formatPrice(_quickOrderProduct.price * _quickOrderQty);
+}
+
+function prefillQuickOrderClientInfo() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('moboro_client_info') || 'null');
+    if (saved) {
+      document.getElementById('quickOrderClientName').value     = saved.name     || '';
+      document.getElementById('quickOrderClientPhone').value    = saved.phone    || '';
+      document.getElementById('quickOrderClientQuartier').value = saved.quartier || '';
+      document.getElementById('quickOrderClientAddress').value  = saved.address  || '';
+    }
+  } catch (e) {}
+}
+
+async function submitQuickOrder() {
+  const name     = document.getElementById('quickOrderClientName').value.trim();
+  const phone    = document.getElementById('quickOrderClientPhone').value.trim();
+  const quartier = document.getElementById('quickOrderClientQuartier').value.trim();
+  const address  = document.getElementById('quickOrderClientAddress').value.trim();
+
+  if (!name || !phone || !quartier || !address) {
+    showToast('Veuillez remplir vos informations de livraison', 'error');
+    return;
+  }
   if (phone.length < 9) {
     showToast('Numéro de téléphone invalide', 'error');
     return;
   }
+  localStorage.setItem('moboro_client_info', JSON.stringify({ name, phone, quartier, address }));
 
-  const seller = window.currentViewedSeller;
-  if (!seller) return;
+  const product = _quickOrderProduct;
+  const seller  = _quickOrderSeller;
+  const qty     = _quickOrderQty;
+  const total   = product.price * qty;
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // Enregistrer commande en base AVANT d'ouvrir WhatsApp
   try {
     const { error } = await db.from(TABLES.ORDERS).insert({
       seller_id:       seller.id,
@@ -153,25 +357,21 @@ async function confirmOrder() {
       client_phone:    phone,
       client_quartier: quartier,
       client_address:  address,
-      items:           cart,
+      items:           [{ id: product.id, name: product.name, price: product.price, quantity: qty }],
       total:           total,
       status:          'en_preparation',
       created_at:      new Date().toISOString()
     });
 
-  if (error) {
-      console.error('confirmOrder insert error:', JSON.stringify(error));
+    if (error) {
+      console.error('submitQuickOrder insert error:', JSON.stringify(error));
       showToast('Erreur enregistrement commande', 'error');
       return;
     }
 
-    // Notification push au vendeur (Option B) — ne bloque pas la commande si ça échoue
     fetch(`${SUPABASE_URL}/functions/v1/send-order-push`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_KEY}` },
       body: JSON.stringify({
         seller_id: seller.id,
         title: '🛒 Nouvelle commande !',
@@ -179,42 +379,16 @@ async function confirmOrder() {
         url: '/Congomarket/'
       })
     }).catch(e => console.error('send-order-push error:', e));
-
   } catch (e) {
-    console.error('confirmOrder exception:', e);
+    console.error('submitQuickOrder exception:', e);
     showToast('Erreur réseau. Réessayez.', 'error');
     return;
   }
 
-  // Message WhatsApp
-  let message = `COMMANDE CLIENT 🛒%0A%0A`;
-  message += `Client: ${name}%0A`;
-  message += `Téléphone: ${phone}%0A`;
-  message += `Quartier: ${quartier}%0A`;
-  message += `Adresse: ${address}%0A%0A`;
-  message += `Produits:%0A`;
-
-  cart.forEach(item => {
-    message += `• ${item.name} × ${item.quantity} = ${formatPrice(item.price * item.quantity)} FCFA%0A`;
-  });
-
-  message += `%0ATOTAL: ${formatPrice(total)} FCFA`;
-
-  // Ouvrir WhatsApp vendeur
+  const message = `COMMANDE CLIENT 🛒%0A%0AClient: ${name}%0ATéléphone: ${phone}%0AQuartier: ${quartier}%0AAdresse: ${address}%0A%0AProduits:%0A• ${product.name} × ${qty} = ${formatPrice(total)} FCFA%0A%0ATOTAL: ${formatPrice(total)} FCFA`;
   window.open(`https://wa.me/${formatWhatsApp(seller.phone)}?text=${message}`, '_blank');
-
   showToast('Commande envoyée !', 'success');
-
-  // Reset panier
-  cart = [];
-  saveCart();
-  updateCartUI();
-  closeCart();
-
-  ['clientName', 'clientPhone', 'clientQuartier', 'clientAddress'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  goBack();
 }
 
 // ================================================================

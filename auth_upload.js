@@ -11,170 +11,9 @@ let _loggedSellerCode = null;
 // HASH PIN — Gestionnaire VIP (table vip_managers)
 // ⚠️  Formule différente de hashPin() qui sert aux vendeurs standards.
 // ================================================================
-
-async function openRegister() {
-  const { data } = await db.from('settings').select('value').eq('key','inscription_vendeur_independant').maybeSingle();
-  if (data && data.value === 'off') {
-    document.getElementById('inscriptionBloqueeModal').style.display = 'flex';
-    return;
-  }
-  showPage('termsPage');
-}
-function refuseTerms()    { showPage('homePage');     }
-async function acceptTerms() {
-  const { data } = await db.from('settings').select('value').eq('key','inscription_vendeur_independant').maybeSingle();
-  if (data && data.value === 'off') {
-    document.getElementById('inscriptionBloqueeModal').style.display = 'flex';
-    return;
-  }
-  showPage('registerPage');
-}
 function openSellerLogin(){ showPage('loginPage');    }
 
-function initRegisterPage() {
-  previewImage('regPhotoFile', 'regPhotoPreview');
-}
 
-// ================================================================
-// INSCRIPTION — Étape 1 : formulaire
-// ================================================================
-async function registerSeller() {
-  const fullName    = document.getElementById('regFullName').value.trim();
-  const countryCode = document.getElementById('regCountryCode').value.trim();
-  const rawPhone    = document.getElementById('regPhone').value.trim().replace(/^0+/, '');
-  const phone       = countryCode + rawPhone;
-  const quartier    = document.getElementById('regQuartier').value.trim();
-  const address     = document.getElementById('regAddress').value.trim();
-  const ville       = document.getElementById('regVille').value.trim();
-  const category    = document.getElementById('regCategory').value;
-  const description = document.getElementById('regDescription').value.trim();
-const photoInput = document.getElementById('regPhotoFile');
-const photoFile = photoInput && photoInput.files ? photoInput.files[0] : undefined;
-
-  if (!fullName || !phone || !quartier || !address || !ville || !category || !description) {
-    showToast('Veuillez remplir tous les champs', 'error');
-    return;
-  }
-
-  // Validation format téléphone international (indicatif + numéro)
-  if (!countryCode) {
-    showToast('Veuillez sélectionner votre indicatif pays', 'error');
-    return;
-  }
-  const phoneClean = phone.replace(/[\s\-().]/g, '');
-  if (!/^\d{11,15}$/.test(phoneClean)) {
-    showToast('Numéro invalide. Entrez votre numéro sans le 0 initial.', 'error');
-    return;
-  }
-  const phoneNorm = phoneClean;
-
-  try {
-    const { data: blocked } = await db.from(TABLES.BLOCKED_PHONES)
-      .select('id').eq('phone', phoneNorm).maybeSingle();
-    if (blocked) {
-      showToast('Ce numéro est banni de la plateforme.', 'error');
-      return;
-    }
-
-    const { data: existing } = await db.from(TABLES.SELLERS)
-      .select('id').eq('phone', phoneNorm).maybeSingle();
-    if (existing) {
-      showToast('Ce numéro a déjà un compte.', 'error');
-      return;
-    }
-
-    let photoUrl = '';
-    if (photoFile) {
-      showToast('Upload photo en cours...', 'info');
-      photoUrl = await uploadPhoto(photoFile, 'sellers') || '';
-    }
-
-    window._pendingSellerData = {
-      fullName, phone: phoneNorm, quartier, address,
-      ville, category, description, photoUrl
-    };
-    showPage('pinPage');
-
-  } catch (e) {
-    console.error('registerSeller exception:', e);
-    showToast('Erreur réseau. Réessayez.', 'error');
-  }
-}
-
-// ================================================================
-// INSCRIPTION — Étape 2 : PIN + création compte
-// ================================================================
-async function validatePin() {
-  const pin        = document.getElementById('pinInput').value.trim();
-  const pinConfirm = document.getElementById('pinConfirmInput').value.trim();
-
-  if (pin.length < 4) {
-    showToast('PIN trop court (minimum 4 chiffres)', 'error');
-    return;
-  }
-  if (pin !== pinConfirm) {
-    showToast('Les PINs ne correspondent pas', 'error');
-    return;
-  }
-
-  const data = window._pendingSellerData;
-  if (!data) { showPage('registerPage'); return; }
-
-  try {
-    const { count: _sellerCount } = await db.from(TABLES.SELLERS)
-  .select('*', { count: 'exact', head: true });
-const sellerCode = generateSellerCode(_sellerCount || 0);
-
-    const { data: sysSetting } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
-    const sysOn = sysSetting && sysSetting.value === 'on';
-    const today = new Date();
-    const freeMonthEnd = new Date(today);
-    freeMonthEnd.setDate(freeMonthEnd.getDate() + 30);
-
-    const newSeller = {
-      code:                sellerCode,
-      full_name:           data.fullName,
-      phone:               data.phone,
-      quartier:            data.quartier,
-      address:             data.address,
-      ville:               data.ville,
-      category:            data.category,
-      description:         data.description,
-      pin_hash:            await hashPin(pin),
-      photo:               data.photoUrl,
-      is_blocked:          false,
-      is_active:           true,
-      position:            0,
-      dynamisme_score:     0,
-      last_published:      null,
-      subscription_status: 'en_cours',
-   subscription_start:  sysOn ? today.toISOString().split('T')[0] : null,
-      subscription_end:    sysOn ? freeMonthEnd.toISOString().split('T')[0] : null, // 🎉 30 jours offerts si système actif
-      created_at:          new Date().toISOString()
-    };
-
-    const { data: created, error } = await db.from(TABLES.SELLERS)
-      .insert(newSeller).select().single();
-
-    if (error || !created) {
-      console.error('validatePin error:', JSON.stringify(error));
-      showToast('Erreur lors de la création du compte', 'error');
-      return;
-    }
-
-    notifyAdmin(created);
-
-    document.getElementById('notifName').innerText = data.fullName;
-    document.getElementById('notifCode').innerText = sellerCode;
-    document.getElementById('notifTarif').innerText = 'Frais : Période promo.';
-    showPage('registerSuccessPage');
-    window._pendingSellerData = null;
-
-  } catch (e) {
-    console.error('validatePin exception:', e);
-    showToast('Erreur lors de la création du compte', 'error');
-  }
-}
 
 // ================================================================
 // NOTIFICATION ADMIN WHATSAPP — désactivée
@@ -435,13 +274,9 @@ function updateProfileIcon() {
 }
 
 // Bug 3 fix — Exposer les fonctions de auth_upload.js sur window
-window.registerSeller              = registerSeller;
-window.validatePin                 = validatePin;
 window.sellerLogin                 = sellerLogin;
 window.checkSession                = checkSession;
 window.logoutSeller                = logoutSeller;
-window.openRegister                = openRegister;
-window.acceptTerms                 = acceptTerms;
 window.openSellerLogin             = openSellerLogin;
 window.showAbonnementExpireModal   = showAbonnementExpireModal;
 window.closeAbonnementExpireModal  = closeAbonnementExpireModal;

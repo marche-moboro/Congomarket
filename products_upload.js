@@ -91,6 +91,7 @@ async function openSellerDashboard() {
   if (banniereEl) banniereEl.innerHTML = getBanniereAbonnement(currentSeller);
 
   showFournisseurExportBtn();
+  loadAccountNotifications(currentSeller.account_type, currentSeller.code);
   showPage('dashboardPage');
   updateProfileIcon();
 
@@ -206,31 +207,6 @@ function openPublishProduct() {
 }
 
 // ================================================================
-// Fiche produit guidée — gabarit de titre "Nom + Caractéristique + Usage"
-// ================================================================
-function buildGuidedTitle(nom, carac, usage) {
-  let title = (nom || '').trim();
-  if (carac && carac.trim()) title += ' ' + carac.trim();
-  if (usage && usage.trim()) title += ' - ' + usage.trim();
-  return title.trim();
-}
-
-function updatePubTitlePreview() {
-  const nom     = document.getElementById('pubName')?.value || '';
-  const carac   = document.getElementById('pubCaracteristique')?.value || '';
-  const usage   = document.getElementById('pubUsage')?.value || '';
-  const preview = document.getElementById('pubTitlePreview');
-  if (!preview) return;
-  const title = buildGuidedTitle(nom, carac, usage);
-  if (title) {
-    preview.style.display = 'block';
-    preview.innerText = '👁️ Aperçu : ' + title;
-  } else {
-    preview.style.display = 'none';
-  }
-}
-
-// ================================================================
 // Statut de commande — visible côté vendeur (Mes commandes)
 // ================================================================
 const ORDER_STATUS_LABELS = {
@@ -248,7 +224,14 @@ async function viewMyOrders() {
       .eq('seller_id', currentSeller.id)
       .order('created_at', { ascending: false });
 
-    if (error) { showToast('Erreur chargement commandes', 'error'); return; }
+    if (error) {
+      console.error('viewMyOrders error:', JSON.stringify(error));
+      const container = document.getElementById('myOrdersResults');
+      if (container) container.innerHTML = '<p style="text-align:center;padding:30px;color:#ff4d4f;">Erreur de chargement des commandes.</p>';
+      showPage('myOrdersPage');
+      showToast('Erreur chargement commandes', 'error');
+      return;
+    }
 
     const container = document.getElementById('myOrdersResults');
     if (!container) return;
@@ -338,25 +321,45 @@ async function publishProduct() {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
   try {
-const pubNameVal  = document.getElementById('pubName').value.trim();
-const pubCaracVal = document.getElementById('pubCaracteristique')?.value.trim() || '';
-const pubUsageVal = document.getElementById('pubUsage')?.value.trim() || '';
-const name        = buildGuidedTitle(pubNameVal, pubCaracVal, pubUsageVal);
+const name        = document.getElementById('pubName').value.trim();
 const price       = document.getElementById('pubPrice').value.trim();
 const description = document.getElementById('pubDescription').value.trim();
 const qte_min     = document.getElementById('pubQteMin')?.value.trim() || null;
 const prix_min    = document.getElementById('pubPrixMin')?.value.trim() || null;
 const qte_max     = document.getElementById('pubQteMax')?.value.trim() || null;
 const prix_max    = document.getElementById('pubPrixMax')?.value.trim() || null;
+const taille      = document.getElementById('pubTaille')?.value.trim()  || null;
+const matiere     = document.getElementById('pubMatiere')?.value.trim() || null;
 
     // ✅ Utiliser pubPhotosFiles[] (système multi-photos) — minimum 1 photo suffisante
     const photoFiles = window.pubPhotosFiles || [];
 
-    if (!name || !price) {
+   
+if (!name || !price) {
       showToast('Nom et prix sont obligatoires', 'error');
       return;
     }
 
+    // Catégorie de publication — obligatoire, dépend du compte / du choix de groupe
+    const retailRadioEl = document.getElementById('pubGroupChoiceRetail');
+    const retailCatEl   = document.getElementById('pubRetailCategory');
+    const ownCatEl       = document.getElementById('pubOwnCategory');
+    const useRetail = !!(retailRadioEl && retailRadioEl.checked);
+
+    let sellerCategoryToUse;
+    if (useRetail) {
+      if (!retailCatEl || !retailCatEl.value) {
+        showToast('Choisissez une catégorie détail', 'error');
+        return;
+      }
+      sellerCategoryToUse = retailCatEl.value;
+    } else {
+      if (!ownCatEl || !ownCatEl.value) {
+        showToast('Choisissez une catégorie', 'error');
+        return;
+      }
+      sellerCategoryToUse = ownCatEl.value;
+    }
     if (isNaN(Number(price)) || Number(price) <= 0) {
       showToast('Prix invalide', 'error');
       return;
@@ -386,7 +389,7 @@ const prix_max    = document.getElementById('pubPrixMax')?.value.trim() || null;
   seller_id:       currentSeller.id,
   seller_name:     currentSeller.full_name,
   seller_phone:    currentSeller.phone,
-  seller_category: currentSeller.category,
+  seller_category: sellerCategoryToUse,
   name,
   price:           Number(price),
   description,
@@ -394,6 +397,8 @@ const prix_max    = document.getElementById('pubPrixMax')?.value.trim() || null;
   prix_min:        prix_min ? Number(prix_min) : null,
   qte_max:         qte_max  ? Number(qte_max)  : null,
   prix_max:        prix_max ? Number(prix_max) : null,
+  taille,
+  matiere,
   image:           imageUrls[0],
   images:          imageUrls,
   is_active:       true,
@@ -419,10 +424,16 @@ const prix_max    = document.getElementById('pubPrixMax')?.value.trim() || null;
     showToast(`Produit publié avec ${imageUrls.length} photo(s) ✓`, 'success');
 
     // Réinitialiser le formulaire
-    ['pubName','pubCaracteristique','pubUsage','pubPrice','pubDescription','pubQteMin','pubPrixMin','pubQteMax','pubPrixMax'].forEach(id => {
+   ['pubName','pubPrice','pubDescription','pubQteMin','pubPrixMin','pubQteMax','pubPrixMax','pubTaille','pubMatiere'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.value = '';
 });
+const ownRadioReset = document.getElementById('pubGroupChoiceOwn');
+if (ownRadioReset) { ownRadioReset.checked = true; if (typeof updatePubGroupChoice === 'function') updatePubGroupChoice(); }
+const ownCatReset = document.getElementById('pubOwnCategory');
+if (ownCatReset) ownCatReset.value = '';
+const retailCatReset = document.getElementById('pubRetailCategory');
+if (retailCatReset) retailCatReset.value = '';
     const titlePreview = document.getElementById('pubTitlePreview');
     if (titlePreview) titlePreview.style.display = 'none';
 
@@ -452,7 +463,7 @@ async function viewMyProducts() {
   if (!currentSeller) return;
 
   const { data: products, error } = await db.from(TABLES.PRODUCTS)
-    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max')
+    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere')
     .eq('seller_id', currentSeller.id)
     .eq('is_active',  true)
     .order('created_at', { ascending: false });
@@ -491,8 +502,10 @@ function _appendMyProducts() {
       <img src="${escapeHtml(p.image)}"
         onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
       <div class="my-product-info">
+       <div class="my-product-info">
         <strong>${escapeHtml(p.name)}</strong>
         <span>${formatPrice(p.price)} FCFA / unité</span>
+        ${renderSpecsHtml(p)}
         ${isGrossiste ? renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max) : ''}
         <div style="display:flex;gap:8px;margin-top:6px;">
           <button class="edit-btn" onclick="openEditProduct('${p.id}')">✏️ Modifier</button>
@@ -565,6 +578,8 @@ async function openEditProduct(productId) {
     document.getElementById('editPubName').value        = p.name        || '';
     document.getElementById('editPubPrice').value       = p.price       || '';
     document.getElementById('editPubDescription').value = p.description || '';
+    document.getElementById('editPubTaille').value      = p.taille      || '';
+    document.getElementById('editPubMatiere').value     = p.matiere     || '';
 
     // Champs quantité — uniquement grossiste/fournisseur
     const qteSection = document.getElementById('editQteSection');
@@ -604,6 +619,8 @@ async function saveEditProduct() {
       name,
       price:       Number(price),
       description,
+      taille:  document.getElementById('editPubTaille')?.value.trim()  || null,
+      matiere: document.getElementById('editPubMatiere')?.value.trim() || null,
     };
 
     if (isGrossiste) {
@@ -716,7 +733,9 @@ const promoPrice      = promoPriceInput ? promoPriceInput.value : '';
     return;
   }
 
-  const type = Object.keys(CATEGORIES_A).includes(currentSeller.category) ? 'A' : 'B';
+  const type = currentSeller.account_type === 'fournisseur_export'
+    ? 'A'
+    : (Object.keys(CATEGORIES_A).includes(currentSeller.category) ? 'A' : 'B');
 
   const qteMin  = btn ? btn.dataset.qteMin  : '';
   const prixMin = btn ? btn.dataset.prixMin : '';
@@ -1027,7 +1046,5 @@ window.openEditProduct             = openEditProduct;
 window.openProfile             = openProfile;
 window.transferToPromoFromBtn  = transferToPromoFromBtn;
 window.openPublishProduct      = openPublishProduct;
-window.updatePubTitlePreview   = updatePubTitlePreview;
-window.buildGuidedTitle        = buildGuidedTitle;
 window.viewMyOrders            = viewMyOrders;
 window.updateOrderStatus       = updateOrderStatus;

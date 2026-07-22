@@ -73,6 +73,318 @@ function renderQuantityTiers(basePrice, qteMin, tier1Price, qteMax, tier2Price) 
   </div>`;
 }
 
+// Version ultra-compacte pour la grille (1 seule ligne, pas de bloc)
+function renderQuantityTiersCompact(p) {
+  if (!p.qte_min && !p.qte_max) return '';
+  const base = Number(p.price) || 0;
+  const parts = [];
+  if (p.qte_min) parts.push(`${p.qte_min}+:${formatPrice(p.prix_min != null ? p.prix_min : base)}F`);
+  if (p.qte_max) parts.push(`${p.qte_max}+:${formatPrice(p.prix_max != null ? p.prix_max : base)}F`);
+  return parts.join(' · ');
+}
+
+// ================================================================
+// SPÉCIFICATIONS PRODUIT — taille / couleur / matière
+// ================================================================
+function renderSpecsHtml(p) {
+  if (!p || (!p.taille && !p.couleur && !p.matiere)) return '';
+  const chips = [];
+  if (p.taille)  chips.push(`📏 ${escapeHtml(p.taille)}`);
+  if (p.couleur) chips.push(`🎨 ${escapeHtml(p.couleur)}`);
+  if (p.matiere) chips.push(`🧵 ${escapeHtml(p.matiere)}`);
+  return `<div class="product-specs" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;">
+    ${chips.map(c => `<span style="background:#f5f7fb;border:1px solid #e8e8e8;color:#555;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;">${c}</span>`).join('')}
+  </div>`;
+}
+window.renderSpecsHtml = renderSpecsHtml;
+
+// ================================================================
+// AVIS VÉRIFIÉS — liés obligatoirement à une commande livrée
+// ================================================================
+function renderStarsReadonly(avg) {
+  const full = Math.round(avg);
+  let html = '<span style="color:#fadb14;font-size:13px;">';
+  for (let i = 1; i <= 5; i++) html += i <= full ? '★' : '☆';
+  return html + '</span>';
+}
+
+async function loadProductReviewsSummary(productId, elementId) {
+  const el = document.getElementById(elementId || `reviews-${productId}`);
+  if (!el) return;
+  try {
+    const { data, error } = await db.from(TABLES.PRODUCT_REVIEWS)
+      .select('rating').eq('product_id', productId);
+    if (error || !data || data.length === 0) {
+      el.innerHTML = `<span style="font-size:11px;color:#999;">Aucun avis vérifié pour le moment</span>`;
+      return;
+    }
+    const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
+    el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis vérifiés)</span>`;
+  } catch (e) { console.error('loadProductReviewsSummary error:', e); }
+}
+
+let _pendingReview = null;
+
+function openReviewModal(productId, sellerId) {
+  _pendingReview = { productId, sellerId };
+  document.getElementById('reviewNameInput').value = '';
+  document.getElementById('reviewPhoneInput').value = '';
+  document.getElementById('reviewCommentInput').value = '';
+  document.getElementById('reviewRatingInput').value = '5';
+  document.getElementById('reviewModalError').innerText = '';
+  document.getElementById('reviewModal').style.display = 'flex';
+}
+
+function closeReviewModal() {
+  document.getElementById('reviewModal').style.display = 'none';
+  _pendingReview = null;
+}
+
+async function submitProductReview() {
+  if (!_pendingReview) return;
+  const { productId, sellerId } = _pendingReview;
+  const name    = document.getElementById('reviewNameInput').value.trim();
+  const phone   = document.getElementById('reviewPhoneInput').value.trim();
+  const rating  = parseInt(document.getElementById('reviewRatingInput').value, 10);
+  const comment = document.getElementById('reviewCommentInput').value.trim();
+  const errorEl = document.getElementById('reviewModalError');
+
+  if (!name) { errorEl.innerText = 'Entrez votre nom.'; return; }
+  if (!phone || phone.length < 8) { errorEl.innerText = 'Entrez un numéro de téléphone valide.'; return; }
+
+  try {
+    const { data: existing } = await db.from(TABLES.PRODUCT_REVIEWS)
+      .select('id').eq('product_id', productId).eq('client_phone', phone).maybeSingle();
+    if (existing) { errorEl.innerText = 'Vous avez déjà laissé un avis pour ce produit.'; return; }
+
+    const { error: insertError } = await db.from(TABLES.PRODUCT_REVIEWS).insert({
+      product_id: productId, seller_id: sellerId,
+      client_phone: phone, client_name: name,
+      rating, comment, created_at: new Date().toISOString()
+    });
+    if (insertError) { errorEl.innerText = 'Erreur, réessayez.'; return; }
+
+    showToast('✅ Merci pour votre avis !', 'success');
+    closeReviewModal();
+    loadProductReviewsSummary(productId);
+  } catch (e) {
+    console.error('submitProductReview error:', e);
+    errorEl.innerText = 'Erreur réseau.';
+  }
+}
+
+window.loadProductReviewsSummary = loadProductReviewsSummary;
+window.openReviewModal           = openReviewModal;
+window.closeReviewModal          = closeReviewModal;
+window.submitProductReview       = submitProductReview;
+
+// ================================================================
+// AVIS VENDEUR (boutique) — distinct des avis produit
+// ================================================================
+async function loadSellerReviewsSummary(sellerId) {
+  const el = document.getElementById(`sellerReviews-${sellerId}`);
+  if (!el) return;
+  try {
+    const { data, error } = await db.from(TABLES.SELLER_REVIEWS)
+      .select('rating').eq('seller_id', sellerId);
+    if (error || !data || data.length === 0) {
+      el.innerHTML = `<span style="font-size:12px;color:#999;">Aucun avis vérifié pour le moment</span>`;
+      return;
+    }
+    const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
+    el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis)</span> ` +
+      `<button onclick="openSellerReviewsListModal('${sellerId}')" style="background:none;border:none;color:#1677FF;font-size:11px;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">Voir plus</button>`;
+  } catch (e) { console.error('loadSellerReviewsSummary error:', e); }
+}
+
+let _pendingSellerReview = null;
+
+function openSellerReviewModal(sellerId) {
+  _pendingSellerReview = sellerId;
+  document.getElementById('sellerReviewNameInput').value = '';
+  document.getElementById('sellerReviewPhoneInput').value = '';
+  document.getElementById('sellerReviewCommentInput').value = '';
+  document.getElementById('sellerReviewRatingInput').value = '5';
+  document.getElementById('sellerReviewModalError').innerText = '';
+  document.getElementById('sellerReviewModal').style.display = 'flex';
+}
+
+function closeSellerReviewModal() {
+  document.getElementById('sellerReviewModal').style.display = 'none';
+  _pendingSellerReview = null;
+}
+
+async function submitSellerReview() {
+  if (!_pendingSellerReview) return;
+  const sellerId = _pendingSellerReview;
+  const name    = document.getElementById('sellerReviewNameInput').value.trim();
+  const phone   = document.getElementById('sellerReviewPhoneInput').value.trim();
+  const rating  = parseInt(document.getElementById('sellerReviewRatingInput').value, 10);
+  const comment = document.getElementById('sellerReviewCommentInput').value.trim();
+  const errorEl = document.getElementById('sellerReviewModalError');
+
+  if (!name) { errorEl.innerText = 'Entrez votre nom.'; return; }
+  if (!phone || phone.length < 8) { errorEl.innerText = 'Entrez un numéro de téléphone valide.'; return; }
+
+  try {
+    const { data: existing } = await db.from(TABLES.SELLER_REVIEWS)
+      .select('id').eq('seller_id', sellerId).eq('client_phone', phone).maybeSingle();
+    if (existing) { errorEl.innerText = 'Vous avez déjà laissé un avis pour cette boutique.'; return; }
+
+    const { error: insertError } = await db.from(TABLES.SELLER_REVIEWS).insert({
+      seller_id: sellerId,
+      client_phone: phone, client_name: name,
+      rating, comment, created_at: new Date().toISOString()
+    });
+    if (insertError) { errorEl.innerText = 'Erreur, réessayez.'; return; }
+
+    showToast('✅ Merci pour votre avis !', 'success');
+    closeSellerReviewModal();
+    loadSellerReviewsSummary(sellerId);
+  } catch (e) {
+    console.error('submitSellerReview error:', e);
+    errorEl.innerText = 'Erreur réseau.';
+  }
+}
+
+async function openSellerReviewsListModal(sellerId) {
+  const modal = document.getElementById('sellerReviewsListModal');
+  const body  = document.getElementById('sellerReviewsListBody');
+  body.innerHTML = '<div class="loading">Chargement...</div>';
+  modal.style.display = 'flex';
+
+  try {
+    const { data, error } = await db.from(TABLES.SELLER_REVIEWS)
+      .select('client_name, rating, comment, created_at')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      body.innerHTML = '<p style="text-align:center;color:#888;padding:20px 0;">Aucun avis pour le moment.</p>';
+      return;
+    }
+
+    body.innerHTML = data.map(r => `
+      <div style="border-bottom:1px solid #eee;padding:10px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <strong style="font-size:13px;">${escapeHtml(r.client_name || 'Client')}</strong>
+          <span style="font-size:11px;color:#999;">${new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+        </div>
+        ${renderStarsReadonly(r.rating)}
+        ${r.comment ? `<p style="font-size:13px;color:#444;margin-top:4px;">${escapeHtml(r.comment)}</p>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('openSellerReviewsListModal error:', e);
+    body.innerHTML = '<p style="text-align:center;color:#f5222d;padding:20px 0;">Erreur de chargement.</p>';
+  }
+}
+
+function closeSellerReviewsListModal() {
+  document.getElementById('sellerReviewsListModal').style.display = 'none';
+}
+
+window.loadSellerReviewsSummary   = loadSellerReviewsSummary;
+window.openSellerReviewModal      = openSellerReviewModal;
+window.closeSellerReviewModal     = closeSellerReviewModal;
+window.submitSellerReview         = submitSellerReview;
+window.openSellerReviewsListModal = openSellerReviewsListModal;
+window.closeSellerReviewsListModal = closeSellerReviewsListModal;
+
+// ================================================================
+// PRODUITS SIMILAIRES — tous vendeurs confondus, priorité au nom, pagination 15
+// ================================================================
+const SIMILAR_PER_PAGE = 15;
+const _similarProductsState = {}; // elementId -> { list, page, hideLabel }
+
+async function loadSimilarProducts(productId, category, elementId, productName, hideLabel) {
+  const id = elementId || `similar-${productId}`;
+  const el = document.getElementById(id);
+  if (!el) return;
+  try {
+    let results = [];
+
+    if (productName) {
+      const keyword = productName.trim().split(/\s+/)[0];
+      if (keyword && keyword.length >= 3) {
+        const { data: nameMatches } = await db.from(TABLES.PRODUCTS)
+          .select('id, name, price, image, seller_id')
+          .ilike('name', `%${keyword}%`)
+          .eq('is_active', true)
+          .neq('id', productId)
+          .limit(30);
+        results = results.concat(nameMatches || []);
+      }
+    }
+
+    if (category) {
+      const { data: catMatches } = await db.from(TABLES.PRODUCTS)
+        .select('id, name, price, image, seller_id')
+        .eq('seller_category', category)
+        .eq('is_active', true)
+        .neq('id', productId)
+        .limit(30);
+      results = results.concat(catMatches || []);
+    }
+
+    const seen = new Set();
+    const finalList = [];
+    for (const r of results) {
+      if (!seen.has(r.id)) { seen.add(r.id); finalList.push(r); }
+    }
+
+    _similarProductsState[id] = { list: finalList, page: 0, hideLabel: !!hideLabel };
+    _renderSimilarProductsPage(id);
+  } catch (e) { console.error('loadSimilarProducts error:', e); }
+}
+
+function _renderSimilarProductsPage(elementId) {
+  const state = _similarProductsState[elementId];
+  const el = document.getElementById(elementId);
+  if (!state || !el) return;
+
+  if (state.list.length === 0) {
+    el.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Aucun produit similaire trouvé.</p>';
+    return;
+  }
+
+  const shown   = Math.min((state.page + 1) * SIMILAR_PER_PAGE, state.list.length);
+  const visible = state.list.slice(0, shown);
+  const hasMore = shown < state.list.length;
+
+  el.innerHTML = `
+    ${state.hideLabel ? '' : '<div style="font-size:12px;font-weight:700;color:#555;margin:10px 0 6px;">🔎 Produits similaires</div>'}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      ${visible.map(sp => `
+        <div style="width:100px;cursor:pointer;" onclick="openSellerProducts('${sp.seller_id}', currentCategoryType || 'B')">
+          <img src="${escapeHtml(sp.image)}" onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
+            style="width:100px;height:100px;object-fit:cover;border-radius:10px;">
+          <div style="font-size:11px;color:#333;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
+          <div style="font-size:11px;font-weight:700;color:#1677FF;">${formatPrice(sp.price)} FCFA</div>
+        </div>
+      `).join('')}
+    </div>
+    ${hasMore ? `
+      <div style="text-align:center;margin-top:8px;">
+        <button onclick="event.stopPropagation(); _loadMoreSimilarProducts('${elementId}')"
+          style="background:#1677FF;color:white;border:none;padding:8px 20px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;">
+          Voir plus
+        </button>
+      </div>
+    ` : ''}
+  `;
+}
+
+function _loadMoreSimilarProducts(elementId) {
+  const state = _similarProductsState[elementId];
+  if (!state) return;
+  state.page++;
+  _renderSimilarProductsPage(elementId);
+}
+
+window.loadSimilarProducts = loadSimilarProducts;
+window._loadMoreSimilarProducts = _loadMoreSimilarProducts;
+
 function getStarHtml(sellerId, entityType = 'seller', stars = 0, badge = null) {
   const storageKey = `star_${entityType}_${sellerId}`;
   const alreadyGiven = !!localStorage.getItem(storageKey);
@@ -145,10 +457,25 @@ const countEl = row ? row.querySelector('.star-count') : null;
 
 // ✅ escapeHtml() → définie dans supabase.js (supprimée ici pour éviter le doublon)
 
-// ✅ CORRECTION 3 : addToCartFromBtn remplace l'injection de p.name dans onclick
-function addToCartFromBtn(btn) {
-  addToCart(btn.dataset.id, btn.dataset.name, Number(btn.dataset.price));
+// addToCartFromBtn est maintenant définie dans cart.js (panier multi-vendeurs)
+
+// ================================================================
+// Contact WhatsApp rapide depuis le zoom — message pré-rempli
+// ================================================================
+function contactSellerWhatsApp(product, seller) {
+  if (!seller || !seller.phone) {
+    showToast('Numéro du vendeur indisponible', 'error');
+    return;
+  }
+  const message =
+    `Bonjour 👋, je suis intéressé(e) par ce produit :\n` +
+    `🛍️ ${product.name} — ${formatPrice(product.price)} FCFA\n` +
+    (product.image ? `📷 Photo : ${product.image}\n` : '') +
+    `\nEst-il toujours disponible ? Quel est le prix pour plusieurs unités ?`;
+
+  window.open(`https://wa.me/${formatWhatsApp(seller.phone)}?text=${encodeURIComponent(message)}`, '_blank');
 }
+window.contactSellerWhatsApp = contactSellerWhatsApp;
 
 let currentCategory     = '';
 let currentCategoryType = ''; // 'A' ou 'B'
@@ -160,20 +487,58 @@ async function openCategory(catId, type) {
   try {
   currentCategory     = catId;
   currentCategoryType = type;
+  window.currentViewedSeller = null;
 
-  const title = ALL_CATEGORIES[catId] || 'Vendeurs';
-  document.getElementById('categoryTitle').innerText = title;
+  const title = ALL_CATEGORIES[catId] || 'Produits';
+  document.getElementById('sellerNameTitle').innerText    = title;
+  document.getElementById('sellerNameSubtitle').innerText = '';
 
-  showPage('sellersPage');
-  document.getElementById('sellerList').innerHTML =
+  showPage('productsPage');
+document.getElementById('productsList').innerHTML =
     '<div class="loading">Chargement...</div>';
+  updateCartUI();
 
-  await loadSellers(catId);
+  const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+
+  let query = db
+    .from(TABLES.PRODUCTS)
+    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+    .eq('seller_category', catId)
+    .eq('is_active', true)
+    .eq('sellers.is_blocked', false)
+    .eq('sellers.is_active', true);
+
+  if (villeFilter) {
+    query = query.ilike('sellers.ville', `%${villeFilter}%`);
+  }
+
+  const { data: products, error } = await query.order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('openCategory error:', JSON.stringify(error));
+    document.getElementById('productsList').innerHTML =
+      '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+    return;
+  }
+
+  renderProducts(products || [], type);
 
   } catch(e) {
     console.error('openCategory error:', e);
     if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
   }}
+  
+  // ================================================================
+// Arbre de catégories : titres + sous-titres affichés à plat
+// ================================================================
+function openCategoryTree(list, type, pageTitle) {
+  document.getElementById('categoryTreeTitle').innerText = pageTitle;
+  const grid = document.getElementById('categoryTreeGrid');
+  grid.innerHTML = `<div class="categories">
+    ${list.map(s => `<button class="cat-btn cat-btn-lg" onclick="openCategory('${s.id}','${type}')">${s.label}</button>`).join('')}
+  </div>`;
+  showPage('categoryTreePage');
+}
 
 // ================================================================
 // Charger vendeurs d'une catégorie
@@ -183,7 +548,7 @@ let _sellersTotal = 0;
 let _sellersCatId = '';
 let _productsAll      = [];
 let _productsPage     = 0;
-const PRODUCTS_PER_PAGE = 10;
+const PRODUCTS_PER_PAGE = 8;
 
 async function loadSellers(catId, append = false) {
   const list = document.getElementById('sellerList');
@@ -309,9 +674,26 @@ async function openSellerProducts(sellerId, type) {
 
     window.currentViewedSeller = seller;
 
-    document.getElementById('sellerNameTitle').innerText    = seller.full_name;
+  const _isMultiServicesSeller = typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory);
+  document.getElementById('sellerNameTitle').innerText    = _isMultiServicesSeller ? seller.full_name : "Boutique " + seller.full_name;
     document.getElementById('sellerNameSubtitle').innerText =
       '📍 ' + seller.quartier + ', ' + seller.ville;
+    document.getElementById('sellerNameMeta').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-weight:700;font-size:14px;color:#222;">🏪 Boutique ${escapeHtml(seller.full_name)}</span>
+        ${seller.phone ? `<a href="tel:+${formatWhatsApp(seller.phone)}" class="call-btn call-btn-sm" title="Appeler">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.57.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/></svg>
+        </a>` : ''}
+        <button class="review-btn-sm" onclick="openSellerReviewModal('${seller.id}')">✍️ Un avis</button>
+      </div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:2px;">
+        ${getStarHtml(seller.id, 'seller', seller.stars || 0, seller.badge || null)}
+        <span id="sellerReviews-${seller.id}" style="font-size:12px;">Chargement avis...</span>
+      </div>
+    `;
+    loadSellerReviewsSummary(seller.id);
+
+    showPage('productsPage');
 
     showPage('productsPage');
     document.getElementById('productsList').innerHTML =
@@ -319,7 +701,7 @@ async function openSellerProducts(sellerId, type) {
 
     const { data: products, error: prodError } = await db
       .from(TABLES.PRODUCTS)
-.select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max')
+.select('id, namey, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
 .eq('seller_id', sellerId)
 .eq('is_active', true)
 .order('created_at', { ascending: false });
@@ -333,17 +715,41 @@ async function openSellerProducts(sellerId, type) {
     // Enregistrer 1 vue page_open par visite vendeur (Bug 9 fix)
     recordProductView(null, sellerId, 'page_open');
 
-    if (type === 'B') {
-      document.getElementById('cartBar').style.display = 'flex';
-      loadCart(sellerId);
-    } else {
-      document.getElementById('cartBar').style.display = 'none';
-    }
+    updateCartUI();
 
   } catch (e) {
     console.error('openSellerProducts exception:', e);
     showToast('Erreur chargement publications', 'error');
   }
+}
+
+// ================================================================
+// Carte produit minimale — tout reste dans le zoom, sauf :
+// prix (badge rouge), nom (bandeau bas), avis (bandeau bas)
+// ================================================================
+function _productCardHtml(p) {
+  const isGrossiste = typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(p.seller_category);
+  const tierLine = isGrossiste ? renderQuantityTiersCompact(p) : '';
+
+  return `
+    <div class="product-card">
+     <div class="product-img-wrap">
+       <img
+          src="${escapeHtml(p.image)}"
+          data-product-id="${p.id}"
+          data-category="${escapeHtml(p.seller_category || '')}"
+          data-name="${escapeHtml(p.name)}"
+          onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
+          onclick="openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)"
+          style="cursor:zoom-in;"
+        >
+        <span class="product-price-badge">${formatPrice(p.price)} FCFA</span>
+        ${tierLine ? `<span class="product-tier-badge">📦 ${tierLine}</span>` : ''}
+        <div class="product-name-overlay">${escapeHtml(p.name)}</div>
+        <div class="product-reviews-overlay" id="reviews-${p.id}">Chargement...</div>
+      </div>
+    </div>
+  `;
 }
 
 // ================================================================
@@ -358,9 +764,18 @@ function renderProducts(products, type) {
     return;
   }
   list.innerHTML = '';
-  _appendProducts(type);
+
+  // Mode catégorie multi-boutiques : les produits portent p.sellers (jointure)
+  if (products[0] && products[0].sellers) {
+    list.style.cssText = 'display:block;padding:8px 15px 80px;';
+    _renderProductsGroupedBySeller();
+  } else {
+    list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
+    _appendProducts(type);
+  }
 }
 
+// ---- Mode boutique unique (pagination classique) ----
 function _appendProducts(type) {
   const list  = document.getElementById('productsList');
   const start = _productsPage * PRODUCTS_PER_PAGE;
@@ -368,39 +783,11 @@ function _appendProducts(type) {
   const oldBtn = document.getElementById('loadMoreProducts');
   if (oldBtn) oldBtn.remove();
 
-  list.insertAdjacentHTML('beforeend', slice.map(p => `
-    <div class="product-card">
-      <img
-        src="${escapeHtml(p.image)}"
-        onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
-        onclick="openLightbox(this.src)"
-        style="cursor:zoom-in;"
-      >
-      <div class="product-content">
-        <h3>${escapeHtml(p.name)}</h3>
-        <p class="product-price">${formatPrice(p.price)} FCFA</p>
-        ${p.description ? `<p class="product-desc">${escapeHtml(p.description)}</p>` : ''}
-        ${renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max)}
-        ${type === 'B'
-          ? `<button class="add-btn"
-               data-id="${p.id}"
-               data-name="${escapeHtml(p.name)}"
-               data-price="${p.price}"
-               onclick="addToCartFromBtn(this)">
-               🛒 Ajouter au panier
-             </button>`
-          : `<a href="https://wa.me/${formatWhatsApp(window.currentViewedSeller?.phone)}"
-               target="_blank" class="contact-btn-product"
-               onclick="trackWhatsappClick(window.currentViewedSeller ? window.currentViewedSeller.id : null, window.currentViewedSeller ? window.currentViewedSeller.account_type : null)">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-               </svg>
-               Contacter le vendeur
-             </a>`
-        }
-      </div>
-    </div>
-  `).join(''));
+  list.insertAdjacentHTML('beforeend', slice.map(p => _productCardHtml(p)).join(''));
+
+  slice.forEach(p => {
+    loadProductReviewsSummary(p.id);
+  });
 
   const loaded = start + slice.length;
   if (loaded < _productsAll.length) {
@@ -414,24 +801,53 @@ function _appendProducts(type) {
   }
 }
 
+// ---- Mode catégorie : une grille par boutique, titrée "Boutique 'nom'" ----
+function _renderProductsGroupedBySeller() {
+  const list = document.getElementById('productsList');
+  const isMultiServices = typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory);
+  const groups = [];
+  const groupMap = {};
+
+  _productsAll.forEach(p => {
+    const sid = p.seller_id;
+    if (!groupMap[sid]) {
+      groupMap[sid] = { seller: p.sellers, products: [] };
+      groups.push(groupMap[sid]);
+    }
+    groupMap[sid].products.push(p);
+  });
+
+list.innerHTML = groups.map(g => `
+    <div class="seller-group" style="margin-bottom:24px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap;">
+        <h2 style="font-size:15px;font-weight:700;color:#222;margin:0;">${isMultiServices ? escapeHtml(g.seller.full_name) : '🏪 Boutique ' + escapeHtml(g.seller.full_name)}</h2>
+        ${g.seller.phone ? `<a href="tel:+${formatWhatsApp(g.seller.phone)}" class="call-btn call-btn-sm" title="Appeler">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.57.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/></svg>
+        </a>` : ''}
+        <button class="review-btn-sm" onclick="openSellerReviewModal('${g.seller.id}')">✍️ Un avis</button>
+      </div>
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:2px 0 8px;">
+        ${getStarHtml(g.seller.id, 'seller', g.seller.stars || 0, g.seller.badge || null)}
+        <span id="sellerReviews-${g.seller.id}" style="font-size:12px;">Chargement avis...</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        ${g.products.map(p => _productCardHtml(p)).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  _productsAll.forEach(p => loadProductReviewsSummary(p.id));
+  groups.forEach(g => loadSellerReviewsSummary(g.seller.id));
+}
+
 function loadMoreProducts() {
   _productsPage++;
   const type = typeof currentCategoryType !== 'undefined' ? currentCategoryType : 'B';
   _appendProducts(type);
 }
 
-function goHome() {
-  showPage('homePage');
-  document.getElementById('cartBar').style.display = 'none';
-  cart = [];
-  window.currentViewedSeller = null;
-  // ✅ NE PAS effacer currentSeller ici — le vendeur reste connecté
-  // currentSeller est effacé uniquement par logoutSeller()
-}
-
-function goBack() {
-  history.back();
-}
+// goHome() déplacée dans index.html (le script inline se charge après
+// sellers.js et écrasait silencieusement cette version — gardée à un seul endroit)
 
 async function recordProductView(productId, sellerId, type = 'view') {
   try {
@@ -566,6 +982,6 @@ window.loadSellers                 = loadSellers;
 window.openSellerProducts          = openSellerProducts;
 window.giveStar                    = giveStar;
 window.trackWhatsappClick          = trackWhatsappClick;
-window.addToCartFromBtn            = addToCartFromBtn;
+// addToCartFromBtn est exportée automatiquement par cart.js (déclaration globale)
 window.loadMoreProducts            = loadMoreProducts;
 window.subscribeSellerPush = subscribeSellerPush;

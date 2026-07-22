@@ -295,16 +295,31 @@ function _appendSearchProducts() {
   container.insertAdjacentHTML('beforeend', slice.map(p => `
     <div class="product-card" style="margin-bottom:12px;">
       <img src="${escapeHtml(p.image)}"
-           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
+           data-product-id="${p.id}"
+           data-category="${escapeHtml(p.seller_category || '')}"
+           data-name="${escapeHtml(p.name)}"
+           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'"
+           onclick="openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)"
+           style="cursor:zoom-in;">
       <div class="product-content">
         <h3>${escapeHtml(p.name)}</h3>
         <p class="seller-location">Par: ${escapeHtml((p.sellers && p.sellers.full_name) || p.seller_name || '')}</p>
         <p class="product-price">${formatPrice(p.price)} FCFA</p>
+        <div id="reviews-search-${p.id}" style="margin:6px 0;">Chargement des avis...</div>
+        <button onclick="openReviewModal('${p.id}','${p.seller_id}')"
+          style="background:none;border:1px solid #e8e8e8;color:#1677FF;font-size:11px;font-weight:600;
+                 padding:4px 10px;border-radius:20px;margin-bottom:6px;cursor:pointer;">
+          ✍️ Laisser un avis vérifié
+       </button>
         <a href="https://wa.me/${formatWhatsApp((p.sellers && p.sellers.phone) || p.seller_phone)}"
            target="_blank" class="contact-btn-product">Contacter le vendeur</a>
       </div>
     </div>
   `).join(''));
+
+  slice.forEach(p => {
+    loadProductReviewsSummary(p.id, `reviews-search-${p.id}`);
+  });
 
   const loaded = start + slice.length;
   if (loaded < _searchResults.products.length) {
@@ -333,7 +348,9 @@ async function openSellerProductsFromSearch(sellerId) {
     }
 
     window.currentViewedSeller = seller;
-    const type = Object.keys(CATEGORIES_A).includes(seller.category) ? 'A' : 'B';
+    const type = seller.account_type === 'fournisseur_export'
+      ? 'A'
+      : (Object.keys(CATEGORIES_A).includes(seller.category) ? 'A' : 'B');
     currentCategoryType = type;
     await openSellerProducts(sellerId, type);
 

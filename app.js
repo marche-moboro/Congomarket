@@ -199,9 +199,86 @@ function openPublishPage() {
   const qteSection = document.getElementById('pubQteSection');
   if (qteSection) qteSection.style.display = isGrossiste ? 'block' : 'none';
 
+  // Choix "mon groupe" vs "Boutique & Vendeur" — pas pour fournisseur_export
+  const canChooseGroup = ['independant_grossiste','vip_grossiste','independant_service']
+    .includes(currentSeller.account_type);
+  const groupSection = document.getElementById('pubGroupChoiceSection');
+  if (groupSection) {
+    groupSection.style.display = canChooseGroup ? 'block' : 'none';
+    if (canChooseGroup) {
+      const ownLabel = document.getElementById('pubGroupChoiceOwnLabel');
+      if (ownLabel) {
+        ownLabel.innerText = currentSeller.account_type === 'independant_service'
+          ? '⭐ Dans mon groupe (Multi-Services & Commerces)'
+          : '🏭 Dans mon groupe (Grossiste & Importateur)';
+      }
+      const ownRadio = document.getElementById('pubGroupChoiceOwn');
+      if (ownRadio) ownRadio.checked = true;
+      populatePubRetailCategories();
+    }
+  }
+
+  populatePubOwnCategories();
+  updatePubGroupChoice();
+
   showPage('publishPage');
 }
-// Bug 3 fix — Exposer explicitement les fonctions de ce fichier sur window
+
+// Remplit la liste "ma catégorie" selon le type de compte :
+// - Boutique & Vendeur → uniquement la grille Boutique & Vendeur (TREE_B2)
+// - Grossiste & Importateur (+ Fournisseur Export) → grille Grossiste (TREE_A)
+// - Multi-Services & Commerces → grille Multi-Services (TREE_B1)
+function populatePubOwnCategories() {
+  const select = document.getElementById('pubOwnCategory');
+  if (!select) return;
+
+  let tree = null;
+  if (currentSeller.account_type === 'independant_vendeur' || currentSeller.account_type === 'vip_vendeur') {
+    tree = typeof TREE_B2 !== 'undefined' ? TREE_B2 : null;
+  } else if (['independant_grossiste','vip_grossiste','fournisseur_export'].includes(currentSeller.account_type)) {
+    tree = typeof TREE_A !== 'undefined' ? TREE_A : null;
+  } else if (currentSeller.account_type === 'independant_service') {
+    tree = typeof TREE_B1 !== 'undefined' ? TREE_B1 : null;
+  }
+
+  select.innerHTML = '<option value="">Choisir une catégorie *</option>';
+  if (tree) {
+    tree.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.label;
+      select.appendChild(opt);
+    });
+  }
+}
+
+function populatePubRetailCategories() {
+  const select = document.getElementById('pubRetailCategory');
+  if (!select || select.dataset.filled === '1') return;
+  if (typeof TREE_B2 === 'undefined') return;
+  TREE_B2.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.label;
+    select.appendChild(opt);
+  });
+  select.dataset.filled = '1';
+}
+
+// Bascule entre "ma catégorie" (TREE_A ou TREE_B1) et "catégorie détail" (TREE_B2)
+function updatePubGroupChoice() {
+  const retailRadio  = document.getElementById('pubGroupChoiceRetail');
+  const retailSelect = document.getElementById('pubRetailCategory');
+  const ownSelect     = document.getElementById('pubOwnCategory');
+  const isRetail = !!(retailRadio && retailRadio.checked);
+
+  if (retailSelect) retailSelect.style.display = isRetail ? 'block' : 'none';
+  if (ownSelect)     ownSelect.style.display     = isRetail ? 'none'  : 'block';
+}
+
+window.populatePubOwnCategories    = populatePubOwnCategories;
+window.populatePubRetailCategories = populatePubRetailCategories;
+window.updatePubGroupChoice        = updatePubGroupChoice;
 // pour que le wrapper safeAsync() dans index.html puisse les trouver
 window.saveNewPin       = saveNewPin;
 window.openPublishPage  = openPublishPage;

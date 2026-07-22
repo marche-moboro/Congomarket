@@ -822,7 +822,7 @@ header p { font-size: 12px; opacity: .80; }
                z-index:9999;min-width:150px;overflow:hidden;max-height:260px;overflow-y:auto;">
         <div onclick="selectVille('','📍 Toutes')"
           class="ville-opt" style="padding:10px 14px;font-size:13px;font-weight:700;color:#1677FF;border-bottom:1px solid #f0f0f0;">
-          📍 Toutes les villes
+          📍 Choisissez votre ville
         </div>
         <div onclick="selectVille('Brazzaville','Brazzaville')"         class="ville-opt">Brazzaville</div>
         <div onclick="selectVille('Pointe-Noire','Pointe-Noire')"       class="ville-opt">Pointe-Noire</div>
@@ -868,76 +868,130 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
   
-  <!-- TOP ACTIONS — 2 colonnes -->
+<!-- TOP ACTIONS — 2 colonnes -->
   <div class="categories" style="padding-top:10px;">
-    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);color:white;" onclick="openCategory('ig','A')">🏭 Importateurs &amp; Grossistes</button>
-    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#fa8c16,#d46b08);color:white;" onclick="openDeliveryAgentRegister()">🚚 Devenir Agent Livreur</button>
+  <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);color:white;" onclick="openCategoryTree(TREE_A,'A','🏭 Importateur & Grossiste')">🏭 Importateurs &amp; Grossistes</button>
+    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#722ed1,#531dab);color:white;" onclick="openCategoryTree(TREE_B1,'A','⭐ Multi-Services & Commerces')">⭐ Multi-Services &amp; Commerces</button>
   </div>
 
-  <!-- CATÉGORIE A (multi-services) -->
-  <div class="section-label">⭐ Multi-Services & Commerces</div>
-  <div class="categories">
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('immo','A')">🏠 Immobilier</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('coiffure','A')">✂️ Grand Salon de Coiffure</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('hotel','A')">🏨 Hôtel, Restau & Tourisme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('deco-mariage','A')">💍 Décoration Mariage</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('menage','A')">🧹 Service de Ménage</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('demenagement','A')">🚛 Déménagement</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('auto','A')">🚗 Automobile & Dépannage</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('couture','A')">🧵 Couture & Styliste</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pharmacie','A')">💊 Pharmacie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('priseningue','A')">🏥 Prinsingue</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('librairie','A')">📚 Librairie & Bibliothèque</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('construction','A')"> 🏗️ Matériaux de Construction</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('photoShop','A')">📸 Photo Shop</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('alimentation','A')">🛒 Alimentation</button>
-<button class="cat-btn cat-btn-lg" onclick="openCategory('ambulance','A')">🚑 Contactez Taxi ou Ambulances</button>
-<button class="cat-btn cat-btn-lg" onclick="openCategory('moto-taxi','A')">🏍️ Véhicule Moto & Taxi</button>
-<button class="cat-btn cat-btn-lg" onclick="openCategory('chambre-froide','A')">❄️ Chambre Froide</button>
-<button class="cat-btn cat-btn-lg" onclick="openCategory('hopital','A')">🏥 Hôpital</button>
-  </div>
-
-  <!-- CATÉGORIE B -->
-  <div class="section-label">🛍️ Boutiques & Vendeurs</div>
-  <div class="categories">
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c1','B')">👟 Chaussures & Basket</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c2','B')">📱  Téléphones & Accessoires</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c3','B')">💄 Beauté & Cosmétiques</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c4','B')">👗 Vêtements Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c5','B')">👠 Chaussures Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c6','B')">👜 Sacs & Mode</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c7','B')">🏠 Maison Déco</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c8','B')">🧼 Savon Artisanal</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c9','B')">🌸 Parfums & Soins</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c10','B')">👶 Bébé & Enfants</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c11','B')">💇 Perruques & Mèches</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c12','B')">🩱 Lingerie & Rideau</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c13','B')">💊 Santé & Bien-être</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c14','B')">👔 Friperie Premium</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c15','B')">🧵 Tissus & Pagnes</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c16','B')">🚢 Occasion d'Europe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c17','B')">🎂 Pâtisserie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c18','B')">🕴️ Veste & Chaussures Luxe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c19','B')">🧴 Plastique</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c20','B')">📺 Électronique</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c21','B')">🥚 Grossiste Œufs</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c22','B')">🎉 Anniversaire & Jetable</button>
-<button class="cat-btn cat-btn-lg" onclick="openCategory('meubles','B')">🛋️ Meubles</button>
-  </div>
-
-  <!-- PROMOS + CONNEXION -->
-  <div class="section-label">🔥 Promotions & Connexion</div>
-  <div class="categories">
+  <!-- TOP ACTIONS 2 — 3 colonnes -->
+  <div class="categories" style="grid-template-columns:1fr 1fr 1fr;">
+  <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#52c41a,#389e0d);color:white;" onclick="openInscriptionChoice()">✏️ S'inscrire</button>
     <button class="cat-btn cat-btn-lg promo-btn" onclick="loadAllPromos()">🔥 Toutes les Promos</button>
-    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#52c41a,#389e0d);color:white;" onclick="showPage('trackOrderPage')">📦 Suivre ma commande</button>
-    <button class="cat-btn cat-btn-lg login-cat-btn" onclick="openSellerLogin()">🔑 Se connecter</button>
+   <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openSellerLogin()">🔑 Se connecter</button>
   </div>
 
-  <!-- INSCRIPTION -->
-  <div class="section-label">✏️ Inscription</div>
-  <div class="categories">
-    <button class="cat-btn" style="background:linear-gradient(135deg,#722ed1,#531dab);color:white;font-size:12px;line-height:1.4;" onclick="openVIPRegister()">👑 Vendeur &amp; Grossiste<br><small style="font-weight:400;opacity:.9;">VIP — Géré par Moboro</small></button>
-    <button class="cat-btn register-cat-btn" style="font-size:12px;line-height:1.4;" onclick="openIndependantChoice()">✅ Vendeur &amp; Grossiste<br><small style="font-weight:400;opacity:.9;">Indépendant — Géré par vous</small></button>
+<!-- CATÉGORIE B -->
+ <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:15px;">🛍️ Boutiques & Vendeurs<button class="cat-btn" style="width:auto;padding:8px 22px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#fa8c16,#d46b08);color:white;border-radius:20px;" onclick="openContactDelivery()">🛵 Taxi</button></div>
+  <div class="categories" id="boutiqueGrid">
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chemise','B')">👔 Chemise</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('polo','B')">🙋 Polo</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('lacoste-h','B')">🐊 Lacoste Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('djine','B')">👖 Djine</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('basin-h','B')">🧵 Basin Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-djokingue','B')">👬 Pantalon Djokingue</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-tissu','B')">🪡 Pantalon Tissu</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('costume-h','B')">🕴️ Costume Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('vareuse','B')">🏃 Vareuse</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('jogging','B')">🏌️ Jogging</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('short','B')">🩳 Short</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('maillot-bain-h','B')">🩱 Maillot de Bain</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('ceinture','B')">🪢 Ceinture</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('cravate','B')">👔 Cravate</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chapeau','B')">🎩 Chapeau</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('montre-chainette','B')">🔗 Montre, Chainette & Autres</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussettes','B')">🧦 Chaussettes</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('sous-vetements-h','B')">🩲 Sous-vêtements</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c18','B')">🕴️ Veste & Chaussures de Luxe</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c4','B')">👗 Prêt à Porter</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('robe','B')">👘 Robe</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('basin-f','B')">🥻 Basin Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('jupe','B')">🎀 Jupe</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-f','B')">🎽 Pantalon Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('costume-f','B')">👩‍💼 Costume Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c12','B')">🎗️ Lingerie Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('super-wax','B')">🎨 Super Wax</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('lacoste-f','B')">🦎 Lacoste Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('maillot-bain-f','B')">👙 Maillot de Bain Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c6','B')">👜 Sacs à Main</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('sacs-voyage','B')">🧳 Sacs de Voyage</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('valisette','B')">💼 Valisette</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('bijoux','B')">💍 Bijoux</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('foulard','B')">🧣 Foulard</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('robe-soiree','B')">💃 Robe de Soirée</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussures-h','B')">👞 Chaussures Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c5','B')">👠 Chaussures Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussures-enfant','B')">🩰 Chaussures Enfant</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c1','B')">👟 Basket</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-h','B')">🧍‍♂️ Mannequin Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-f','B')">🧍‍♀️ Mannequin Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-enfant','B')">🧒 Mannequin Enfant</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('sandales-h','B')">🩴 Sandales Homme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('sandales-f','B')">👡 Sandales Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('talons','B')">🥿 Talons</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('bottes','B')">🥾 Bottes</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c10','B')">👶 Vêtements Bébé</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('vetements-garcon','B')">👦 Vêtements Garçon</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('vetements-fille','B')">👧 Vêtements Fille</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('jouets','B')">🧸 Jouets</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('velo-enfant','B')">🚲 Vélo</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c3','B')">💄 Beauté & Cosmétiques</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c9','B')">🌸 Parfums de Luxe</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c8','B')">🧼 Savon Artisanal</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c11','B')">💇 Perruques & Mèches</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('produit-bain','B')">🛁 Produit de Bain</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('produit-capillaire','B')">💆 Produit Capillaire</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c13','B')">💊 Santé & Bien-être Femme</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('telephone','B')">📱 Téléphone</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('ordinateur','B')">💻 Ordinateur</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('tablette','B')">📟 Tablette</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('chargeur','B')">🔌 Chargeur</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('casque-ecouteurs','B')">🎧 Casque & Écouteurs</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c2','B')">🛡️ Étui Téléphone</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('montre-connectee','B')">⌚ Montre Connectée</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('television','B')">📺 Télévision</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('ventilateur','B')">🌀 Ventilateur</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('console-jeux','B')">🎮 Console & Jeux Vidéo</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('drones-camera','B')">🚁 Drones & Caméra</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c20','B')">🔋 Électronique</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('meubles','B')">🛋️ Meubles</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('electromenager','B')">🍳 Électroménager</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('cuisine-vaisselle','B')">🍽️ Cuisine & Vaisselle</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('literie','B')">🛏️ Literie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c7','B')">🏠 Décoration Maison</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('rideau-tapis','B')">🪟 Rideau & Tapis</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c19','B')">🧴 Plastique Ménager</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('eponge','B')">🧽 Éponge</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c22','B')">🎉 Anniversaire & Objet Jetable</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('alimentation','B')">🛒 Épicerie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('fruits-legumes','B')">🍎 Fruits & Légumes</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('boucherie-poissonnerie','B')">🥩 Boucherie & Poissonnerie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('boulangerie','B')">🥖 Boulangerie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('boissons-jus','B')">🧃 Boissons & Jus</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('produits-bio','B')">🌱 Produits Bio</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c17','B')">🎂 Pâtisserie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c15','B')">📏 Tissus au Mètre</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('pagnes','B')">🌺 Pagnes</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c14','B')">♻️ Friperie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('c16','B')">🚢 Occasion d'Europe</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('habit-travail','B')">🦺 Habit de Travail</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('artisanat-local','B')">🪘 Artisanat Local & Monde</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('accessoires-auto','B')">🚗 Accessoires Auto</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('pieces-auto','B')">🔧 Pièces Détachées Auto</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('location-voiture','B')">🚙 Location Voiture</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('voiture-vente','B')">🚘 Voiture en Vente</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('moto-vente','B')">🏍️ Vente des Motos</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('velo-vente','B')">🚴 Vente des Vélos</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('patin-skate','B')">🛼 Patin & Skate</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('articles-sport','B')">⚽ Articles de Sport</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('librairie','B')">📚 Librairie</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('instrument-musique','B')">🎸 Instrument de Musique</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('peche-camping','B')">🎣 Objets de Pêche & Camping</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('articles-religieux','B')">📿 Articles Religieux</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('sacs-scolaires','B')">🎒 Sacs</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('cahiers','B')">📓 Cahiers</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('tenue-cousue','B')">✂️ Tenue Cousue</button>
+    <button class="cat-btn cat-btn-lg" onclick="openCategory('autre-b2','B')">➕ Autre</button>
   </div>
 
   <!-- FOOTER -->
@@ -977,6 +1031,17 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
+<!-- ========== ARBRE DE CATÉGORIES (tout à plat) ========== -->
+<div class="page" id="categoryTreePage">
+  <div style="background:#f5f7fb;padding:12px 15px 0;">
+    <div class="page-header" style="margin-bottom:12px;">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div class="section-title" id="categoryTreeTitle">Catégories</div>
+    </div>
+  </div>
+  <div id="categoryTreeGrid" style="padding:0 15px 80px;"></div>
+</div>
+
 <!-- ========== SELLERS PAGE ========== -->
 <div class="page" id="sellersPage">
   <div style="background:#f5f7fb;padding:12px 15px 0;">
@@ -986,9 +1051,6 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
   <div id="sellerList" style="display:block;padding:8px 15px 80px;"></div>
-</div>
-    <div id="sellerList" style="display:block;padding:0 15px 80px;"></div>
-  </div>
 </div>
 
 <!-- ========== PRODUCTS PAGE ========== -->
@@ -1001,8 +1063,9 @@ header p { font-size: 12px; opacity: .80; }
         <div class="section-subtitle" id="sellerNameSubtitle"></div>
       </div>
     </div>
+    <div id="sellerNameMeta" style="padding-bottom:8px;"></div>
   </div>
-  <div id="productsList" style="padding:8px 15px 80px;"></div>
+  <div id="productsList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;"></div>
 </div>
 <!-- ========== PROMOS PAGE ========== -->
 <div class="page" id="promosPage">
@@ -1012,45 +1075,6 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title" id="promosTitle">Promotions</div></div>
     </div>
     <div id="promosList"></div>
-  </div>
-</div>
-
-<!-- ========== TERMS PAGE ========== -->
-<div class="page" id="termsPage">
-  <div class="register-page">
-    <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
-      <div><div class="section-title">Conditions d'utilisation</div></div>
-    </div>
-    <div class="form-card">
-      <div class="info-box">
-        <strong>Bienvenue dans votre marché. Lancez votre activité en toute confiance et en toute sécurité</strong><br><br>
-        Créez votre espace vendeur gratuitement et gardez 100% de vos ventes.<br>
-        Nous ne prenons <strong>aucune commission</strong> sur vos ventes.
-      </div>
-      <div class="terms-content">
-        <h3>📋 Conditions du Marché</h3>
-        <p>En vous inscrivant sur Marché, vous acceptez les conditions suivantes :</p>
-        <h3>1. Inscription gratuite</h3>
-        <p>L'inscription est 100% gratuite. Aucun frais ne vous sera demandé lors de la création de votre compte.</p>
-        <h3>2. Frais d'abonnement</h3>
-        <p>Après la période promotionnelle, des <strong>frais mensuels</strong> s'appliqueront pour maintenir votre espace actif. Votre compte sera automatiquement bloqué si non payé</p>
-        <h3>3. Sans engagement</h3>
-        <p>Vous pouvez arrêter votre abonnement à tout moment sans pénalité.</p>
-        <h3>4. Publications</h3>
-        <p>Vous vous engagez à publier uniquement des produits légaux et conformes aux lois congolaises. Toute publication frauduleuse entraînera la suspension du compte.</p>
-        <h3>5. Commission</h3>
-        <p>Marché Moboro ne prend <strong>aucune commission</strong> sur vos ventes. Vous gardez <strong>100%</strong> de vos revenus.</p>
-        <h3>6. Support</h3>
-        <p>Notre équipe reste disponible sur WhatsApp pour vous accompagner.</p>
-        <h3>Pourquoi commencer maintenant :</h3>
-        <p>✅ Inscription gratuite : sans frais cachés<br>
-        ✅ Support dédié : nous sommes disponibles si besoin d'aide<br>
-        ✅ Sans engagement : les frais ne s'appliquent qu'après la période promotionnelle</p>
-      </div>
-      <button class="primary-btn" onclick="acceptTerms()">✅ Accepter et s'inscrire gratuitement</button>
-      <button class="secondary-btn" onclick="goHome()">✕ Refuser</button>
-    </div>
   </div>
 </div>
 
@@ -1072,8 +1096,8 @@ header p { font-size: 12px; opacity: .80; }
         <h3>1. Accès réservé</h3>
         <p>Votre profil est visible uniquement par les grossistes & importateurs inscrits sur Moboro.</p>
         <h3>2. Abonnement</h3>
-        <p>Fournisseur Export : <strong>période promo</strong><br>
-        Vous bénéficiez de la période promotionnelle.</p>
+        <p>Fournisseur Export : <strong>20 000 FCFA/mois</strong><br>
+        après période promo de lancement.</p>
         <h3>3. Publications</h3>
         <p>Produits légaux uniquement.</p>
         <h3>4. Commission</h3>
@@ -1250,241 +1274,6 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
-
-<!-- ========== REGISTER PAGE ========== -->
-<div class="page" id="registerPage">
-  <div class="register-page">
-    <div class="page-header">
-      <button class="back-btn" onclick="showPage('termsPage')">←</button>
-      <div><div class="section-title">Créer mon compte</div></div>
-    </div>
-    <div class="form-card">
-      <h2>Informations du vendeur</h2>
-      <input type="text" id="regFullName" placeholder="Nom complet *">
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-  <select id="regCountryCode" style="width:145px;padding:13px 10px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:13px;outline:none;background:#fafafa;">
-    <optgroup label="🌍 Afrique Centrale">
-      <option value="242">🇨🇬 +242 Congo</option>
-      <option value="243">🇨🇩 +243 RD Congo</option>
-      <option value="237">🇨🇲 +237 Cameroun</option>
-      <option value="236">🇨🇫 +236 Centrafrique</option>
-      <option value="235">🇹🇩 +235 Tchad</option>
-      <option value="241">🇬🇦 +241 Gabon</option>
-      <option value="240">🇬🇶 +240 Guinée Éq.</option>
-      <option value="239">🇸🇹 +239 São Tomé</option>
-      <option value="257">🇧🇮 +257 Burundi</option>
-      <option value="250">🇷🇼 +250 Rwanda</option>
-    </optgroup>
-    <optgroup label="🌍 Afrique de l'Ouest">
-      <option value="225">🇨🇮 +225 Côte d'Ivoire</option>
-      <option value="221">🇸🇳 +221 Sénégal</option>
-      <option value="229">🇧🇯 +229 Bénin</option>
-      <option value="226">🇧🇫 +226 Burkina Faso</option>
-      <option value="223">🇲🇱 +223 Mali</option>
-      <option value="227">🇳🇪 +227 Niger</option>
-      <option value="228">🇹🇬 +228 Togo</option>
-      <option value="224">🇬🇳 +224 Guinée</option>
-      <option value="245">🇬🇼 +245 Guinée-Bissau</option>
-      <option value="232">🇸🇱 +232 Sierra Leone</option>
-      <option value="231">🇱🇷 +231 Libéria</option>
-      <option value="234">🇳🇬 +234 Nigeria</option>
-      <option value="233">🇬🇭 +233 Ghana</option>
-      <option value="220">🇬🇲 +220 Gambie</option>
-      <option value="238">🇨🇻 +238 Cap-Vert</option>
-      <option value="222">🇲🇷 +222 Mauritanie</option>
-    </optgroup>
-    <optgroup label="🌍 Afrique de l'Est">
-      <option value="254">🇰🇪 +254 Kenya</option>
-      <option value="255">🇹🇿 +255 Tanzanie</option>
-      <option value="256">🇺🇬 +256 Ouganda</option>
-      <option value="251">🇪🇹 +251 Éthiopie</option>
-      <option value="252">🇸🇴 +252 Somalie</option>
-      <option value="253">🇩🇯 +253 Djibouti</option>
-      <option value="291">🇪🇷 +291 Érythrée</option>
-      <option value="249">🇸🇩 +249 Soudan</option>
-      <option value="211">🇸🇸 +211 Soudan du Sud</option>
-      <option value="261">🇲🇬 +261 Madagascar</option>
-      <option value="263">🇿🇼 +263 Zimbabwe</option>
-      <option value="265">🇲🇼 +265 Malawi</option>
-      <option value="266">🇱🇸 +266 Lesotho</option>
-      <option value="267">🇧🇼 +267 Botswana</option>
-      <option value="268">🇸🇿 +268 Eswatini</option>
-      <option value="269">🇰🇲 +269 Comores</option>
-      <option value="262">🇷🇪 +262 Réunion</option>
-    </optgroup>
-    <optgroup label="🌍 Afrique du Nord">
-      <option value="212">🇲🇦 +212 Maroc</option>
-      <option value="213">🇩🇿 +213 Algérie</option>
-      <option value="216">🇹🇳 +216 Tunisie</option>
-      <option value="218">🇱🇾 +218 Libye</option>
-      <option value="20">🇪🇬 +20 Égypte</option>
-      <option value="249">🇸🇩 +249 Soudan</option>
-    </optgroup>
-    <optgroup label="🌍 Afrique Australe">
-      <option value="27">🇿🇦 +27 Afrique du Sud</option>
-      <option value="258">🇲🇿 +258 Mozambique</option>
-      <option value="260">🇿🇲 +260 Zambie</option>
-      <option value="264">🇳🇦 +264 Namibie</option>
-      <option value="230">🇲🇺 +230 Maurice</option>
-      <option value="248">🇸🇨 +248 Seychelles</option>
-    </optgroup>
-    <optgroup label="🌍 Afrique — Autres">
-      <option value="244">🇦🇴 +244 Angola</option>
-    </optgroup>
-    <optgroup label="🌍 Europe">
-      <option value="33">🇫🇷 +33 France</option>
-      <option value="32">🇧🇪 +32 Belgique</option>
-      <option value="41">🇨🇭 +41 Suisse</option>
-      <option value="352">🇱🇺 +352 Luxembourg</option>
-      <option value="34">🇪🇸 +34 Espagne</option>
-      <option value="351">🇵🇹 +351 Portugal</option>
-      <option value="39">🇮🇹 +39 Italie</option>
-      <option value="49">🇩🇪 +49 Allemagne</option>
-      <option value="44">🇬🇧 +44 Royaume-Uni</option>
-      <option value="31">🇳🇱 +31 Pays-Bas</option>
-      <option value="46">🇸🇪 +46 Suède</option>
-      <option value="47">🇳🇴 +47 Norvège</option>
-      <option value="45">🇩🇰 +45 Danemark</option>
-      <option value="358">🇫🇮 +358 Finlande</option>
-      <option value="48">🇵🇱 +48 Pologne</option>
-      <option value="380">🇺🇦 +380 Ukraine</option>
-      <option value="7">🇷🇺 +7 Russie</option>
-      <option value="30">🇬🇷 +30 Grèce</option>
-      <option value="36">🇭🇺 +36 Hongrie</option>
-      <option value="40">🇷🇴 +40 Roumanie</option>
-      <option value="420">🇨🇿 +420 Tchéquie</option>
-      <option value="43">🇦🇹 +43 Autriche</option>
-    </optgroup>
-    <optgroup label="🌎 Amériques">
-      <option value="1">🇺🇸 +1 États-Unis</option>
-      <option value="1">🇨🇦 +1 Canada</option>
-      <option value="55">🇧🇷 +55 Brésil</option>
-      <option value="52">🇲🇽 +52 Mexique</option>
-      <option value="57">🇨🇴 +57 Colombie</option>
-      <option value="54">🇦🇷 +54 Argentine</option>
-      <option value="56">🇨🇱 +56 Chili</option>
-      <option value="51">🇵🇪 +51 Pérou</option>
-      <option value="58">🇻🇪 +58 Venezuela</option>
-      <option value="593">🇪🇨 +593 Équateur</option>
-      <option value="591">🇧🇴 +591 Bolivie</option>
-      <option value="595">🇵🇾 +595 Paraguay</option>
-      <option value="598">🇺🇾 +598 Uruguay</option>
-      <option value="509">🇭🇹 +509 Haïti</option>
-    </optgroup>
-    <optgroup label="🌏 Asie & Moyen-Orient">
-      <option value="86">🇨🇳 +86 Chine</option>
-      <option value="91">🇮🇳 +91 Inde</option>
-      <option value="81">🇯🇵 +81 Japon</option>
-      <option value="82">🇰🇷 +82 Corée du Sud</option>
-      <option value="971">🇦🇪 +971 Émirats</option>
-      <option value="966">🇸🇦 +966 Arabie Saoudite</option>
-      <option value="212">🇲🇦 +212 Maroc</option>
-      <option value="961">🇱🇧 +961 Liban</option>
-      <option value="90">🇹🇷 +90 Türkiye</option>
-      <option value="62">🇮🇩 +62 Indonésie</option>
-      <option value="63">🇵🇭 +63 Philippines</option>
-      <option value="60">🇲🇾 +60 Malaisie</option>
-      <option value="65">🇸🇬 +65 Singapour</option>
-      <option value="66">🇹🇭 +66 Thaïlande</option>
-      <option value="92">🇵🇰 +92 Pakistan</option>
-      <option value="880">🇧🇩 +880 Bangladesh</option>
-    </optgroup>
-    <optgroup label="🌏 Océanie">
-      <option value="61">🇦🇺 +61 Australie</option>
-      <option value="64">🇳🇿 +64 Nouvelle-Zélande</option>
-    </optgroup>
-  </select>
-  <input type="tel" id="regPhone" placeholder="Numéro complet avec le 0 *" style="flex:1;">
-</div>
-      <input type="text" id="regQuartier" placeholder="Quartier *">
-      <input type="text" id="regAddress" placeholder="Adresse *">
-      <select id="regVille" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;font-size:14px;outline:none;background:#fafafa;">
-        <option value="">Choisir votre ville *</option>
-        <option value="Brazzaville">Brazzaville</option>
-        <option value="Pointe-Noire">Pointe-Noire</option>
-        <option value="Dolisie">Dolisie</option>
-        <option value="Nkayi">Nkayi</option>
-        <option value="Oyo">Oyo</option>
-        <option value="Bétou">Bétou</option>
-        <option value="Ouesso">Ouesso</option>
-        <option value="Impfondo">Impfondo</option>
-        <option value="Madingou">Madingou</option>
-        <option value="Owando">Owando</option>
-        <option value="Sibiti">Sibiti</option>
-        <option value="Mossaka">Mossaka</option>
-        <option value="Gamboma">Gamboma</option>
-        <option value="Djambala">Djambala</option>
-        <option value="Makoua">Makoua</option>
-        <option value="Kinkala">Kinkala</option>
-        <option value="Ewo">Ewo</option>
-        <option value="Dongou">Dongou</option>
-      </select>
-      <select id="regCategory">
-        <option value="">Choisir votre catégorie *</option>
-        <optgroup label="Catégorie A - Importateurs & Grossistes">
-          <option value="ig">Meilleur Importateurs & Grossistes</option>
-          <option value="immo">Immobilier</option>
-          <option value="coiffure">Grand Salon de Coiffure</option>
-          <option value="hotel">Hôtel, Jardin & Lieu Touristique</option>
-          <option value="deco-mariage">Décoration Mariage & Autres</option>
-          <option value="menage">Service de Ménage</option>
-          <option value="demenagement">Service de Déménagement</option>
-          <option value="auto">Automobile & Dépannage</option>
-          <option value="couture">Couture & Styliste</option>
-<option value="ambulance">Contactez Taxi ou Ambulances</option>
-<option value="moto-taxi">Véhicule Moto & Taxi</option>
-<option value="chambre-froide">Chambre Froide</option>
-<option value="hopital">Hôpital</option>
-        </optgroup>
-        <optgroup label="Catégorie B - Boutiques & Vendeurs">
-          <option value="c1">Chaussures & Basket</option>
-          <option value="c2">Accessoires Téléphone</option>
-          <option value="c3">Beauté & Cosmétiques</option>
-          <option value="c4">Vêtements Femme</option>
-          <option value="c5">Chaussures Femme</option>
-          <option value="c6">Sacs & Accessoires Mode</option>
-          <option value="c7">Maison & Décoration</option>
-          <option value="c8">Savon Artisanal & Naturel</option>
-          <option value="c9">Parfums & Soins Luxe</option>
-          <option value="c10">Bébé & Enfants</option>
-          <option value="c11">Perruques & Mèches</option>
-          <option value="c12">Lingerie, Nuit, Rideau & Té</option>
-          <option value="c13">Santé & Bien-être Femme</option>
-          <option value="c14">Friperie & Habit de Travail</option>
-          <option value="c15">Tissus & Pagnes</option>
-          <option value="c16">Occasion d'Europe</option>
-          <option value="c17">Pâtisserie</option>
-          <option value="c18">Veste & Chaussures de Luxe</option>
-          <option value="c19">Plastique</option>
-          <option value="c20">Électronique</option>
-          <option value="c21">Grossiste Œufs</option>
-          <option value="c22">Anniversaire & Objet Jetable</option>
-<option value="meubles">Meubles</option>
-        </optgroup>
-      </select>
-      <textarea id="regDescription" placeholder="Description de votre activité *"></textarea>
-      <button class="primary-btn" onclick="registerSeller()">Continuer →</button>
-      <button class="secondary-btn" onclick="goHome()">Annuler</button>
-    </div>
-  </div>
-</div>
-
-<!-- ========== PIN PAGE ========== -->
-<div class="page" id="pinPage">
-  <div class="register-page">
-    <div class="page-header">
-      <button class="back-btn" onclick="showPage('registerPage')">←</button>
-      <div><div class="section-title">Créer votre PIN</div></div>
-    </div>
-    <div class="form-card">
-      <div class="info-box">Votre PIN vous permettra de vous connecter à votre compte. Choisissez-en un facile à retenir mais difficile à deviner.</div>
-      <input type="password" id="pinInput" placeholder="Votre PIN (minimum 4 chiffres)" maxlength="6" inputmode="numeric">
-      <input type="password" id="pinConfirmInput" placeholder="Confirmer votre PIN" maxlength="6" inputmode="numeric">
-      <button class="primary-btn" onclick="validatePin()">✅ Valider et créer mon compte</button>
-    </div>
-  </div>
-</div>
-
 <!-- ========== REGISTER SUCCESS PAGE ========== -->
 <div class="page" id="registerSuccessPage">
   <div class="register-page">
@@ -1523,7 +1312,7 @@ header p { font-size: 12px; opacity: .80; }
         <span id="livreurNotifCode" style="font-size:24px;letter-spacing:3px;"></span>
       </div>
       <div class="info-box">
-        💡 <strong>À noter :</strong> Abonnement — Période promo.<br><br>
+     💡 <strong>À noter :</strong> Abonnement — 1 000 FCFA/mois après période promo de lancement.<br><br>
         📌 Retournez à l'accueil pour vous connecter et modifier votre grille tarifaire.<br><br>
         Notre équipe reste disponible si vous avez besoin d'aide.
       </div>
@@ -1556,7 +1345,7 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="dashboardPage">
   <div class="register-page">
         <div class="page-header">
-    <button class="back-btn" onclick="goBack()">←</button>
+    <button class="back-btn" onclick="goHome()">←</button>
 <div><div class="section-title">Mon espace</div></div>
     </div>
 
@@ -1586,18 +1375,11 @@ header p { font-size: 12px; opacity: .80; }
       <button class="dash-btn" onclick="viewMyStats()">
        <span class="icon">📊</span>Mes statistiques
       </button>
-    <button class="dash-btn" style="background:#722ed1;color:white;position:relative;" onclick="viewMyOrders()">
-        <span class="icon">📦</span>Mes commandes
-        <span class="orders-notif-badge" style="display:none;position:absolute;top:6px;right:10px;background:#ff4d4f;color:white;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;align-items:center;justify-content:center;padding:0 4px;"></span>
-      </button>
-      <button class="dash-btn" style="background:#13c2c2;color:white;" onclick="subscribeSellerPush(currentSeller.id)">
-        <span class="icon">🔔</span>Activer les notifications
-      </button>
       <button class="dash-btn" style="background:#fa8c16;color:white;" onclick="openContactDelivery()">
-        <span class="icon">🚚</span>Contacter un livreur
+        <span class="icon">🛵</span>Taxi
       </button>
       <div id="btnFournisseursExportIndep" style="display:none;grid-column:1/3;">
-        <button class="dash-btn full" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openFournisseursExportList()">
+        <button class="dash-btn full" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openFournisseurExportCountries()">
           <span class="icon">🌍</span>Fournisseurs Export
         </button>
       </div>
@@ -1702,55 +1484,76 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title">Publier un produit</div></div>
     </div>
     <div class="form-card">
-      <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Titre du produit (guidé)</label>
-      <div style="background:#f0f7ff;border:1px solid #d6e8ff;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:11px;color:#555;line-height:1.5;">
-        💡 Astuce : un bon titre suit le format <strong>Nom + Caractéristique + Usage</strong>.<br>
-        Ex : "Robe" + "rouge taille L" + "pour soirée/mariage"
+      <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Nom du produit</label>
+      <input type="text" id="pubName" placeholder="Nom du produit *" oninput="updatePubPreview()">
+
+      <label style="font-size:13px;color:#555;font-weight:600;margin-top:10px;display:block;">💰 Prix unitaire (FCFA) *</label>
+      <input type="number" id="pubPrice" placeholder="Prix unitaire *" min="0" oninput="updatePubPreview()">
+
+      <!-- Champs quantité — affichés uniquement pour grossistes/fournisseurs -->
+      <div id="pubQteSection" style="display:none;">
+        <label style="font-size:13px;color:#555;font-weight:600;margin:8px 0 4px;display:block;">📦 Tarifs par quantité</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="number" id="pubQteMin" placeholder="Qté minimum" min="1">
+          <input type="number" id="pubPrixMin" placeholder="Prix qté min (FCFA)" min="0">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+          <input type="number" id="pubQteMax" placeholder="Qté maximum" min="1">
+          <input type="number" id="pubPrixMax" placeholder="Prix qté max (FCFA)" min="0">
+        </div>
       </div>
-      <input type="text" id="pubName" placeholder="Nom du produit * (ex: Robe)" oninput="updatePubTitlePreview()">
-      <input type="text" id="pubCaracteristique" placeholder="Caractéristique (couleur, taille, modèle...)" style="margin-top:8px;" oninput="updatePubTitlePreview()">
-      <input type="text" id="pubUsage" placeholder="Usage (pour qui, quand, occasion...)" style="margin-top:8px;" oninput="updatePubTitlePreview()">
-      <div id="pubTitlePreview" style="font-size:12px;color:#1677FF;font-weight:600;margin:8px 0 4px;padding:6px 10px;background:#f5f7fb;border-radius:8px;display:none;"></div>
 
-<label style="font-size:13px;color:#555;font-weight:600;margin-top:4px;display:block;">💰 Prix unitaire (FCFA) *</label>
-<input type="number" id="pubPrice" placeholder="Prix unitaire *" min="0">
+      <!-- Catégorie de publication (obligatoire, dépend du compte / du choix de groupe) -->
+      <div id="pubCategorySection" style="margin:10px 0;">
+        <select id="pubOwnCategory" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+          <option value="">Choisir une catégorie *</option>
+        </select>
+      </div>
 
-<!-- Champs quantité — affichés uniquement pour grossistes/fournisseurs -->
-<div id="pubQteSection" style="display:none;">
-  <label style="font-size:13px;color:#555;font-weight:600;margin:8px 0 4px;display:block;">📦 Tarifs par quantité</label>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-    <input type="number" id="pubQteMin" placeholder="Qté minimum" min="1">
-    <input type="number" id="pubPrixMin" placeholder="Prix qté min (FCFA)" min="0">
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
-    <input type="number" id="pubQteMax" placeholder="Qté maximum" min="1">
-    <input type="number" id="pubPrixMax" placeholder="Prix qté max (FCFA)" min="0">
-  </div>
-</div>
+      <!-- Choix du groupe de publication (grossiste / multi-services / VIP grossiste) -->
+      <div id="pubGroupChoiceSection" style="display:none;margin:10px 0;padding:10px;background:#f0f7ff;border:1px solid #d6e8ff;border-radius:12px;">
+        <label style="font-size:13px;color:#333;font-weight:700;display:block;margin-bottom:8px;">📂 Où publier ce produit ?</label>
 
-<textarea id="pubDescription" placeholder="Description du produit" style="margin-top:8px;"></textarea>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#333;cursor:pointer;margin-bottom:6px;">
+          <input type="radio" name="pubGroupChoice" id="pubGroupChoiceOwn" value="own" checked onchange="updatePubGroupChoice()">
+          <span id="pubGroupChoiceOwnLabel">Dans mon groupe</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#333;cursor:pointer;">
+          <input type="radio" name="pubGroupChoice" id="pubGroupChoiceRetail" value="retail" onchange="updatePubGroupChoice()">
+          <span>🛍️ Boutique & Vendeur (détail)</span>
+        </label>
 
-      <!-- Zone photos style Facebook -->
+        <select id="pubRetailCategory" style="display:none;width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;margin-top:8px;">
+          <option value="">Choisir une catégorie détail *</option>
+        </select>
+      </div>
+
+      <label style="font-size:13px;color:#555;font-weight:600;margin:8px 0 4px;display:block;">📋 Spécifications (optionnel)</label>
+      <input type="text" id="pubTaille" placeholder="Taille (ex: S, M, L)">
+      <input type="text" id="pubMatiere" placeholder="Matière (ex: Coton, Cuir)" style="margin-top:8px;">
+
+      <textarea id="pubDescription" placeholder="Description du produit" style="margin-top:8px;"></textarea>
+
+      <!-- Aperçu -->
+      <div id="pubTitlePreview" style="font-size:12px;color:#1677FF;font-weight:600;margin:10px 0;padding:8px 10px;background:#f5f7fb;border-radius:8px;display:none;"></div>
+
+      <!-- Zone photo -->
       <div style="margin-bottom:12px;">
-        <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photos (max 3) *</label>
+        <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo *</label>
 
-        <!-- Preview photos -->
         <div id="pubPhotosPreview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
 
-        <!-- Boutons ajout photos -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="pubPhotoButtons">
           <label for="pubGallery" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0f7ff;border:2px dashed #1677FF;padding:14px;border-radius:14px;cursor:pointer;color:#1677FF;font-weight:600;font-size:13px;">
             🖼️ Galerie
           </label>
-          <input type="file" id="pubGallery" accept="image/*" multiple style="display:none;" onchange="addPubPhotos(this, 'gallery')">
+          <input type="file" id="pubGallery" accept="image/*" style="display:none;" onchange="addPubPhotos(this, 'gallery')">
 
           <label for="pubCamera" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0fff4;border:2px dashed #52c41a;padding:14px;border-radius:14px;cursor:pointer;color:#52c41a;font-weight:600;font-size:13px;">
             📷 Caméra
           </label>
           <input type="file" id="pubCamera" accept="image/*" capture="environment" style="display:none;" onchange="addPubPhotos(this, 'camera')">
         </div>
-
-      <p id="pubPhotoCount" style="font-size:12px;color:#888;margin-top:6px;text-align:center;">0/3 photos</p>
       </div>
 
       <button class="primary-btn" onclick="publishProduct()">📤 Publier</button>
@@ -1797,6 +1600,11 @@ header p { font-size: 12px; opacity: .80; }
           <input type="number" id="editPubPrixMax" placeholder="Prix qté max (FCFA)" min="0">
         </div>
       </div>
+
+    <!-- Spécifications produit — optionnel -->
+      <label style="font-size:13px;color:#555;font-weight:600;margin:8px 0 4px;display:block;">📋 Spécifications (optionnel)</label>
+      <input type="text" id="editPubTaille" placeholder="Taille (ex: S, M, L)">
+      <input type="text" id="editPubMatiere" placeholder="Matière (ex: Coton, Cuir)" style="margin-top:8px;">
 
       <textarea id="editPubDescription" placeholder="Description du produit" style="margin-top:8px;"></textarea>
 
@@ -1995,7 +1803,7 @@ header p { font-size: 12px; opacity: .80; }
         <span class="icon">🚚</span>Contacter un livreur
       </button>
       <div id="btnFournisseursExport" style="display:none;grid-column:1/3;">
-        <button class="dash-btn full" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openFournisseursExportList()">
+        <button class="dash-btn full" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openFournisseurExportCountries()">
           <span class="icon">🌍</span>Fournisseurs Importateur 
         </button>
       </div>
@@ -2238,27 +2046,19 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
-<!-- ========== PAGE : CHOIX INDÉPENDANT ========== -->
-<div class="page" id="independantChoicePage">
+<!-- ========== PAGE CHOIX INSCRIPTION ========== -->
+<div class="page" id="inscriptionChoicePage">
   <div class="register-page">
     <div class="page-header">
       <button class="back-btn" onclick="goHome()">←</button>
-      <div><div class="section-title">Type de compte</div></div>
+      <div><div class="section-title">S'inscrire</div></div>
     </div>
     <div class="form-card">
-      <div class="info-box" style="background:#f0f7ff;">
-        <strong>✅ Compte Indépendant</strong><br><br>
-        Vous gérez tout vous-même : publications, promotions, commandes.<br>
-        Payez uniquement votre abonnement mensuel.
-      </div>
-      <div style="background:#f9f9f9;padding:14px;border-radius:14px;margin-bottom:14px;font-size:13px;line-height:1.8;">
-        💰 <strong>Tarifs abonnement :</strong><br>
-        • Vendeur indépendant : <strong>Période promo</strong><br>
-        • Grossiste &amp; Importateur indépendant : <strong>Période promo</strong>
-      </div>
-<button class="primary-btn" style="background:linear-gradient(135deg,#52c41a,#389e0d);" onclick="openIndependantVendeur()">✅ Vendeur Indépendant</button>
-<button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#1677FF,#0d5bd1);" onclick="openIndependantGrossiste()">🏭 Grossiste &amp; Importateur Indépendant</button>
-      <button class="secondary-btn" onclick="goHome()">Annuler</button>
+      <button class="primary-btn" style="background:linear-gradient(135deg,#52c41a,#389e0d);" onclick="openIndependantVendeur()">🛍️ Boutiques & Vendeurs</button>
+      <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#1677FF,#0d5bd1);" onclick="openIndependantGrossiste()">🏭 Importateur &amp; Grossiste</button>
+      <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="openIndependantService()">⭐ Multi-Services & Commerces</button>
+      <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="openDeliveryAgentRegister()">🛵 Inscription Taxi</button>
+      <button class="secondary-btn" style="margin-top:10px;" onclick="goHome()">Annuler</button>
     </div>
   </div>
 </div>
@@ -2267,11 +2067,11 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="termsIndependantPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="showPage('independantChoicePage')">←</button>
-      <div><div class="section-title">Conditions — Vendeur</div></div>
+      <button class="back-btn" onclick="showPage('inscriptionChoicePage')">←</button>
+     <div><div class="section-title" id="termsIndependantHeaderTitle">Conditions — Vendeur</div></div>
     </div>
     <div class="form-card">
-      <div class="info-box">
+      <div class="info-box" id="termsIndependantInfoBox">
         <strong>✅ Compte Vendeur Indépendant</strong><br><br>
         Créez votre espace vendeur et gardez <strong>100% de vos ventes</strong>.<br>
         Aucune commission sur vos transactions.
@@ -2281,8 +2081,8 @@ header p { font-size: 12px; opacity: .80; }
         <h3>1. Inscription gratuite</h3>
         <p>L'inscription est 100% gratuite. Aucun frais lors de la création.</p>
         <h3>2. Frais d'abonnement</h3>
-        <p>Vendeur indépendant : <strong>Période promo</strong><br>
-        Vous bénéficiez de la période promotionnelle.</p>
+        <p><span id="termsIndependantAbonnementLabel">Vendeur indépendant</span> : <strong id="termsIndependantAbonnementAmount">1 500 FCFA/mois</strong><br>
+        après période promo de lancement.</p>
         <h3>3. Sans engagement</h3>
         <p>Arrêtez à tout moment sans pénalité.</p>
         <h3>4. Publications</h3>
@@ -2293,7 +2093,7 @@ header p { font-size: 12px; opacity: .80; }
         <p>Vous gérez vous-même vos publications, promos et contacts clients.</p>
       </div>
       <button class="primary-btn" onclick="acceptIndependantTerms()">✅ Accepter et s'inscrire</button>
-      <button class="secondary-btn" onclick="showPage('independantChoicePage')">✕ Refuser</button>
+      <button class="secondary-btn" onclick="showPage('inscriptionChoicePage')">✕ Refuser</button>
     </div>
   </div>
 </div>
@@ -2302,7 +2102,7 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="termsGrossisteIndependantPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="showPage('independantChoicePage')">←</button>
+      <button class="back-btn" onclick="showPage('inscriptionChoicePage')">←</button>
       <div><div class="section-title">Conditions — Grossiste</div></div>
     </div>
     <div class="form-card">
@@ -2316,8 +2116,8 @@ header p { font-size: 12px; opacity: .80; }
         <h3>1. Inscription gratuite</h3>
         <p>L'inscription est 100% gratuite. Aucun frais lors de la création.</p>
         <h3>2. Frais d'abonnement</h3>
-        <p>Grossiste & Importateur indépendant : <strong>Période promo</strong><br>
-        Vous bénéficiez de la période promotionnelle.</p>
+       <p>Grossiste & Importateur indépendant : <strong>5 000 FCFA/mois</strong><br>
+        après période promo de lancement.</p>
         <h3>3. Sans engagement</h3>
         <p>Arrêtez à tout moment sans pénalité.</p>
         <h3>4. Publications</h3>
@@ -2328,7 +2128,7 @@ header p { font-size: 12px; opacity: .80; }
         <p>Vous gérez vous-même vos publications, promos et contacts clients.</p>
       </div>
       <button class="primary-btn" onclick="acceptIndependantTerms()">✅ Accepter et s'inscrire</button>
-      <button class="secondary-btn" onclick="showPage('independantChoicePage')">✕ Refuser</button>
+      <button class="secondary-btn" onclick="showPage('inscriptionChoicePage')">✕ Refuser</button>
     </div>
   </div>
 </div>
@@ -2337,7 +2137,7 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="registerIndependantPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="showPage('termsIndependantPage')">←</button>
+     <button class="back-btn" onclick="showPage(_indepAccountType === 'grossiste' ? 'termsGrossisteIndependantPage' : 'termsIndependantPage')">←</button>
       <div><div class="section-title" id="registerIndependantTitle">Créer mon compte</div></div>
     </div>
     <div class="form-card">
@@ -2485,58 +2285,7 @@ header p { font-size: 12px; opacity: .80; }
         <option value="Ewo">Ewo</option>
         <option value="Dongou">Dongou</option>
       </select>
-     <!-- Select Vendeur Indépendant (33 catégories sans ig) -->
-<select id="indepCategoryVendeur" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;font-size:14px;outline:none;background:#fafafa;display:none;">
-  <option value="">Choisir votre catégorie *</option>
-  <optgroup label="Catégorie A">
-    <option value="immo">Immobilier</option>
-    <option value="coiffure">Grand Salon de Coiffure</option>
-    <option value="hotel">Hôtel, Jardin &amp; Lieu Touristique</option>
-    <option value="deco-mariage">Décoration Mariage &amp; Autres</option>
-    <option value="menage">Service de Ménage</option>
-    <option value="demenagement">Service de Déménagement</option>
-    <option value="auto">Automobile &amp; Dépannage</option>
-    <option value="couture">Couture &amp; Styliste</option>
-    <option value="pharmacie">Pharmacie</option>
-    <option value="construction">Matériaux de Construction</option>
-    <option value="alimentation">Alimentation</option>
-<option value="ambulance">Contactez Taxi ou Ambulances</option>
-<option value="moto-taxi">Véhicule Moto &amp; Taxi</option>
-<option value="chambre-froide">Chambre Froide</option>
-<option value="hopital">Hôpital</option>
-  </optgroup>
-  <optgroup label="Catégorie B - Boutiques &amp; Vendeurs">
-    <option value="c1">Chaussures &amp; Basket</option>
-    <option value="c2">Accessoires Téléphone</option>
-    <option value="c3">Beauté &amp; Cosmétiques</option>
-    <option value="c4">Vêtements Femme</option>
-    <option value="c5">Chaussures Femme</option>
-    <option value="c6">Sacs &amp; Accessoires Mode</option>
-    <option value="c7">Maison &amp; Décoration</option>
-    <option value="c8">Savon Artisanal &amp; Naturel</option>
-    <option value="c9">Parfums &amp; Soins Luxe</option>
-    <option value="c10">Bébé &amp; Enfants</option>
-    <option value="c11">Perruques &amp; Mèches</option>
-    <option value="c12">Lingerie, Nuit &amp; Rideau</option>
-    <option value="c13">Santé &amp; Bien-être Femme</option>
-    <option value="c14">Friperie &amp; Habit de Travail</option>
-    <option value="c15">Tissus &amp; Pagnes</option>
-    <option value="c16">Occasion d'Europe</option>
-    <option value="c17">Pâtisserie</option>
-    <option value="c18">Veste &amp; Chaussures de Luxe</option>
-    <option value="c19">Plastique</option>
-    <option value="c20">Électronique</option>
-    <option value="c21">Grossiste Œufs</option>
-    <option value="c22">Anniversaire &amp; Objet Jetable</option>
-<option value="meubles">Meubles</option>
-  </optgroup>
-</select>
-
-<!-- Select Grossiste Indépendant (ig seulement) -->
-<select id="indepCategoryGrossiste" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;margin-bottom:10px;font-size:14px;outline:none;background:#fafafa;display:none;">
-  <option value="">Choisir votre catégorie *</option>
-  <option value="ig">Importateurs &amp; Grossistes</option>
-</select>
+    
       <textarea id="indepDescription" placeholder="Description de votre activité *"></textarea>
       <div style="margin-bottom:12px;">
         <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo de profil</label>
@@ -2572,7 +2321,7 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="vipRegisterPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
+   <button class="back-btn" onclick="showPage('inscriptionChoicePage')">←</button>
       <div><div class="section-title">Compte VIP</div></div>
     </div>
     <div class="form-card">
@@ -2591,7 +2340,8 @@ header p { font-size: 12px; opacity: .80; }
       </div>
       <div style="background:#f9f9f9;padding:14px;border-radius:14px;margin-bottom:16px;font-size:13px;line-height:1.8;">
         💰 <strong>Tarifs VIP :</strong><br>
-        • Vendeur VIP : <strong>Période promo</strong><br>
+        • Vendeur VIP : <strong>5 000 FCFA/mois</strong> après période promo de lancement<br>
+        • Grossiste &amp; Importateur VIP : <strong>10 000 FCFA/mois</strong> après période promo de lancement
         • Grossiste &amp; Importateur VIP : <strong>Période promo</strong>
       </div>
       <div class="info-box">
@@ -2610,14 +2360,14 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="deliveryAgentRegisterPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
+    <button class="back-btn" onclick="showPage('inscriptionChoicePage')">←</button>
       <div><div class="section-title">Devenir Agent Livreur</div></div>
     </div>
     <div class="form-card">
       <div class="info-box" style="background:#fff7e6;border:1px solid #ffd591;">
-        <strong>🚚 Agent de livraison Moboro</strong><br><br>
-        Rejoignez notre réseau de livreurs et gagnez de l'argent en livrant les commandes des clients.<br><br>
-        💰 Abonnement : <strong>période promo</strong>
+        <strong>🛵 Service Taxi Moboro</strong><br><br>
+        Rejoignez notre réseau de Taxi et gagnez plus d'argent grâce à Moboro.<br><br>
+     💰 Abonnement : <strong>1 000 FCFA/mois</strong> après période promo de lancement
       </div>
       <h2>Vos informations</h2>
       <input type="text" id="livreurFullName" placeholder="Nom complet *">
@@ -2761,7 +2511,14 @@ header p { font-size: 12px; opacity: .80; }
         <option value="Dongou">Dongou</option>
       </select>
       <input type="text" id="livreurQuartier" placeholder="Quartier(s) de livraison * (ex: Moungali, Poto-Poto)">
-      <input type="text" id="livreurMoyen" placeholder="Moyen de transport * (moto, vélo, voiture...)">
+      <select id="livreurMoyen" style="width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;margin-bottom:10px;">
+        <option value=""> Type de véhicule *</option>
+        <option value="moto-taxi">🛵 Taxi (Moto)</option>
+        <option value="taxi-voiture">🚕 Taxi (Voiture)</option>
+        <option value="minibus">🚐 Minibus / Taxi collectif</option>
+        <option value="ambulance">🚑 Ambulance</option>
+        <option value="camion">🚛 Camion / Transport marchandises</option>
+      </select>
       <textarea id="livreurDescription" placeholder="Décrivez votre service (horaires, zones couvertes...)" style="min-height:80px;"></textarea>
       <div style="margin-bottom:12px;">
         <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo de profil</label>
@@ -2771,7 +2528,7 @@ header p { font-size: 12px; opacity: .80; }
         <input type="file" id="livreurPhotoFile" accept="image/*" style="display:none;" onchange="previewLivreurPhoto(this)">
         <img src="" id="livreurPhotoPreview" style="display:none;width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:8px;border:3px solid #fa8c16;">
       </div>
-     <button class="primary-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="goToPinLivreur()">🚚 S'inscrire comme livreur</button>
+     <button class="primary-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="goToPinLivreur()">🛵 S'inscrire comme Taxi</button>
       <button class="secondary-btn" onclick="goHome()">Annuler</button>
     </div>
   </div>
@@ -2818,7 +2575,7 @@ header p { font-size: 12px; opacity: .80; }
         <div>🚗 <strong>Moyen :</strong> <span id="livreurDashMoyen"></span></div>
         <div>📍 <strong>Quartiers :</strong> <span id="livreurDashQuartier"></span></div>
         <div>📝 <strong>Description :</strong> <span id="livreurDashDesc"></span></div>
-        <div>💰 <strong>Abonnement :</strong> Période promo</div>
+        <div>💰 <strong>Abonnement :</strong> 1 000 FCFA/mois après période promo de lancement</div>
       </div>
 
       <!-- Grille de tarification personnalisée -->
@@ -2929,6 +2686,18 @@ header p { font-size: 12px; opacity: .80; }
           <option value="Dongou">Dongou</option>
         </select>
       </div>
+      <!-- Filtre type de taxi (apparaît après le choix de la ville) -->
+      <div id="deliveryTypeFilterWrap" style="padding:0 0 10px;display:none;">
+        <select id="deliveryTypeFilter" onchange="loadDeliveryAgentsByVille(document.getElementById('deliveryVilleFilter').value)"
+          style="width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+          <option value="">🚦 Tous les types</option>
+          <option value="moto-taxi">🛵 Taxi (Moto)</option>
+          <option value="taxi-voiture">🚕 Taxi (Voiture)</option>
+          <option value="minibus">🚐 Minibus / Taxi collectif</option>
+          <option value="ambulance">🚑 Ambulance</option>
+          <option value="camion">🚛 Camion / Transport marchandises</option>
+        </select>
+      </div>
       <div id="deliveryAgentsList">
         <p style="text-align:center;padding:30px;color:#888;font-size:14px;">Choisissez une ville pour voir les livreurs disponibles</p>
       </div>
@@ -2956,6 +2725,18 @@ header p { font-size: 12px; opacity: .80; }
 </div>
 
 <!-- ========== FOURNISSEURS EXPORT LIST ========== -->
+<div class="page" id="fournisseurExportCountriesPage">
+  <div class="register-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div><div class="section-title">🌍 Fournisseur Export — Choisir un pays</div></div>
+    </div>
+    <div id="fournisseurExportCountriesList">
+      <div class="loading">Chargement...</div>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="fournisseursExportPage">
   <div class="register-page">
     <div class="page-header">
@@ -2965,26 +2746,62 @@ header p { font-size: 12px; opacity: .80; }
     <input type="text" id="exportSearchInput" placeholder="Rechercher un fournisseur..."
       oninput="filterFournisseursExport(this.value)"
       style="width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid #87e8de;
+             font-size:14px;outline:none;background:#f0fff4;box-sizing:border-box;margin-bottom:10px;">
+    <select id="exportVilleFilter" onchange="filterFournisseursExportByVille(this.value)"
+      style="width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #87e8de;
              font-size:14px;outline:none;background:#f0fff4;box-sizing:border-box;margin-bottom:12px;">
+      <option value="">Toutes les villes</option>
+    </select>
     <div id="fournisseursExportList">
       <div class="loading">Chargement...</div>
     </div>
   </div>
 </div>
 
-<!-- ========== CART BAR ========== -->
-<div class="cart-bar" id="cartBar">
-  <div class="cart-left">
-    <div class="cart-circle">
-      🛒
-      <div class="cart-count" id="cartCount">0</div>
+<!-- ========== CART FLOTTANT (bulle) ========== -->
+<div class="cart-bar" id="cartBar" onclick="openCart()">
+  🛒
+  <div class="cart-count" id="cartCount">0</div>
+</div>
+
+<!-- ========== PAGE : MA COMMANDE (commande rapide 1 produit) ========== -->
+<div class="page" id="quickOrderPage">
+  <div class="register-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div><div class="section-title">Ma commande</div></div>
     </div>
-    <div class="cart-preview">
-      <strong>Panier</strong>
-      <span id="cartTotalPreview">0 FCFA</span>
+    <div class="form-card">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;">
+        <img id="quickOrderImg" src="" style="width:80px;height:80px;object-fit:cover;border-radius:12px;">
+        <div>
+          <div id="quickOrderName" style="font-weight:700;font-size:15px;"></div>
+          <div id="quickOrderSeller" style="font-size:12px;color:#888;"></div>
+          <div id="quickOrderUnitPrice" style="font-size:13px;color:#1677FF;font-weight:600;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;">
+        <button onclick="changeQuickOrderQty(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid #ddd;background:white;font-size:18px;">−</button>
+        <span id="quickOrderQty" style="font-size:18px;font-weight:700;min-width:24px;text-align:center;">1</span>
+        <button onclick="changeQuickOrderQty(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid #ddd;background:white;font-size:18px;">+</button>
+      </div>
+
+      <div style="text-align:center;font-size:20px;font-weight:700;color:#ff4d4f;margin-bottom:16px;">
+        Total : <span id="quickOrderTotal">0</span> FCFA
+      </div>
+
+      <p style="font-size:12px;color:#888;margin:10px 0 6px;">📍 Vos informations de livraison</p>
+      <input type="text" id="quickOrderClientName" placeholder="Nom complet *">
+      <input type="tel" id="quickOrderClientPhone" placeholder="Téléphone *">
+      <input type="text" id="quickOrderClientQuartier" placeholder="Quartier *">
+      <input type="text" id="quickOrderClientAddress" placeholder="Adresse *">
+
+      <button class="command-btn" onclick="submitQuickOrder()">
+        🛍️ Confirmer la commande
+      </button>
     </div>
   </div>
-  <button class="pay-btn" onclick="openCart()">Commander</button>
 </div>
 
 <!-- ========== CART MODAL ========== -->
@@ -2994,14 +2811,12 @@ header p { font-size: 12px; opacity: .80; }
     <div class="notice">Votre commande sera envoyée directement au vendeur sur WhatsApp.</div>
     <div id="cartItems"></div>
     <div class="total"><span id="totalPrice">0</span> FCFA</div>
+    <p style="font-size:12px;color:#888;margin:10px 0 6px;">📍 Vos informations de livraison</p>
     <input type="text" id="clientName" placeholder="Nom complet *">
     <input type="tel" id="clientPhone" placeholder="Téléphone *">
     <input type="text" id="clientQuartier" placeholder="Quartier *">
     <input type="text" id="clientAddress" placeholder="Adresse *">
-          <button class="command-btn" onclick="confirmOrder()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      Commander maintenant
-    </button>
+    <p style="font-size:11px;color:#aaa;margin:4px 0 10px;">👉 Cliquez sur "🛍️ Commander" sous chaque boutique pour valider sa partie de la commande.</p>
     <button class="close-modal-btn" onclick="closeCart()">Fermer</button>
   </div>
 </div>
@@ -3016,6 +2831,57 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
 </div>
+<!-- ========== REVIEW MODAL ========== -->
+<div class="modal" id="reviewModal">
+  <div class="modal-content">
+    <h2>✍️ Un avis</h2>
+    <input type="text" id="reviewNameInput" placeholder="Votre nom *">
+    <input type="tel" id="reviewPhoneInput" placeholder="Votre téléphone *">
+    <select id="reviewRatingInput" style="width:100%;padding:10px;margin:8px 0;border-radius:10px;border:1px solid #ddd;">
+      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+      <option value="4">⭐⭐⭐⭐ Très bien</option>
+      <option value="3">⭐⭐⭐ Correct</option>
+      <option value="2">⭐⭐ Décevant</option>
+      <option value="1">⭐ Mauvais</option>
+    </select>
+    <textarea id="reviewCommentInput" placeholder="Votre commentaire (optionnel)" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;"></textarea>
+    <p id="reviewModalError" style="color:#ff4d4f;font-size:12px;margin:6px 0;"></p>
+    <button class="command-btn" onclick="submitProductReview()">Envoyer mon avis</button>
+    <button class="close-modal-btn" onclick="closeReviewModal()">Annuler</button>
+  </div>
+</div>
+
+<!-- Modal : laisser un avis vendeur -->
+<div class="modal" id="sellerReviewModal">
+  <div class="modal-content">
+    <h2>✍️ Avis sur cette boutique</h2>
+    <input type="text" id="sellerReviewNameInput" placeholder="Votre nom *">
+    <input type="tel" id="sellerReviewPhoneInput" placeholder="Votre téléphone *">
+    <select id="sellerReviewRatingInput" style="width:100%;padding:10px;margin:8px 0;border-radius:10px;border:1px solid #ddd;">
+      <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+      <option value="4">⭐⭐⭐⭐ Très bien</option>
+      <option value="3">⭐⭐⭐ Correct</option>
+      <option value="2">⭐⭐ Décevant</option>
+      <option value="1">⭐ Mauvais</option>
+    </select>
+    <textarea id="sellerReviewCommentInput" placeholder="Votre commentaire (optionnel)" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;"></textarea>
+    <p id="sellerReviewModalError" style="color:#ff4d4f;font-size:12px;margin:6px 0;"></p>
+    <button class="command-btn" onclick="submitSellerReview()">Envoyer mon avis</button>
+    <button class="close-modal-btn" onclick="closeSellerReviewModal()">Annuler</button>
+    </div>
+  </div>
+
+<!-- Modal : voir tous les avis vendeur -->
+<div class="modal" id="sellerReviewsListModal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">💬 Avis clients</h2>
+      <button onclick="closeSellerReviewsListModal()" style="background:none;border:none;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="sellerReviewsListBody" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- Modal abonnement expiré -->
 <div class="modal" id="abonnementExpireModal" style="display:none;">
   <div class="modal-content" style="text-align:center;">
@@ -3263,11 +3129,55 @@ function backToSellers() {
 
 function goHome() {
   showPage('homePage');
-  document.getElementById('cartBar').style.display = 'none';
-  cart = [];
+  updateCartUI();
   window.currentViewedSeller = null;
 }
+// ================================================================
+// NOTIFICATIONS ADMIN — affichage + fermeture mémorisée (localStorage)
+// ================================================================
+async function loadAccountNotifications(groupKey, code) {
+  try {
+    const { data, error } = await db.from(TABLES.ADMIN_NOTIFICATIONS)
+      .select('*')
+      .or(`target_type.eq.all,and(target_type.eq.group,target_group.eq.${groupKey}),and(target_type.eq.code,target_code.eq.${code})`)
+      .order('created_at', { ascending: false });
 
+    if (error) { console.error('loadAccountNotifications error:', JSON.stringify(error)); return; }
+    if (!data || data.length === 0) return;
+
+    const dismissKey = 'dismissed_notifs_' + code;
+    const dismissed = JSON.parse(localStorage.getItem(dismissKey) || '[]');
+    const toShow = data.filter(n => !dismissed.includes(n.id));
+    if (toShow.length === 0) return;
+
+    document.getElementById('accountNotifList').innerHTML = toShow.map(n => `
+      <div id="notifCard_${n.id}" style="background:#fffbe6;border:1px solid #ffe58f;border-radius:12px;padding:14px;margin-bottom:10px;position:relative;font-size:14px;color:#614700;">
+        <button onclick="dismissNotification('${n.id}', '${code}')"
+          style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:18px;font-weight:700;color:#614700;cursor:pointer;line-height:1;">✕</button>
+        <div style="padding-right:24px;">🔔 ${escapeHtml(n.message)}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('accountNotifModal').style.display = 'flex';
+  } catch (e) {
+    console.error('loadAccountNotifications error:', e);
+  }
+}
+
+function dismissNotification(id, code) {
+  const dismissKey = 'dismissed_notifs_' + code;
+  const dismissed = JSON.parse(localStorage.getItem(dismissKey) || '[]');
+  if (!dismissed.includes(id)) dismissed.push(id);
+  localStorage.setItem(dismissKey, JSON.stringify(dismissed));
+
+  const card = document.getElementById('notifCard_' + id);
+  if (card) card.remove();
+
+  const list = document.getElementById('accountNotifList');
+  if (list && list.children.length === 0) {
+    document.getElementById('accountNotifModal').style.display = 'none';
+  }
+}
 // ==================== PRODUCTS.JS ====================
 
 // ✅ openSellerDashboard() — déplacé dans fichier .js séparé
@@ -3357,77 +3267,68 @@ const phone = countryCode + rawPhone;
 
 window.pubPhotosFiles = []; // Tableau des fichiers photos sélectionnés
 
-// Ajouter photos (galerie ou caméra)
+// Une seule photo par publication — en choisir une nouvelle remplace l'ancienne
 function addPubPhotos(input, source) {
   if (!input.files || !input.files.length) return;
 
-  const remaining = 3 - window.pubPhotosFiles.length;
-  if (remaining <= 0) {
-    showToast('Maximum 3 photos atteint', 'error');
-    return;
-  }
+  const file = input.files[0];
+  window.pubPhotosFiles = [file];
 
-  const files = Array.from(input.files).slice(0, remaining);
-
-  files.forEach(file => {
-if (window.pubPhotosFiles.length >= 3) return;
-window.pubPhotosFiles.push(file);
-
-    // Preview
-    const reader = new FileReader();
-    reader.onload = e => {
-      const preview = document.getElementById('pubPhotosPreview');
-      const div = document.createElement('div');
-      div.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;';
-      div.innerHTML = `
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('pubPhotosPreview');
+    preview.innerHTML = `
+      <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;">
         <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
-        <button onclick="removePubPhoto(${pubPhotosFiles.length - 1})"
+        <button onclick="removePubPhoto(0)"
           style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>
-      `;
-      preview.appendChild(div);
-      updatePhotoCount();
-    };
-    reader.readAsDataURL(file);
-  });
+      </div>
+    `;
+  };
+  reader.readAsDataURL(file);
 
   input.value = '';
-  updatePhotoCount();
 }
 
-// Supprimer une photo
+// Supprimer la photo
 function removePubPhoto(index) {
-  window.pubPhotosFiles.splice(index, 1);
-  refreshPhotoPreviews();
-  updatePhotoCount();
+  window.pubPhotosFiles = [];
+  document.getElementById('pubPhotosPreview').innerHTML = '';
 }
 
-// Rafraîchir les previews
+// Rafraîchir la preview (utilisée après une modification)
 function refreshPhotoPreviews() {
   const preview = document.getElementById('pubPhotosPreview');
   preview.innerHTML = '';
-  window.pubPhotosFiles.forEach((file, i) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const div = document.createElement('div');
-      div.style.cssText = 'position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;';
-      div.innerHTML = `
+  const file = window.pubPhotosFiles[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.innerHTML = `
+      <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;">
         <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
-        <button onclick="removePubPhoto(${i})"
+        <button onclick="removePubPhoto(0)"
           style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>
-      `;
-      preview.appendChild(div);
-    };
-    reader.readAsDataURL(file);
-  });
+      </div>
+    `;
+  };
+  reader.readAsDataURL(file);
 }
 
-// Mettre à jour compteur
-function updatePhotoCount() {
-  const count = window.pubPhotosFiles.length;
-  document.getElementById('pubPhotoCount').innerText = `${count} photos`;
-  const btns = document.getElementById('pubPhotoButtons');
-  if (btns) btns.style.display = count >= 3 ? 'none' : 'grid';
+// Aperçu — Nom + Prix, affiché entre Description et Photo
+function updatePubPreview() {
+  const nom     = document.getElementById('pubName')?.value.trim()  || '';
+  const prix    = document.getElementById('pubPrice')?.value.trim() || '';
+  const preview = document.getElementById('pubTitlePreview');
+  if (!preview) return;
+  if (nom || prix) {
+    preview.style.display = 'block';
+    preview.innerText = '👁️ Aperçu : ' + (nom || 'Sans nom') + (prix ? ' — ' + formatPrice(Number(prix)) + ' FCFA' : '');
+  } else {
+    preview.style.display = 'none';
+  }
 }
+window.updatePubPreview = updatePubPreview;
 
 // Preview photo profil
 function previewProfilePhoto(input) {
@@ -3506,6 +3407,9 @@ const _scrollMemory = {};
 
 function showPage(pageId, fromPopState = false) {
   if (pageId !== 'homePage') {
+    // On retire les anciennes occurrences de cette page avant de la ré-empiler,
+    // pour éviter que la pile ne s'encombre d'entrées obsolètes (retours qui se confondent)
+    pageHistory = pageHistory.filter(id => id !== pageId);
     pageHistory.push(pageId);
   } else {
     pageHistory = [];
@@ -3551,12 +3455,21 @@ function showPage(pageId, fromPopState = false) {
 
 function goBack() {
   pageHistory.pop();
-  const prev = pageHistory.pop() || 'homePage';
+  const prev = pageHistory[pageHistory.length - 1] || 'homePage';
   showPage(prev);
 }
 
 // Bouton retour physique du téléphone
 window.addEventListener('popstate', function(e) {
+  const lb = document.getElementById('lightbox');
+  if (lb && lb.style.display !== 'none') {
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+    document.getElementById('lightboxSimilarPanel').style.display = 'none';
+    _lightboxProduct = null;
+    _lightboxHistoryPushed = false;
+    return;
+  }
   if (e.state && e.state.pageId) {
     showPage(e.state.pageId, true);
   } else {
@@ -3572,8 +3485,6 @@ document.addEventListener('keydown', function(e) {
   const id = active.id;
 
   if (id === 'loginPage') return sellerLogin();
-  if (id === 'registerPage')                   return goToPinStep();
-  if (id === 'pinPage')                        return registerSeller();
   if (id === 'registerIndepPage')              return registerIndependant();
   if (id === 'registerLivreurPage')            return goToPinLivreur();
   if (id === 'pinLivreurPage')                 return registerDeliveryAgent();
@@ -3609,6 +3520,15 @@ function previewExportPhoto(input) {
   reader.readAsDataURL(file);
 }
 
+function normalizeCountryName(str) {
+  if (!str) return '';
+  return str.trim().toLowerCase()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 async function registerFournisseurExport() {
   try {
     const fullName    = document.getElementById('exportFullName').value.trim();
@@ -3617,7 +3537,7 @@ const rawPhone = document.getElementById('exportPhone').value.trim();
 const phone = countryCode + rawPhone;
     const quartier    = document.getElementById('exportQuartier').value.trim();
     const address     = document.getElementById('exportAddress').value.trim();
-    const pays        = document.getElementById('exportPays').value.trim();
+    const pays        = normalizeCountryName(document.getElementById('exportPays').value.trim());
 const ville       = document.getElementById('exportVille').value.trim();
     const category    = document.getElementById('exportCategory').value;
     const description = document.getElementById('exportDescription').value.trim();
@@ -3630,7 +3550,7 @@ const ville       = document.getElementById('exportVille').value.trim();
 
     const { data: blocked } = await db.from('blocked_phones')
       .select('id').eq('phone', phone).maybeSingle();
-    if (blocked) { showToast('Ce numéro est banni.', 'error'); return; }
+    if (blocked) { showToast('Ce numéro est banni', 'error'); return; }
 
     const { data: existing } = await db.from(TABLES.SELLERS)
       .select('id').eq('phone', phone).maybeSingle();
@@ -3724,7 +3644,8 @@ await notifyAdminEmail({ seller: {
 
 document.getElementById('notifName').innerText = data.fullName;
 document.getElementById('notifCode').innerText = sellerCode;
-document.getElementById('notifTarif').innerText = 'Frais : Période promo.';
+document.getElementById('notifTarif').innerText = 'Frais : 20 000 FCFA/mois après période promo de lancement.';
+showToast('Compte créé ! En attente de validation par l\'administration avant publication.', 'success');
 showPage('registerSuccessPage');
 window._pendingExportData = null;
   } catch(e) {
@@ -3740,31 +3661,68 @@ window._pendingExportData = null;
 // ================================================================
 let _allFournisseursExport = [];
 
-async function openFournisseursExportList() {
-  // Vérifier que c'est un grossiste
-  if (!currentSeller ||
-      !(currentSeller.account_type === 'vip_grossiste' ||
-        currentSeller.account_type === 'independant_grossiste' ||
-        currentSeller.account_type === 'fournisseur_export')) {
-    showToast('Accès réservé aux grossistes et fournisseurs', 'error');
-    return;
+async function openFournisseurExportCountries() {
+  document.getElementById('fournisseurExportCountriesList').innerHTML = '<div class="loading">Chargement...</div>';
+  showPage('fournisseurExportCountriesPage');
+
+  try {
+    const { data, error } = await db.from(TABLES.SELLERS)
+      .select('pays')
+      .eq('account_type', 'fournisseur_export')
+      .eq('is_approved', true)
+      .eq('is_blocked', false)
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    const countries = [...new Set((data || [])
+      .map(s => (s.pays || '').trim())
+      .filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+    const div = document.getElementById('fournisseurExportCountriesList');
+    if (countries.length === 0) {
+      div.innerHTML = '<p style="text-align:center;padding:30px;color:#888;font-size:14px;">Aucun fournisseur export disponible pour le moment.</p>';
+      return;
+    }
+
+    div.innerHTML = countries.map(pays => `
+      <button class="cat-btn" style="width:100%;margin-bottom:8px;background:linear-gradient(135deg,#13c2c2,#08979c);color:white;"
+        onclick="openFournisseursExportList('${escapeHtml(pays)}')">
+        🌍 ${escapeHtml(pays)}
+      </button>
+    `).join('');
+  } catch (e) {
+    console.error('openFournisseurExportCountries error:', e);
+    document.getElementById('fournisseurExportCountriesList').innerHTML =
+      '<p style="text-align:center;padding:20px;color:#ff4d4f;">Erreur de chargement</p>';
   }
+}
+window.openFournisseurExportCountries = openFournisseurExportCountries;
+
+async function openFournisseursExportList(paysFilter) {
   document.getElementById('exportSearchInput').value = '';
   document.getElementById('fournisseursExportList').innerHTML = '<div class="loading">Chargement...</div>';
   showPage('fournisseursExportPage');
 
   try {
-    const { data: fournisseurs, error } = await db.from(TABLES.SELLERS)
-      .select('id, full_name, code, phone, quartier, ville, category, description, photo, stars, badge, is_verified')
+    let query = db.from(TABLES.SELLERS)
+      .select('id, full_name, code, phone, quartier, ville, pays, category, description, photo, stars, badge, is_verified')
       .eq('account_type', 'fournisseur_export')
+      .eq('is_approved', true)
       .eq('is_blocked', false)
       .eq('is_active', true)
       .eq('subscription_status', 'en_cours')
       .order('stars', { ascending: false });
 
+    if (paysFilter) query = query.eq('pays', paysFilter);
+
+    const { data: fournisseurs, error } = await query;
+    if (error) throw error;
+
     _allFournisseursExport = fournisseurs || [];
     renderFournisseursExport(_allFournisseursExport);
   } catch(e) {
+    console.error('openFournisseursExportList error:', e);
     document.getElementById('fournisseursExportList').innerHTML =
       '<p style="text-align:center;padding:20px;color:#ff4d4f;">Erreur de chargement</p>';
   }
@@ -3790,9 +3748,32 @@ const FOURN_PER_PAGE = 8;
 function renderFournisseursExport(list) {
   _fournAll  = list || [];
   _fournPage = 0;
+
+  const villeSelect = document.getElementById('exportVilleFilter');
+  if (villeSelect) {
+    const villes = [...new Set(_allFournisseursExport.map(f => (f.ville || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+    villeSelect.innerHTML = '<option value="">Toutes les villes</option>' +
+      villes.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  }
+
   const div  = document.getElementById('fournisseursExportList');
   if (!_fournAll.length) {
     div.innerHTML = '<p style="text-align:center;padding:30px;color:#888;font-size:14px;">Aucun fournisseur export disponible</p>';
+    return;
+  }
+  div.innerHTML = '';
+  _appendFournisseurs();
+}
+
+function filterFournisseursExportByVille(ville) {
+  _fournAll  = ville
+    ? _allFournisseursExport.filter(f => (f.ville || '').trim() === ville)
+    : _allFournisseursExport;
+  _fournPage = 0;
+  const div = document.getElementById('fournisseursExportList');
+  if (!_fournAll.length) {
+    div.innerHTML = '<p style="text-align:center;padding:30px;color:#888;font-size:14px;">Aucun fournisseur dans cette ville</p>';
     return;
   }
   div.innerHTML = '';
@@ -3819,7 +3800,7 @@ function _appendFournisseurs() {
             ${f.is_verified ? `<span style="background:#e6fffb;border:1px solid #13c2c2;color:#08979c;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;">✔️ Fournisseur vérifié</span>` : ''}
           </div>
           <div style="font-size:12px;color:#13c2c2;font-weight:600;">${escapeHtml(f.category || '')}</div>
-          <div style="font-size:12px;color:#888;">📍 ${escapeHtml(f.quartier || '')} · ${escapeHtml(f.ville || '')}</div>
+          <div style="font-size:12px;color:#888;">📍 ${escapeHtml(f.quartier || '')} · ${escapeHtml(f.ville || '')}${f.pays ? ' · 🌍 ' + escapeHtml(f.pays) : ''}</div>
         </div>
       </div>
       <div style="font-size:13px;color:#555;margin-bottom:10px;line-height:1.5;">
@@ -3887,6 +3868,7 @@ function checkRegisterParam() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+  loadCart();
   showPage('homePage');
   await checkSession();
   updateProfileIcon();
@@ -3991,13 +3973,21 @@ function openVipWhatsApp(e) {
   window.open(`https://wa.me/${ADMIN_PHONE}?text=${msg}`, '_blank');
 }
 
+function openFournisseurExportWhatsApp(e) {
+  e.preventDefault();
+  const msg = encodeURIComponent(
+    'Bonjour Moboro 👋\n\nJe souhaite m\'inscrire en tant que Fournisseur Export.\nPouvez-vous m\'aider à configurer mon espace ?\n\nMerci !'
+  );
+  window.open(`https://wa.me/${ADMIN_PHONE}?text=${msg}`, '_blank');
+}
+
 // ================================================================
 // INSCRIPTION INDÉPENDANT
 // ================================================================
 let _indepAccountType = 'vendeur'; // 'vendeur' ou 'grossiste'
 
-function openIndependantChoice() {
-  showPage('independantChoicePage');
+function openInscriptionChoice() {
+  showPage('inscriptionChoicePage');
 }
 
 async function openIndependantVendeur() {
@@ -4008,8 +3998,11 @@ async function openIndependantVendeur() {
   }
   _indepAccountType = 'vendeur';
   document.getElementById('registerIndependantTitle').innerText = 'Vendeur Indépendant';
-  document.getElementById('indepCategoryVendeur').style.display = '';
-  document.getElementById('indepCategoryGrossiste').style.display = 'none';
+  document.getElementById('termsIndependantHeaderTitle').innerText = 'Conditions — Vendeur';
+  document.getElementById('termsIndependantInfoBox').innerHTML =
+    '<strong>✅ Compte Vendeur Indépendant</strong><br><br>Créez votre espace vendeur et gardez <strong>100% de vos ventes</strong>.<br>Aucune commission sur vos transactions.';
+  document.getElementById('termsIndependantAbonnementLabel').innerText = 'Boutique & Vendeur';
+  document.getElementById('termsIndependantAbonnementAmount').innerText = '1 500 FCFA/mois';
   showPage('termsIndependantPage');
 }
 
@@ -4021,9 +4014,17 @@ async function openIndependantGrossiste() {
   }
   _indepAccountType = 'grossiste';
   document.getElementById('registerIndependantTitle').innerText = 'Grossiste & Importateur Indépendant';
-  document.getElementById('indepCategoryVendeur').style.display = 'none';
-  document.getElementById('indepCategoryGrossiste').style.display = '';
   showPage('termsGrossisteIndependantPage');
+}
+async function openIndependantService() {
+  _indepAccountType = 'service';
+  document.getElementById('registerIndependantTitle').innerText = 'Multi-Services & Commerces';
+  document.getElementById('termsIndependantHeaderTitle').innerText = 'Conditions — Multi-Services & Commerces';
+  document.getElementById('termsIndependantInfoBox').innerHTML =
+    '<strong>⭐ Compte Multi-Services & Commerces</strong><br><br>Proposez vos services et commerces (coiffure, hôtel, déménagement, décoration...) et gérez vos clients directement.<br>Aucune commission sur vos transactions.';
+  document.getElementById('termsIndependantAbonnementLabel').innerText = 'Multi-Services & Commerces';
+  document.getElementById('termsIndependantAbonnementAmount').innerText = '3 000 FCFA/mois';
+  showPage('termsIndependantPage');
 }
 
 function acceptIndependantTerms() {
@@ -4048,17 +4049,13 @@ async function registerIndependant() {
   const quartier    = document.getElementById('indepQuartier').value.trim();
   const address     = document.getElementById('indepAddress').value.trim();
   const ville       = document.getElementById('indepVille').value.trim();
-const activeSelect = _indepAccountType === 'grossiste' 
-  ? document.getElementById('indepCategoryGrossiste')
-  : document.getElementById('indepCategoryVendeur');
-const category = activeSelect.value;
-  const description = document.getElementById('indepDescription').value.trim();
+const description = document.getElementById('indepDescription').value.trim();
   const photoInput = document.getElementById('indepPhotoFile');
 const photoFile = photoInput && photoInput.files
     ? photoInput.files[0]
     : null;
   
-  if (!fullName || !phone || !quartier || !address || !ville || !category || !description) {
+  if (!fullName || !phone || !quartier || !address || !ville || !description) {
     showToast('Veuillez remplir tous les champs', 'error');
     return;
   }
@@ -4077,7 +4074,7 @@ const photoFile = photoInput && photoInput.files
     photoUrl = await uploadPhoto(photoFile, 'sellers') || '';
   }
 
-  window._pendingIndepData = { fullName, phone, quartier, address, ville, category, description, photoUrl, accountType: _indepAccountType };
+window._pendingIndepData = { fullName, phone, quartier, address, ville, description, photoUrl, accountType: _indepAccountType };
   showPage('pinIndependantPage');
 
   } catch(e) {
@@ -4115,7 +4112,7 @@ const { data: sysSetting2 } = await db.from('settings').select('value').eq('key'
       quartier:            data.quartier,
       address:             data.address,
       ville:               data.ville,
-      category:            data.category,
+      category:            data.accountType,
       description:         data.description,
       pin_hash: await hashPin(pin),
       photo:               data.photoUrl,
@@ -4138,7 +4135,8 @@ const { data: sysSetting2 } = await db.from('settings').select('value').eq('key'
 
     document.getElementById('notifName').innerText = data.fullName;
     document.getElementById('notifCode').innerText = sellerCode;
-    document.getElementById('notifTarif').innerText = 'Frais : Période promo.';
+    const _indepTarifsConfirm = { vendeur: '1 500', grossiste: '5 000', service: '3 000' };
+    document.getElementById('notifTarif').innerText = 'Frais : ' + (_indepTarifsConfirm[_indepAccountType] || '1 500') + ' FCFA/mois après période promo de lancement.';
     showPage('registerSuccessPage');
     window._pendingIndepData = null;
 
@@ -4281,21 +4279,40 @@ function openContactDelivery() {
   showPage('contactDeliveryPage');
 }
 
+const TAXI_TYPE_LABELS = {
+  'moto-taxi':    '🛵 Taxi (Moto)',
+  'taxi-voiture': '🚕 Taxi (Voiture)',
+  'minibus':      '🚐 Minibus / Taxi collectif',
+  'ambulance':    '🚑 Ambulance',
+  'camion':       '🚛 Camion / Transport marchandises'
+};
+
 async function loadDeliveryAgentsByVille(ville) {
   const list = document.getElementById('deliveryAgentsList');
+  const typeWrap = document.getElementById('deliveryTypeFilterWrap');
+
   if (!ville) {
+    if (typeWrap) typeWrap.style.display = 'none';
     list.innerHTML = '<p style="text-align:center;padding:30px;color:#888;font-size:14px;">Choisissez une ville</p>';
     return;
   }
+  if (typeWrap) typeWrap.style.display = 'block';
+
+  const typeEl = document.getElementById('deliveryTypeFilter');
+  const typeFilter = typeEl ? typeEl.value : '';
 
   list.innerHTML = '<div class="loading">Chargement...</div>';
 
   try {
-    const { data: agents, error } = await db.from('delivery_agents')
+    let agentsQuery = db.from('delivery_agents')
       .select('*')
       .ilike('ville', `%${ville}%`)
       .eq('is_active', true)
-      .eq('is_blocked', false)
+      .eq('is_blocked', false);
+
+    if (typeFilter) agentsQuery = agentsQuery.eq('moyen', typeFilter);
+
+    const { data: agents, error } = await agentsQuery
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -4334,7 +4351,7 @@ async function loadDeliveryAgentsByVille(ville) {
                 onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200'">
               <div style="flex:1;">
                 <div style="font-size:15px;font-weight:700;">${escapeHtml(a.full_name)}</div>
-                <div style="font-size:12px;color:#fa8c16;font-weight:600;">🛵 ${escapeHtml(a.moyen || '')}</div>
+               <div style="font-size:12px;color:#fa8c16;font-weight:600;">${TAXI_TYPE_LABELS[a.moyen] || ('🚗 ' + escapeHtml(a.moyen || ''))}</div>
                 ${a.description ? `<div style="font-size:12px;color:#666;margin-top:2px;">${escapeHtml(a.description)}</div>` : ''}
                 ${getStarHtml(a.id, 'livreur', a.stars || 0, a.badge || null)}
                 ${(a.tarif_1_de || a.tarif_2_de || a.tarif_3_de) ? `
@@ -4345,11 +4362,17 @@ async function loadDeliveryAgentsByVille(ville) {
     ${a.tarif_3_de ? `<div style="font-size:11px;color:#555;display:flex;justify-content:space-between;"><span>${escapeHtml(a.tarif_3_de)} → ${escapeHtml(a.tarif_3_a)}</span><strong>${escapeHtml(a.tarif_3_prix)} FCFA</strong></div>` : ''}
   </div>` : ''}
               </div>
-              <a href="https://wa.me/${a.phone}?text=${encodeURIComponent('Bonjour ' + a.full_name + ', je voudrais une livraison depuis Marché Moboro.')}"
-                target="_blank"
-                style="display:flex;align-items:center;justify-content:center;background:#25D366;color:white;border:none;padding:10px 12px;border-radius:12px;font-weight:700;font-size:13px;text-decoration:none;flex-shrink:0;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              </a>
+              <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                <a href="tel:+${formatWhatsApp(a.phone)}"
+                  style="display:flex;align-items:center;justify-content:center;background:#1677FF;color:white;border:none;padding:10px 12px;border-radius:12px;text-decoration:none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.57.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/></svg>
+                </a>
+                <a href="https://wa.me/${a.phone}?text=${encodeURIComponent('Bonjour ' + a.full_name + ', je voudrais une livraison depuis Marché Moboro.')}"
+                  target="_blank"
+                  style="display:flex;align-items:center;justify-content:center;background:#25D366;color:white;border:none;padding:10px 12px;border-radius:12px;font-weight:700;font-size:13px;text-decoration:none;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                </a>
+              </div>
             </div>
           `).join('')}
         </div>
@@ -4403,6 +4426,15 @@ function toggleVilleDropdown(e) {
   _villeDropdownOpen = !_villeDropdownOpen;
   menu.style.display = _villeDropdownOpen ? 'block' : 'none';
 }
+
+// Ouvre automatiquement la liste des villes dès que ce script s'exécute (pendant le chargement)
+(() => {
+  const menu = document.getElementById('villeDropdownMenu');
+  if (menu) {
+    menu.style.display = 'block';
+    _villeDropdownOpen = true;
+  }
+})();
 
 // Fermer si clic ailleurs
 document.addEventListener('click', function(e) {
@@ -4944,15 +4976,17 @@ const phone = countryCode + rawPhone;
     const today4 = new Date(); const end4 = new Date(today4); end4.setDate(end4.getDate()+30);
 
     const { data: created, error } = await db.from(TABLES.SELLERS).insert({
-code:                sellerCode,
-      full_name:           fullName,
-      phone:               phone,
-      quartier:            quartier,
-      address:             address,
-      ville:               ville,
-      category:            category,
-      description:         description,
-      pin_hash:            await hashPin(pin),
+      code:          sellerCode,
+full_name:           data.fullName,
+      phone:               data.phone,
+      quartier:            data.quartier,
+      address:             data.address,
+      ville:               data.ville,
+      pays:                data.pays,
+      category:            data.category,
+      description:         data.description,
+      is_approved:         false,
+      pin_hash: await hashPin(pin),
       photo:               '',
       is_blocked:          false,
       is_active:           true,
@@ -5001,7 +5035,7 @@ code:                sellerCode,
 // Protège contre les crashs silencieux si Supabase est lent ou hors ligne
 window.addEventListener('DOMContentLoaded', () => {
   const asyncFns = [
-    'registerSeller', 'openCategory', 'openSellerDashboard',
+     'openCategory', 'openSellerDashboard',
     'publishProduct', 'viewMyProducts', 'deleteProduct', 'openSendToPromo',
     'transferToPromo', 'viewMyPromos', 'deletePromo', 'loadPromos',
     'uploadProfilePhoto', 'performSearch', 'openSellerProductsFromSearch',
@@ -5040,6 +5074,7 @@ function openLivreurDashboard() {
   document.getElementById('livreurDashMoyen').innerText = l.moyen;
   document.getElementById('livreurDashQuartier').innerText = l.quartier;
   document.getElementById('livreurDashDesc').innerText = l.description || '—';
+  loadAccountNotifications('livreur', l.code);
   const avatar = document.getElementById('livreurDashAvatar');
   const photo = document.getElementById('livreurDashPhoto');
   if (l.photoUrl) {
@@ -5173,34 +5208,212 @@ async function saveLivreurGrille() {
       navigator.serviceWorker.register('./service-worker.js')
         .then(reg => {
           console.log('SW enregistré ✓');
-          reg.update();
+          try { reg.update(); } catch (e) { console.warn('SW update ignoré:', e); }
           document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') reg.update();
+            if (document.visibilityState === 'visible') {
+              try { reg.update(); } catch (e) { console.warn('SW update ignoré:', e); }
+            }
           });
         })
         .catch(err => console.error('SW erreur:', err));
     });
   }
   
-  function openLightbox(src) {
-  const lb = document.getElementById('lightbox');
-  document.getElementById('lightboxImg').src = src;
+  let _lightboxProduct = null;
+
+function openLightbox(src, productId, category, name) {
+  const lb  = document.getElementById('lightbox');
+  const img = document.getElementById('lightboxImg');
+  img.src = src;
+  resetLightboxZoom();
   lb.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  history.pushState({ lightboxOpen: true }, '');
+  _lightboxHistoryPushed = true;
+
+  const btn     = document.getElementById('lightboxSimilarBtn');
+  const panel   = document.getElementById('lightboxSimilarPanel');
+  const infoBox = document.getElementById('lightboxInfo');
+  panel.style.display = 'none';
+  panel.innerHTML = '';
+
+  if (productId) {
+    _lightboxProduct = { productId, category, name };
+    btn.style.display = 'inline-block';
+
+    const p = (typeof _productsAll !== 'undefined' ? _productsAll : []).find(pr => pr.id === productId);
+    if (p) {
+      const seller     = p.sellers || window.currentViewedSeller || null;
+      const contactId   = seller ? seller.id : (p.seller_id || '');
+      const isMultiServices = typeof TREE_B1_IDS !== 'undefined' && typeof currentCategory !== 'undefined' && TREE_B1_IDS.has(currentCategory);
+
+    window._lbCurrentProduct = { id: p.id, name: p.name, price: p.price, image: p.image };
+      window._lbCurrentSeller  = seller
+        ? { id: seller.id, full_name: seller.full_name, phone: seller.phone, account_type: seller.account_type }
+        : { id: contactId, full_name: '', phone: '', account_type: '' };
+
+      btn.innerHTML = isMultiServices ? '🔎 Voir les services similaires' : '🔎 Voir les produits similaires';
+
+      infoBox.innerHTML = `
+        ${p.sellers ? `<div style="font-size:12px;color:#4dabff;font-weight:600;margin-bottom:4px;">${isMultiServices ? escapeHtml(p.sellers.full_name) : '🏪 Boutique ' + escapeHtml(p.sellers.full_name)}</div>` : ''}
+        <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">${escapeHtml(p.name)}</div>
+        ${typeof renderSpecsHtml === 'function' ? renderSpecsHtml(p) : ''}
+        ${p.description ? `<div style="font-size:13px;color:#ddd;margin-bottom:6px;">${escapeHtml(p.description)}</div>` : ''}
+        ${typeof renderQuantityTiers === 'function' ? renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max) : ''}
+        <div style="font-size:19px;font-weight:700;color:#ff4d4f;margin-bottom:10px;">${formatPrice(p.price)} FCFA</div>
+        <div id="lightboxReviews-${p.id}" style="margin-bottom:10px;font-size:12px;color:#ddd;">Chargement des avis...</div>
+        <button onclick="event.stopPropagation(); openReviewModal('${p.id}','${contactId}')"
+          style="background:none;border:1px solid #666;color:#4dabff;font-size:12px;font-weight:600;
+                 padding:6px 14px;border-radius:20px;margin-bottom:10px;cursor:pointer;">
+          ✍️ Laisser un avis vérifié
+        </button><br>
+    <div style="display:flex;gap:10px;justify-content:center;align-items:center;">
+          <button onclick="event.stopPropagation(); contactSellerWhatsApp(window._lbCurrentProduct, window._lbCurrentSeller)"
+            title="Contacter via WhatsApp"
+            style="background:#25D366;border:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </button>
+          ${seller && seller.phone ? `<a href="tel:+${formatWhatsApp(seller.phone)}" onclick="event.stopPropagation();" title="Appeler"
+            style="background:#1677FF;color:white;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="white"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.57.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11.36 11.36 0 00.57 3.57 1 1 0 01-.25 1.01l-2.2 2.21z"/></svg>
+          </a>` : ''}
+          ${!isMultiServices ? `<button onclick="event.stopPropagation(); addToCartQuick(window._lbCurrentProduct, window._lbCurrentSeller)"
+            style="background:#1677FF;color:white;border:none;width:44px;height:44px;border-radius:50%;font-size:18px;cursor:pointer;position:relative;">
+            🛒
+            <span id="lbCartBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#FFD700;color:black;width:18px;height:18px;border-radius:50%;font-size:10px;align-items:center;justify-content:center;font-weight:700;"></span>
+          </button>` : ''}
+        </div>
+      `;
+      infoBox.style.display = 'block';
+      loadProductReviewsSummary(p.id, `lightboxReviews-${p.id}`);
+      if (!isMultiServices && typeof updateCartUI === 'function') updateCartUI();
+    } else {
+      infoBox.style.display = 'none';
+    }
+  } else {
+    _lightboxProduct = null;
+    btn.style.display = 'none';
+    infoBox.style.display = 'none';
+  }
 }
+
+let _lightboxHistoryPushed = false;
 
 function closeLightbox() {
   document.getElementById('lightbox').style.display = 'none';
   document.body.style.overflow = '';
+  document.getElementById('lightboxSimilarPanel').style.display = 'none';
+  _lightboxProduct = null;
+  if (_lightboxHistoryPushed) {
+    _lightboxHistoryPushed = false;
+    history.back();
+  }
+}
+
+async function toggleLightboxSimilar() {
+  const panel = document.getElementById('lightboxSimilarPanel');
+  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
+  if (!_lightboxProduct) return;
+  panel.style.display = 'block';
+  panel.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Chargement...</p>';
+  await loadSimilarProducts(_lightboxProduct.productId, _lightboxProduct.category, 'lightboxSimilarPanel', _lightboxProduct.name, true);
 }
   
+  let _lbScale = 1, _lbPanX = 0, _lbPanY = 0;
+
+function resetLightboxZoom() {
+  _lbScale = 1; _lbPanX = 0; _lbPanY = 0;
+  const img = document.getElementById('lightboxImg');
+  if (img) img.style.transform = 'translate(0px,0px) scale(1)';
+}
+function applyLightboxTransform() {
+  const img = document.getElementById('lightboxImg');
+  img.style.transform = `translate(${_lbPanX}px,${_lbPanY}px) scale(${_lbScale})`;
+}
+
+function initLightboxZoom(){
+  const img = document.getElementById('lightboxImg');
+  if (!img) return;
+
+  img.addEventListener('wheel', e => {
+    e.preventDefault();
+    _lbScale = Math.min(4, Math.max(1, _lbScale + (e.deltaY < 0 ? 0.2 : -0.2)));
+    if (_lbScale === 1) { _lbPanX = 0; _lbPanY = 0; }
+    applyLightboxTransform();
+  }, { passive: false });
+
+  img.addEventListener('dblclick', () => {
+    _lbScale = _lbScale > 1 ? 1 : 2;
+    _lbPanX = 0; _lbPanY = 0;
+    applyLightboxTransform();
+  });
+
+  let pinchStartDist = 0, pinchStartScale = 1;
+  let dragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+
+  img.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      pinchStartDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      pinchStartScale = _lbScale;
+    } else if (e.touches.length === 1 && _lbScale > 1) {
+      dragging = true;
+      dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+      panStartX  = _lbPanX; panStartY = _lbPanY;
+    }
+  }, { passive: true });
+
+  img.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      _lbScale = Math.min(4, Math.max(1, pinchStartScale * (dist / pinchStartDist)));
+      applyLightboxTransform();
+    } else if (dragging && e.touches.length === 1) {
+      _lbPanX = panStartX + (e.touches[0].clientX - dragStartX);
+      _lbPanY = panStartY + (e.touches[0].clientY - dragStartY);
+      applyLightboxTransform();
+    }
+  }, { passive: true });
+
+  img.addEventListener('touchend', () => { dragging = false; });
+}
+document.addEventListener('DOMContentLoaded', initLightboxZoom);
+
 </script>
+
+<!-- Modal : notifications du compte -->
+<div class="modal" id="accountNotifModal">
+  <div class="modal-content" style="max-width:380px;">
+    <div id="accountNotifList"></div>
+  </div>
+</div>
 
 <!-- LIGHTBOX -->
 <div id="lightbox" onclick="closeLightbox()"
   style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;">
-  <img id="lightboxImg" src="" style="max-width:95%;max-height:90vh;object-fit:contain;border-radius:8px;">
+  background:rgba(0,0,0,0.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="event.stopPropagation(); closeLightbox();"
+    style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);color:white;border:none;
+           width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;">✕</button>
+  <div style="width:100%;max-height:66vh;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;">
+    <img id="lightboxImg" src="" onclick="event.stopPropagation();"
+      style="max-width:95%;max-height:66vh;object-fit:contain;border-radius:8px;cursor:zoom-in;transition:transform .15s ease;">
+  </div>
+  <div id="lightboxInfo" onclick="event.stopPropagation();"
+    style="display:none;width:90%;max-width:420px;text-align:center;margin-top:10px;"></div>
+  <button id="lightboxSimilarBtn" onclick="event.stopPropagation(); toggleLightboxSimilar();"
+    style="display:none;margin-top:12px;background:#1677FF;color:white;border:none;padding:10px 22px;
+           border-radius:30px;font-size:13px;font-weight:600;cursor:pointer;">
+    🔎 Voir les produits similaires
+  </button>
+  <div id="lightboxSimilarPanel" onclick="event.stopPropagation();"
+    style="display:none;width:90%;max-width:95%;max-height:28vh;overflow-y:auto;overflow-x:hidden;
+           background:white;border-radius:14px;padding:10px;margin-top:10px;"></div>
 </div>
 
 </body>

@@ -100,10 +100,11 @@
     <div class="nav-tab" onclick="switchTab('badges', event)">🏅 Badges</div>
         <div class="nav-tab" onclick="switchTab('actions', event)">⚙️ Actions</div>
         <div class="nav-tab" onclick="switchTab('banner', event)">🖼️ Banner</div>
-    <div class="nav-tab" onclick="switchTab('fournisseurs', event); loadFournisseurs()">🌍 Fournisseurs</div>
+  <div class="nav-tab" onclick="switchTab('fournisseurs', event); loadFournisseurs()">⭐ Multi-Services</div>
     <div class="nav-tab" onclick="switchTab('logs', event)">📝 Logs</div>
     <div class="nav-tab" onclick="switchTab('paiements', event); loadSubscriptionToggle(); loadPaiementsDashboard()">💳 Paiements</div>
     <div class="nav-tab" onclick="switchTab('inscriptions', event); loadInscriptionToggles()">🔒 Inscriptions</div>
+    <div class="nav-tab" onclick="switchTab('notifications', event)">🔔 Notifications</div>
   </div>
 
   <div class="admin-content">
@@ -120,9 +121,10 @@
     <div onclick="switchTab('badges')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🏅<br>Badges</div>
     <div onclick="switchTab('actions')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">⚙️<br>Actions</div>
     <div onclick="switchTab('banner')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🖼️<br>Banner</div>
-    <div onclick="switchTab('fournisseurs');loadFournisseurs()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🌍<br>Fournisseurs</div>
+<div onclick="switchTab('fournisseurs');loadFournisseurs()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">⭐<br>Multi-Services</div>
     <div onclick="switchTab('logs')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">📝<br>Logs</div>
 <div onclick="switchTab('paiements');loadSubscriptionToggle();loadPaiementsDashboard()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">💳<br>Paiements</div>
+ <div onclick="switchTab('notifications')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🔔<br>Notifications</div>
     <div onclick="switchTab('inscriptions');loadInscriptionToggles()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🔒<br>Inscriptions</div>
   </div>
 
@@ -137,12 +139,10 @@
   <div class="form-card" style="margin-bottom:12px;">
     <h2 style="font-size:15px;margin-bottom:10px;">👥 Utilisateurs total</h2>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-number" id="sCountLivreur">0</div><div class="stat-label">🚚 Livreurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sCountVendeur">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sCountGrossiste">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sCountVipVendeur">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sCountVipGrossiste">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
-      <div class="stat-card"><div class="stat-number" id="sCountFournisseur">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountLivreur">0</div><div class="stat-label">🛵 Taxis</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountVendeur">0</div><div class="stat-label">🛍️ Boutique & Vendeur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountGrossiste">0</div><div class="stat-label">🏭 Grossiste & Importateur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sCountMultiServices">0</div><div class="stat-label">⭐ Multi-Services</div></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
       <span style="font-size:13px;color:#555;font-weight:600;">Inscrits aujourd'hui</span>
@@ -157,11 +157,9 @@
   <div class="form-card" style="margin-bottom:12px;">
     <h2 style="font-size:15px;margin-bottom:4px;">⚡ Utilisateurs actifs <span style="font-size:11px;font-weight:400;color:#888;">(publication aujourd'hui)</span></h2>
     <div class="stat-grid" style="margin-top:10px;">
-      <div class="stat-card"><div class="stat-number" id="sActiveVendeur">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sActiveGrossiste">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sActiveVipVendeur">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sActiveVipGrossiste">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
-      <div class="stat-card"><div class="stat-number" id="sActiveFournisseur">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveVendeur">0</div><div class="stat-label">🛍️ Boutique & Vendeur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveGrossiste">0</div><div class="stat-label">🏭 Grossiste & Importateur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sActiveMultiServices">0</div><div class="stat-label">⭐ Multi-Services</div></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
       <span style="font-size:13px;color:#555;font-weight:600;">Total actifs</span>
@@ -173,21 +171,17 @@
     <h2 style="font-size:15px;margin-bottom:4px;">📲 Contacts WhatsApp</h2>
     <p style="font-size:11px;color:#888;margin-bottom:10px;">Aujourd'hui</p>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-number" id="sClickLivreurToday">0</div><div class="stat-label">🚚 Livreurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVendeurToday">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickGrossisteToday">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVipVendeurToday">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVipGrossisteToday">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickFournisseurToday">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickLivreurToday">0</div><div class="stat-label">🛵 Taxis</div></div>
+   <div class="stat-card"><div class="stat-number" id="sClickVendeurToday">0</div><div class="stat-label">🛍️ Boutique & Vendeur</div></div>
+  <div class="stat-card"><div class="stat-number" id="sClickGrossisteToday">0</div><div class="stat-label">🏭 Grossiste & Importateur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickMultiServicesToday">0</div><div class="stat-label">⭐ Multi-Services</div></div>
     </div>
     <p style="font-size:11px;color:#888;margin:10px 0 6px;">Total</p>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-number" id="sClickLivreurTotal">0</div><div class="stat-label">🚚 Livreurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVendeurTotal">0</div><div class="stat-label">🛍️ Vendeurs indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickGrossisteTotal">0</div><div class="stat-label">📦 Grossistes indép.</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVipVendeurTotal">0</div><div class="stat-label">👑 VIP Vendeurs</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickVipGrossisteTotal">0</div><div class="stat-label">👑 VIP Grossistes</div></div>
-      <div class="stat-card"><div class="stat-number" id="sClickFournisseurTotal">0</div><div class="stat-label">🌍 Fournisseurs</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickLivreurTotal">0</div><div class="stat-label">🛵 Taxis</div></div>
+   <div class="stat-card"><div class="stat-number" id="sClickVendeurTotal">0</div><div class="stat-label">🛍️ Boutique & Vendeur</div></div>
+  <div class="stat-card"><div class="stat-number" id="sClickGrossisteTotal">0</div><div class="stat-label">🏭 Grossiste & Importateur</div></div>
+      <div class="stat-card"><div class="stat-number" id="sClickMultiServicesTotal">0</div><div class="stat-label">⭐ Multi-Services</div></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:#f0f2f5;border-radius:10px;">
       <span style="font-size:13px;color:#555;font-weight:600;">Total contacts</span>
@@ -622,6 +616,54 @@
       </div>
       <div id="logsList"></div>
     </div>
+
+<!-- ===== TAB NOTIFICATIONS ===== -->
+    <div class="tab-panel" id="tab-notifications">
+      <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+      <div class="form-card">
+        <h2>🔔 Envoyer une notification</h2>
+
+        <textarea id="notifMessage" placeholder="Message à afficher dans les comptes..." rows="4"
+          style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;margin-bottom:12px;"></textarea>
+
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:8px;">📂 Destinataires</label>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer;">
+            <input type="checkbox" id="notifGroupAll" onchange="toggleNotifAllGroups()"> 🌍 Tous les groupes
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding-left:16px;">
+            <input type="checkbox" class="notifGroupBox" value="livreur"> 🛵 Taxi
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding-left:16px;">
+            <input type="checkbox" class="notifGroupBox" value="independant_vendeur"> 🛍️ Boutique & Vendeur
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding-left:16px;">
+            <input type="checkbox" class="notifGroupBox" value="independant_grossiste"> 🏭 Grossiste & Importateur
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding-left:16px;">
+            <input type="checkbox" class="notifGroupBox" value="independant_service"> ⭐ Multi-Services & Commerce
+          </label>
+        </div>
+
+        <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:6px;">🔍 Ou envoyer à un compte précis (code)</label>
+        <input type="text" id="notifCodeSearch" placeholder="Rechercher un code (ex: MBR0001A, MBRL0001R)..."
+          style="width:100%;padding:10px;border-radius:10px;border:1px solid #ddd;margin-bottom:8px;text-transform:uppercase;"
+          oninput="searchNotifRecipient(this.value)">
+        <div id="notifCodeResults" style="margin-bottom:8px;"></div>
+        <div id="notifSelectedRecipient" style="display:none;background:#f0f7ff;border:1px solid #d6e8ff;border-radius:10px;padding:10px;margin-bottom:12px;font-size:13px;">
+          <span id="notifSelectedRecipientText"></span>
+          <button onclick="clearNotifRecipient()" style="float:right;background:none;border:none;color:#ff4d4f;font-weight:700;cursor:pointer;">✕</button>
+        </div>
+
+        <button class="btn-primary" onclick="sendAdminNotification()" style="width:100%;">📤 Envoyer la notification</button>
+      </div>
+
+      <div class="form-card">
+        <h2>🕓 Dernières notifications envoyées</h2>
+        <button class="btn-primary" onclick="loadRecentNotifications()">🔄 Charger</button>
+        <div id="recentNotifList" style="margin-top:10px;"></div>
+      </div>
+    </div>
     
 <!-- ===== TAB PAIEMENTS ===== -->
     <div class="tab-panel" id="tab-paiements">
@@ -639,12 +681,10 @@
       <div class="form-card" style="margin-bottom:14px;">
         <h2>💳 Enregistrer un paiement</h2>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-          <button onclick="openPaiementModal('livreur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🚚 Livreur<br><span style="font-size:10px;font-weight:400;color:#888;">1 500 · 4 000 · 15 000</span></button>
-          <button onclick="openPaiementModal('vendeur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🛍️ Vendeur Indép.<br><span style="font-size:10px;font-weight:400;color:#888;">2 000 · 5 500 · 20 000</span></button>
-          <button onclick="openPaiementModal('grossiste')" style="background:#fff7e6;border:1.5px solid #faad14;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#d48806;cursor:pointer;">🏭 Grossiste Indép.<br><span style="font-size:10px;font-weight:400;color:#888;">5 000 · 13 500 · 50 000</span></button>
-          <button onclick="openPaiementModal('vip_vendeur')" style="background:#f9f0ff;border:1.5px solid #722ed1;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#722ed1;cursor:pointer;">👑 Vendeur VIP<br><span style="font-size:10px;font-weight:400;color:#888;">5 000 · 13 500 · 50 000</span></button>
-          <button onclick="openPaiementModal('vip_grossiste')" style="background:#f9f0ff;border:1.5px solid #722ed1;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#722ed1;cursor:pointer;">👑 Grossiste VIP<br><span style="font-size:10px;font-weight:400;color:#888;">10 000 · 27 000 · 100 000</span></button>
-          <button onclick="openPaiementModal('fournisseur_export')" style="background:#e6fffb;border:1.5px solid #13c2c2;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#08979c;cursor:pointer;">📦 Fournisseur<br><span style="font-size:10px;font-weight:400;color:#888;">20 000 · 54 000 · 200 000</span></button>
+          <button onclick="openPaiementModal('livreur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🛵 Taxi<br><span style="font-size:10px;font-weight:400;color:#888;">1 000 · 2 700 · 10 000</span></button>
+          <button onclick="openPaiementModal('vendeur')" style="background:#f0f7ff;border:1.5px solid #1677FF;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#1677FF;cursor:pointer;">🛍️ Boutique & Vendeur<br><span style="font-size:10px;font-weight:400;color:#888;">1 500 · 4 000 · 15 000</span></button>
+          <button onclick="openPaiementModal('grossiste')" style="background:#fff7e6;border:1.5px solid #faad14;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#d48806;cursor:pointer;">🏭 Grossiste & Importateur<br><span style="font-size:10px;font-weight:400;color:#888;">5 000 · 13 500 · 50 000</span></button>
+          <button onclick="openPaiementModal('multi_services')" style="background:#fff0f6;border:1.5px solid #eb2f96;border-radius:14px;padding:14px 8px;font-size:12px;font-weight:700;color:#c41d7f;cursor:pointer;">⭐ Multi-Services & Commerce<br><span style="font-size:10px;font-weight:400;color:#888;">3 000 · 8 000 · 30 000</span></button>
         </div>
         <p style="font-size:10px;color:#bbb;margin-top:8px;text-align:center;">Mensuel · Trimestriel · Annuel (FCFA)</p>
       </div>
@@ -676,7 +716,8 @@ const TABLES = {
   PAYMENTS:        'payments',
   SETTINGS:        'settings',
   WHATSAPP_CLICKS: 'whatsapp_clicks',
-  DELIVERY_AGENTS: 'delivery_agents'
+  DELIVERY_AGENTS: 'delivery_agents',
+  ADMIN_NOTIFICATIONS: 'admin_notifications'
 };
 
 // Prévisualiser avant upload
@@ -951,6 +992,136 @@ async function searchResetPin() {
   `).join('');
 }
 
+// ================================================================
+// NOTIFICATIONS ADMIN
+// ================================================================
+let _notifSelectedCode = null;
+
+function toggleNotifAllGroups() {
+  const allChecked = document.getElementById('notifGroupAll').checked;
+  document.querySelectorAll('.notifGroupBox').forEach(cb => {
+    cb.checked = false;
+    cb.disabled = allChecked;
+  });
+}
+
+async function searchNotifRecipient(q) {
+  q = q.trim();
+  const div = document.getElementById('notifCodeResults');
+  if (!q) { div.innerHTML = ''; return; }
+
+  const { data: sellers } = await db.from(TABLES.SELLERS)
+    .select('code, full_name, account_type')
+    .ilike('code', `%${q}%`).limit(5);
+
+  const { data: livreurs } = await db.from(TABLES.DELIVERY_AGENTS)
+    .select('code, full_name')
+    .ilike('code', `%${q}%`).limit(5);
+
+  const results = [
+    ...(sellers  || []).map(s => ({ code: s.code, name: s.full_name, type: 'Compte' })),
+    ...(livreurs || []).map(l => ({ code: l.code, name: l.full_name, type: 'Taxi' }))
+  ];
+
+  if (results.length === 0) {
+    div.innerHTML = '<p style="font-size:12px;color:#999;">Aucun résultat</p>';
+    return;
+  }
+
+  div.innerHTML = results.map(r => `
+    <div onclick="selectNotifRecipient('${r.code}','${escapeHtml(r.name)}')"
+      style="padding:8px 10px;border:1px solid #eee;border-radius:8px;margin-bottom:4px;cursor:pointer;font-size:13px;">
+      <strong>${escapeHtml(r.code)}</strong> — ${escapeHtml(r.name)} <span style="color:#999;">(${r.type})</span>
+    </div>
+  `).join('');
+}
+
+function selectNotifRecipient(code, name) {
+  _notifSelectedCode = code;
+  document.getElementById('notifCodeSearch').value = '';
+  document.getElementById('notifCodeResults').innerHTML = '';
+  document.getElementById('notifSelectedRecipientText').innerText = `🎯 ${code} — ${name}`;
+  document.getElementById('notifSelectedRecipient').style.display = 'block';
+}
+
+function clearNotifRecipient() {
+  _notifSelectedCode = null;
+  document.getElementById('notifSelectedRecipient').style.display = 'none';
+}
+
+async function sendAdminNotification() {
+  const message = document.getElementById('notifMessage').value.trim();
+  if (!message) { showToast('Écris un message', 'error'); return; }
+
+  try {
+    if (_notifSelectedCode) {
+      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert({
+        message, target_type: 'code', target_code: _notifSelectedCode
+      });
+      if (error) { console.error('sendAdminNotification supabase error:', error); showToast('Erreur envoi', 'error'); return; }
+      showToast(`Notification envoyée à ${_notifSelectedCode} ✓`, 'success');
+
+    } else if (document.getElementById('notifGroupAll').checked) {
+      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert({
+        message, target_type: 'all'
+      });
+      if (error) { console.error('sendAdminNotification supabase error:', JSON.stringify(error)); showToast('Erreur envoi', 'error'); return; }
+      showToast('Notification envoyée à tous les groupes ✓', 'success');
+
+    } else {
+      const checked = Array.from(document.querySelectorAll('.notifGroupBox:checked')).map(cb => cb.value);
+      if (checked.length === 0) { showToast('Choisis au moins un destinataire', 'error'); return; }
+
+      const rows = checked.map(g => ({ message, target_type: 'group', target_group: g }));
+      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert(rows);
+      if (error) { console.error('sendAdminNotification supabase error:', JSON.stringify(error)); showToast('Erreur envoi', 'error'); return; }
+      showToast(`Notification envoyée à ${checked.length} groupe(s) ✓`, 'success');
+    }
+
+    document.getElementById('notifMessage').value = '';
+    document.getElementById('notifGroupAll').checked = false;
+    document.querySelectorAll('.notifGroupBox').forEach(cb => { cb.checked = false; cb.disabled = false; });
+    clearNotifRecipient();
+    loadRecentNotifications();
+  } catch (e) {
+    console.error('sendAdminNotification error:', e);
+    showToast('Erreur réseau', 'error');
+  }
+}
+
+async function loadRecentNotifications() {
+  const div = document.getElementById('recentNotifList');
+  div.innerHTML = '<div class="loading">Chargement...</div>';
+
+  const { data, error } = await db.from(TABLES.ADMIN_NOTIFICATIONS)
+    .select('*').order('created_at', { ascending: false }).limit(15);
+
+  if (error || !data || data.length === 0) {
+    div.innerHTML = '<p style="font-size:12px;color:#999;">Aucune notification envoyée.</p>';
+    return;
+  }
+
+  const GROUP_LABELS = {
+    livreur: '🛵 Taxi',
+    independant_vendeur: '🛍️ Boutique & Vendeur',
+    independant_grossiste: '🏭 Grossiste & Importateur',
+    independant_service: '⭐ Multi-Services & Commerce'
+  };
+
+  div.innerHTML = data.map(n => {
+    let target = '🌍 Tous les groupes';
+    if (n.target_type === 'group') target = GROUP_LABELS[n.target_group] || n.target_group;
+    if (n.target_type === 'code')  target = '🎯 ' + n.target_code;
+    return `
+      <div style="border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;">
+        <div style="color:#1677FF;font-weight:700;margin-bottom:4px;">${target}</div>
+        <div style="color:#333;margin-bottom:4px;">${escapeHtml(n.message)}</div>
+        <div style="color:#999;font-size:11px;">${new Date(n.created_at).toLocaleString('fr-FR')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
 async function resetPin(sellerId, name) {
   if (!confirm(`Réinitialiser le PIN de ${name} à 0000 ?`)) return;
   try {
@@ -988,9 +1159,7 @@ document.getElementById('sTodaySellers').innerText = (todayS.count || 0) + (toda
 const types = [
 { key: 'independant_vendeur',   id: 'sCountVendeur' },
 { key: 'independant_grossiste', id: 'sCountGrossiste' },
-  { key: 'vip_vendeur',        id: 'sCountVipVendeur' },
-  { key: 'vip_grossiste',      id: 'sCountVipGrossiste' },
-  { key: 'fournisseur_export', id: 'sCountFournisseur' }
+  { key: 'independant_service', id: 'sCountMultiServices' }
 ];
 await Promise.all(types.map(async t => {
   const { count } = await db.from(TABLES.SELLERS).select('*', {count:'exact',head:true}).eq('account_type', t.key);
@@ -1013,9 +1182,7 @@ if (totalEl) totalEl.innerText = (totalSellers.count || 0) + (totalAgents.count 
     const activeTypes = [
   { key: 'independant_vendeur',   id: 'sActiveVendeur' },
   { key: 'independant_grossiste', id: 'sActiveGrossiste' },
-      { key: 'vip_vendeur',        id: 'sActiveVipVendeur' },
-      { key: 'vip_grossiste',      id: 'sActiveVipGrossiste' },
-      { key: 'fournisseur_export', id: 'sActiveFournisseur' }
+      { key: 'independant_service', id: 'sActiveMultiServices' }
     ];
     let activeTotal = 0;
     await Promise.all(activeTypes.map(async t => {
@@ -1031,9 +1198,7 @@ if (totalEl) totalEl.innerText = (totalSellers.count || 0) + (totalAgents.count 
       { key: 'livreur',            todayId: 'sClickLivreurToday',     totalId: 'sClickLivreurTotal' },
    { key: 'independant_vendeur',   todayId: 'sClickVendeurToday', totalId: 'sClickVendeurTotal' },
   { key: 'independant_grossiste', todayId: 'sClickGrossisteToday', totalId: 'sClickGrossisteTotal' },
-      { key: 'vip_vendeur',        todayId: 'sClickVipVendeurToday',   totalId: 'sClickVipVendeurTotal' },
-      { key: 'vip_grossiste',      todayId: 'sClickVipGrossisteToday', totalId: 'sClickVipGrossisteTotal' },
-      { key: 'fournisseur_export', todayId: 'sClickFournisseurToday',  totalId: 'sClickFournisseurTotal' }
+      { key: 'independant_service', todayId: 'sClickMultiServicesToday', totalId: 'sClickMultiServicesTotal' }
     ];
     let clickTotal = 0;
     await Promise.all(clickTypes.map(async t => {
@@ -1737,11 +1902,9 @@ async function loadSellersForBadge() {
     .eq('is_blocked', false).order('stars', { ascending: false });
 
 const typeLabel = {
-    independant_vendeur:   '👤 Vendeur',
-    independant_grossiste: '📦 Grossiste',
-    vip_vendeur:           '👑 VIP Vendeur',
-    vip_grossiste:         '👑 VIP Grossiste',
-    fournisseur_export:    '🌍 Fournisseur'
+    independant_vendeur:   '🛍️ Boutique & Vendeur',
+    independant_grossiste: '🏭 Grossiste & Importateur',
+    independant_service:   '⭐ Multi-Services & Commerce'
   };
   const all = [
     ...(sellers  || []).map(s => ({ ...s, entityType: 'seller',
@@ -1949,12 +2112,10 @@ async function runAutoBlock() {
 // MODULE PAIEMENT
 // ================================================================
 const TARIFS_ADMIN = {
-  livreur:            { label:'🚚 Livreur',              mensuel:1500,  trimestriel:4000,  annuel:15000,  table:'delivery_agents', db_type:null },
-  vendeur:            { label:'🛍️ Vendeur Indépendant',  mensuel:2000,  trimestriel:5500,  annuel:20000,  table:'sellers',         db_type:'independant_vendeur' },
-  vip_vendeur:        { label:'👑 Vendeur VIP',           mensuel:5000,  trimestriel:13500, annuel:50000,  table:'sellers',         db_type:'vip_vendeur' },
-  grossiste:          { label:'🏭 Grossiste Indépendant', mensuel:5000,  trimestriel:13500, annuel:50000,  table:'sellers',         db_type:'independant_grossiste' },
-  vip_grossiste:      { label:'👑 Grossiste VIP',         mensuel:10000, trimestriel:27000, annuel:100000, table:'sellers',         db_type:'vip_grossiste' },
-  fournisseur_export: { label:'📦 Fournisseur Export',    mensuel:20000, trimestriel:54000, annuel:200000, table:'sellers',         db_type:'fournisseur_export' }
+  livreur:        { label:'🛵 Taxi',                     mensuel:1000, trimestriel:2700,  annuel:10000, table:'delivery_agents', db_type:null },
+  vendeur:        { label:'🛍️ Boutique & Vendeur',       mensuel:1500, trimestriel:4000,  annuel:15000, table:'sellers',         db_type:'independant_vendeur' },
+  multi_services: { label:'⭐ Multi-Services & Commerce', mensuel:3000, trimestriel:8000,  annuel:30000, table:'sellers',         db_type:'independant_service' },
+  grossiste:      { label:'🏭 Grossiste & Importateur',   mensuel:5000, trimestriel:13500, annuel:50000, table:'sellers',         db_type:'independant_grossiste' }
 };
 let _paiementSeller = null;
 
@@ -2137,9 +2298,9 @@ async function loadFournisseurs() {
     const div = document.getElementById('fournisseursResults');
     div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
 
-    let query = db.from(TABLES.SELLERS)
-    .select('id,code,full_name,phone,ville,category,is_blocked,subscription_end,subscription_status,is_verified')
-      .eq('account_type', 'fournisseur_export')
+let query = db.from(TABLES.SELLERS)
+    .select('id,code,full_name,phone,ville,pays,category,is_blocked,is_approved,subscription_end,subscription_status,is_verified')
+     .eq('account_type', 'independant_service')
       .order('created_at', { ascending: false });
 
     if (q) query = query.or(`code.ilike.%${q}%,full_name.ilike.%${q}%,ville.ilike.%${q}%,phone.ilike.%${q}%`);
@@ -2151,13 +2312,13 @@ async function loadFournisseurs() {
     }
 
     div.innerHTML = `<div class="table-wrap"><table>
-      <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Ville</th><th>Statut</th><th>Vérifié</th><th>Action</th></tr>
+      <tr><th>Code</th><th>Nom</th><th>Tél</th><th>Ville / Pays</th><th>Statut</th><th>Approbation</th><th>Vérifié</th><th>Action</th></tr>
       ${fournisseurs.map(f => `
         <tr>
           <td><strong style="color:#13c2c2;">${escapeHtml(f.code)}</strong></td>
           <td>${escapeHtml(f.full_name)}</td>
           <td>${escapeHtml(f.phone)}</td>
-          <td>${escapeHtml(f.ville||'')}</td>
+          <td>${escapeHtml(f.ville||'')}${f.pays ? ' / ' + escapeHtml(f.pays) : ''}</td>
           <td>
             ${f.is_blocked
               ? '<span class="badge-red">Bloqué</span>'
@@ -2169,9 +2330,18 @@ async function loadFournisseurs() {
             </small>
           </td>
           <td>
+            ${f.is_approved
+              ? '<span class="badge-green">✔️ Approuvé</span>'
+              : '<span class="badge-yellow">⏳ En attente</span>'}
+          </td>
+          <td>
             ${f.is_verified ? '<span class="badge-green">✔️ Vérifié</span>' : '<span style="color:#ccc;font-size:11px;">Non vérifié</span>'}
           </td>
           <td style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="action-btn ${f.is_approved ? 'block-btn' : 'unblock-btn'}"
+              onclick="toggleApproveFournisseur('${f.id}', ${f.is_approved ? 'true' : 'false'})">
+              ${f.is_approved ? 'Suspendre' : '✅ Approuver'}
+            </button>
             <button class="action-btn ${f.is_blocked ? 'unblock-btn' : 'block-btn'}"
               onclick="toggleBlockFournisseur('${f.id}', ${f.is_blocked})">
               ${f.is_blocked ? 'Débloquer' : 'Bloquer'}
@@ -2201,6 +2371,17 @@ async function toggleBlockFournisseur(id, isBlocked) {
     await db.from(TABLES.SELLERS).update(upd).eq('id', id);
     showToast(isBlocked ? 'Fournisseur débloqué ✓' : 'Fournisseur bloqué ✓', 'success');
     await logAction(isBlocked ? 'Déblocage fournisseur' : 'Blocage fournisseur', id, '', '');
+    loadFournisseurs();
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+async function toggleApproveFournisseur(id, isApproved) {
+  try {
+    if (!confirm(`${isApproved ? 'Suspendre (masquer)' : 'Approuver et publier'} ce fournisseur export ?`)) return;
+    const { error } = await db.from(TABLES.SELLERS).update({ is_approved: !isApproved }).eq('id', id);
+    if (error) { showToast('Erreur', 'error'); return; }
+    showToast(isApproved ? 'Fournisseur suspendu' : 'Fournisseur approuvé et publié ✓', 'success');
+    await logAction(isApproved ? 'Suspension fournisseur' : 'Approbation fournisseur', id, '', '');
     loadFournisseurs();
   } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
 }
