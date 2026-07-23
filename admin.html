@@ -830,9 +830,14 @@ async function verifyPin(code, pin, table) {
         body: JSON.stringify({ code, pin, table })
       }
     );
-    if (!res.ok) return { ok: false, account: null };
+    if (!res.ok) {
+      const errText = await res.text();
+      alert('DEBUG - Status: ' + res.status + ' | Réponse: ' + errText);
+      return { ok: false, account: null };
+    }
     return await res.json();
   } catch (e) {
+    alert('DEBUG - Exception: ' + e.message);
     return { ok: false, account: null };
   }
 }
