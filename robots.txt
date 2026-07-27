@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://marche-moboro.github.io/Congomarket/sitemap.xml
