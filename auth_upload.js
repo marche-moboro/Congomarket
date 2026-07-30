@@ -42,6 +42,7 @@ if (vipRes.ok) {
   _vipManagerConnected = true;
   _vipManagerCode = code;
   sessionStorage.setItem('vip_manager', code);
+  sessionStorage.setItem('vip_session_token', vipRes.session_token);
   const welcome = document.getElementById('vipManagerWelcome');
   if (welcome) welcome.innerText = vipMgr.full_name || code;
   showToast('Bienvenue dans l\'espace VIP 👑', 'success');
@@ -63,7 +64,7 @@ if (code.startsWith('MBRL')) {
       if (isSubscriptionActive()) {
         const statut = checkSubscriptionExpiry(livreur.subscription_end);
         if (statut === 'expire') {
-          await autoBlockExpired(livreur.id, 'delivery_agents');
+          await autoBlockExpired(livreur.code, 'delivery_agents');
           showAbonnementExpireModal(livreur.full_name, livreur.subscription_end);
           return;
         }
@@ -80,6 +81,7 @@ if (code.startsWith('MBRL')) {
         tarif_3_de: livreur.tarif_3_de, tarif_3_a: livreur.tarif_3_a, tarif_3_prix: livreur.tarif_3_prix,
       };
       localStorage.setItem('livreur_code', code);
+      localStorage.setItem('livreur_session_token', livRes.session_token);
       showToast('Bienvenue ' + livreur.full_name, 'success');
       openLivreurDashboard();
       return;
@@ -100,7 +102,7 @@ const seller = selRes.account;
     if (isSubscriptionActive()) {
       const statut = checkSubscriptionExpiry(seller.subscription_end);
       if (statut === 'expire') {
-        await autoBlockExpired(seller.id, 'sellers');
+        await autoBlockExpired(seller.code, 'sellers');
         showAbonnementExpireModal(seller.full_name, seller.subscription_end);
         return;
       }
@@ -110,6 +112,7 @@ const seller = selRes.account;
 _loggedSellerCode = seller.code; // ← mémoriser le code du compte connecté
 subscribeSellerOrderNotifications(seller.id);
 localStorage.setItem('seller_code', code);
+localStorage.setItem('seller_session_token', selRes.session_token);
     showToast('Bienvenue ' + seller.full_name, 'success');
 
     if (seller.account_type === 'fournisseur_export') {
@@ -155,6 +158,10 @@ function closeAbonnementExpireModal() {
 }
 // ================================================================
 // SESSION
+// ✅ CORRIGÉ : la session n'est plus restaurée à partir d'un simple code
+// stocké en clair (usurpable par quiconque connaît le code public d'un
+// vendeur). Elle exige désormais un session_token valide, vérifié
+// côté serveur via account-actions / check_session.
 // ================================================================
 async function checkSession() {
   try {
@@ -169,60 +176,84 @@ async function checkSession() {
     const codeToUse = savedExportCode || savedCode;
 
     if (codeToUse) {
-   const { data: seller } = await db.from(TABLES.SELLERS)
-        .select('id, code, full_name, phone, quartier, address, ville, category, description, photo, is_blocked, is_active, position, dynamisme_score, account_type, subscription_status, subscription_start, subscription_end, stars, badge, is_verified, has_first_sale, is_reliable, pays, is_approved, created_at, last_published, whatsapp_clicks_today, whatsapp_clicks_total')
-        .eq('code', codeToUse).maybeSingle();
+      const sellerSessionToken = localStorage.getItem('seller_session_token');
+      let seller = null;
+
+      if (sellerSessionToken) {
+        try {
+          const res = await fetch(SUPABASE_URL + '/functions/v1/account-actions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+            body: JSON.stringify({ action: 'check_session', table: 'sellers', session_token: sellerSessionToken })
+          });
+          const result = await res.json();
+          seller = result.ok ? result.account : null;
+        } catch (e) {
+          console.error('check_session (seller) error:', e);
+          seller = null;
+        }
+      }
 
       if (seller && !seller.is_blocked) {
+        let expired = false;
         if (isSubscriptionActive()) {
           const statut = checkSubscriptionExpiry(seller.subscription_end);
           if (statut === 'expire') {
-            await autoBlockExpired(seller.id, 'sellers');
+            expired = true;
+            await autoBlockExpired(seller.code, 'sellers');
             localStorage.removeItem('seller_code');
             localStorage.removeItem('export_code');
-          } else {
-            currentSeller = seller;
-         _loggedSellerCode = seller.code; // ← sync au rechargement
-            updateProfileIcon();
-            subscribeSellerOrderNotifications(seller.id);
+            localStorage.removeItem('seller_session_token');
           }
-        } else {
-           currentSeller = seller;
+        }
+        if (!expired) {
+          currentSeller = seller;
           _loggedSellerCode = seller.code; // ← sync au rechargement
           updateProfileIcon();
           subscribeSellerOrderNotifications(seller.id);
+          // ✅ Déjà connecté : direct au tableau de bord, pas la page d'accueil
+          if (seller.account_type === 'fournisseur_export') openFournisseurDashboard();
+          else if (seller.account_type && seller.account_type.startsWith('vip')) openVIPClientDashboard();
+          else openSellerDashboard();
         }
       } else {
         localStorage.removeItem('seller_code');
         localStorage.removeItem('export_code');
+        localStorage.removeItem('seller_session_token');
       }
     }
 
     // ── Session livreur ──
     const savedLivreurCode = localStorage.getItem('livreur_code');
-    if (savedLivreurCode) {
-   const { data: livreur } = await db.from('delivery_agents')
-        .select('id, code, full_name, phone, quartier, ville, moyen, description, photo, is_blocked, is_active, stars, badge, subscription_status, subscription_start, subscription_end, created_at, tarif_1_de, tarif_1_a, tarif_1_prix, tarif_2_de, tarif_2_a, tarif_2_prix, tarif_3_de, tarif_3_a, tarif_3_prix')
-        .eq('code', savedLivreurCode).maybeSingle();
+    const livreurSessionToken = localStorage.getItem('livreur_session_token');
+
+    if (savedLivreurCode && livreurSessionToken) {
+      let livreur = null;
+      try {
+        const livRes = await fetch(SUPABASE_URL + '/functions/v1/account-actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+          body: JSON.stringify({ action: 'check_session', table: 'delivery_agents', session_token: livreurSessionToken })
+        });
+        const livResult = await livRes.json();
+        livreur = livResult.ok ? livResult.account : null;
+      } catch (e) {
+        console.error('check_session (livreur) error:', e);
+        livreur = null;
+      }
+
       if (livreur && !livreur.is_blocked) {
+        let expired = false;
         if (isSubscriptionActive()) {
           const statut = checkSubscriptionExpiry(livreur.subscription_end);
           if (statut === 'expire') {
-            await autoBlockExpired(livreur.id, 'delivery_agents');
+            expired = true;
+            await autoBlockExpired(livreur.code, 'delivery_agents');
             localStorage.removeItem('livreur_code');
-          } else {
-            window._currentLivreur = {
-              fullName: livreur.full_name, phone: livreur.phone,
-              ville: livreur.ville, quartier: livreur.quartier,
-              moyen: livreur.moyen, description: livreur.description,
-              photoUrl: livreur.photo, code: livreur.code, id: livreur.id,
-              subscription_end: livreur.subscription_end,
-              tarif_1_de: livreur.tarif_1_de, tarif_1_a: livreur.tarif_1_a, tarif_1_prix: livreur.tarif_1_prix,
-              tarif_2_de: livreur.tarif_2_de, tarif_2_a: livreur.tarif_2_a, tarif_2_prix: livreur.tarif_2_prix,
-              tarif_3_de: livreur.tarif_3_de, tarif_3_a: livreur.tarif_3_a, tarif_3_prix: livreur.tarif_3_prix,
-            };
+            localStorage.removeItem('livreur_session_token');
           }
-        } else {
+        }
+        if (!expired) {
           window._currentLivreur = {
             fullName: livreur.full_name, phone: livreur.phone,
             ville: livreur.ville, quartier: livreur.quartier,
@@ -233,10 +264,16 @@ async function checkSession() {
             tarif_2_de: livreur.tarif_2_de, tarif_2_a: livreur.tarif_2_a, tarif_2_prix: livreur.tarif_2_prix,
             tarif_3_de: livreur.tarif_3_de, tarif_3_a: livreur.tarif_3_a, tarif_3_prix: livreur.tarif_3_prix,
           };
+          // ✅ Déjà connecté : direct au tableau de bord
+          openLivreurDashboard();
         }
       } else {
         localStorage.removeItem('livreur_code');
+        localStorage.removeItem('livreur_session_token');
       }
+    } else if (savedLivreurCode && !livreurSessionToken) {
+      // Ancien localStorage sans token (avant migration) — on force une reconnexion propre
+      localStorage.removeItem('livreur_code');
     }
 
   } catch(e) {
@@ -246,13 +283,35 @@ async function checkSession() {
 
 function logoutSeller() {
   unsubscribeSellerOrderNotifications();
+
+  const sellerToken = localStorage.getItem('seller_session_token');
+  const livreurToken = localStorage.getItem('livreur_session_token');
+
+  if (sellerToken) {
+    fetch(SUPABASE_URL + '/functions/v1/account-actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout', table: 'sellers', session_token: sellerToken })
+    }).catch(() => {});
+  }
+  if (livreurToken) {
+    fetch(SUPABASE_URL + '/functions/v1/account-actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'logout', table: 'delivery_agents', session_token: livreurToken })
+    }).catch(() => {});
+  }
+
   currentSeller = null;
-  _loggedSellerCode = null; // ← reset
+  _loggedSellerCode = null;
   localStorage.removeItem('seller_code');
   localStorage.removeItem('livreur_code');
   localStorage.removeItem('export_code');
+  localStorage.removeItem('seller_session_token');
+  localStorage.removeItem('livreur_session_token');
+  sessionStorage.removeItem('vip_session_token');
   window._currentLivreur = null;
-  window.currentViewedSeller = null; // ← reset vendeur consulté
+  window.currentViewedSeller = null;
   showPage('homePage');
   showToast('Déconnecté', 'info');
 }

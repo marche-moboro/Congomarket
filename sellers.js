@@ -663,7 +663,7 @@ async function openSellerProducts(sellerId, type) {
   try {
     const { data: seller, error } = await db
       .from(TABLES.SELLERS)
-      .select('*')
+      .select('id, code, full_name, phone, quartier, address, ville, category, description, photo, is_blocked, is_active, position, dynamisme_score, account_type, subscription_status, subscription_start, subscription_end, stars, badge, is_verified, has_first_sale, is_reliable, pays, is_approved, created_at, last_published, whatsapp_clicks_today, whatsapp_clicks_total')
       .eq('id', sellerId)
       .single();
 

@@ -1345,8 +1345,8 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="dashboardPage">
   <div class="register-page">
         <div class="page-header">
-    <button class="back-btn" onclick="goHome()">←</button>
-<div><div class="section-title">Mon espace</div></div>
+    <div><div class="section-title">Mon espace</div></div>
+    <button class="secondary-btn" onclick="goHome()">🌐 Ouvrir le site</button>
     </div>
 
     <div class="seller-profile-header">
@@ -1699,8 +1699,8 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="adminDashboard">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
       <div><div class="section-title">👑 Espace VIP</div></div>
+      <button class="secondary-btn" onclick="goHome()">🌐 Ouvrir le site</button>
     </div>
 
     <div style="text-align:center;padding:10px 0 16px;">
@@ -1768,8 +1768,8 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="vipClientDashboard">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
       <div><div class="section-title">👑 Mon espace VIP</div></div>
+      <button class="secondary-btn" onclick="goHome()">🌐 Ouvrir le site</button>
     </div>
 
     <div class="seller-profile-header">
@@ -2555,8 +2555,8 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="livreurDashboardPage">
   <div class="register-page">
     <div class="page-header">
-      <button class="back-btn" onclick="goHome()">←</button>
-      <div><div class="section-title">Mon Compte Livreur</div></div>
+     <div><div class="section-title">Mon Compte Livreur</div></div>
+      <button class="secondary-btn" onclick="goHome()">🌐 Ouvrir le site</button>
     </div>
     <div class="form-card">
 
@@ -3425,11 +3425,13 @@ function showPage(pageId, fromPopState = false) {
     _scrollMemory[activePage.id] = window.scrollY;
   }
 
-  // Reset contexte vendeur si retour à l'accueil
+  // Reset uniquement du contexte "boutique consultée" (navigation publique).
+  // ⚠️ Ne plus effacer currentSeller/_currentLivreur ici : ce sont les
+  // variables de connexion du compte, pas le contexte de navigation —
+  // les effacer à chaque retour accueil déconnectait silencieusement
+  // l'utilisateur en pleine session.
   if (pageId === 'homePage') {
     window.currentViewedSeller = null;
-    if (typeof currentSeller !== 'undefined') currentSeller = null;
-    window._currentLivreur = null;
   }
 
   document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
@@ -3588,67 +3590,36 @@ async function validateFournisseurExportPin() {
   if (!data) { showPage('registerFournisseurExportPage'); _submittingExport = false; return; }
 
   try {
-    const { count } = await db.from(TABLES.SELLERS).select('*', { count: 'exact', head: true });
-    const sellerCode = generateSellerCode(count || 0);
+    let paysDetecte = '—', villeDetectee = '—';
+    try {
+      const geo = await fetch('https://ipapi.co/json/').then(r => r.json());
+      paysDetecte   = geo.country_name || '—';
+      villeDetectee = geo.city         || '—';
+    } catch(e) {}
 
-    const { data: sysSetting1 } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
-    const sysOn1 = sysSetting1 && sysSetting1.value === 'on';
-    const today1 = new Date(); const end1 = new Date(today1); end1.setDate(end1.getDate()+30);
+    const res = await fetch(SUPABASE_URL + '/functions/v1/register-seller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({
+        type: 'fournisseur_export',
+        pin,
+        full_name: data.fullName, phone: data.phone, quartier: data.quartier,
+        address: data.address, ville: data.ville, category: data.category,
+        description: data.description, pays: data.pays, photo: data.photoUrl,
+        pays_declare: data.pays, pays_detecte: paysDetecte,
+        ville_declaree: data.ville, ville_detectee: villeDetectee
+      })
+    });
+    const result = await res.json();
 
-    const { data: created, error } = await db.from(TABLES.SELLERS).insert({
-      code:          sellerCode,
-full_name:           data.fullName,
-      phone:               data.phone,
-      quartier:            data.quartier,
-      address:             data.address,
-      ville:               data.ville,
-      category:            data.category,
-      description:         data.description,
-      pin_hash: await hashPin(pin),
-      photo:               data.photoUrl,
-      is_blocked:          false,
-      is_active:           true,
-      position:            0,
-      dynamisme_score:     0,
-      account_type:        'fournisseur_export',
-      subscription_status: 'en_cours',
-      subscription_start:  sysOn1 ? today1.toISOString().split('T')[0] : null,
-      subscription_end:    sysOn1 ? end1.toISOString().split('T')[0] : null,
-      created_at:          new Date().toISOString()
-    }).select().single();
+    if (!result.ok) { showToast(result.error || 'Erreur création du compte', 'error'); return; }
 
-    if (error || !created) { showToast('Erreur création du compte', 'error'); return; }
-
-    // Détection localisation en arrière-plan
-let paysDetecte = '—', villeDetectee = '—';
-try {
-  const geo = await fetch('https://ipapi.co/json/').then(r => r.json());
-  paysDetecte   = geo.country_name || '—';
-  villeDetectee = geo.city         || '—';
-} catch(e) {}
-
-// Email admin
-await notifyAdminEmail({ seller: {
-  full_name:      data.fullName,
-  phone:          data.phone,
-  category:       data.category,
-  quartier:       data.quartier,
-  address:        data.address,
-  pays_declare:   data.pays,
-  pays_detecte:   paysDetecte,
-  ville_declaree: data.ville,
-  ville_detectee: villeDetectee,
-  description:    data.description,
-  account_type:   'fournisseur_export',
-  code:           sellerCode
-}});
-
-document.getElementById('notifName').innerText = data.fullName;
-document.getElementById('notifCode').innerText = sellerCode;
-document.getElementById('notifTarif').innerText = 'Frais : 20 000 FCFA/mois après période promo de lancement.';
-showToast('Compte créé ! En attente de validation par l\'administration avant publication.', 'success');
-showPage('registerSuccessPage');
-window._pendingExportData = null;
+    document.getElementById('notifName').innerText = data.fullName;
+    document.getElementById('notifCode').innerText = result.account.code;
+    document.getElementById('notifTarif').innerText = 'Frais : 20 000 FCFA/mois après période promo de lancement.';
+    showToast('Compte créé ! En attente de validation par l\'administration avant publication.', 'success');
+    showPage('registerSuccessPage');
+    window._pendingExportData = null;
   } catch(e) {
     showToast('Erreur: ' + e.message, 'error');
   } finally {
@@ -4099,43 +4070,23 @@ async function validateIndependantPin() {
   if (!data) { showPage('registerIndependantPage'); _submittingIndep = false; return; }
 
   try {
-    const { count } = await db.from(TABLES.SELLERS).select('*', { count: 'exact', head: true });
-    const sellerCode = generateSellerCode(count || 0);
+    const res = await fetch(SUPABASE_URL + '/functions/v1/register-seller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({
+        type: 'independant',
+        pin,
+        full_name: data.fullName, phone: data.phone, quartier: data.quartier,
+        address: data.address, ville: data.ville, description: data.description,
+        account_type_choice: data.accountType, photo: data.photoUrl
+      })
+    });
+    const result = await res.json();
 
-const { data: sysSetting2 } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
-    const sysOn2 = sysSetting2 && sysSetting2.value === 'on';
-    const today2 = new Date(); const end2 = new Date(today2); end2.setDate(end2.getDate()+30);
-
-    const newSeller = {
-      code:                sellerCode,
-      full_name:           data.fullName,
-      phone:               data.phone,
-      quartier:            data.quartier,
-      address:             data.address,
-      ville:               data.ville,
-      category:            data.accountType,
-      description:         data.description,
-      pin_hash: await hashPin(pin),
-      photo:               data.photoUrl,
-      is_blocked:          false,
-      is_active:           true,
-      position:            0,
-      dynamisme_score:     0,
-      account_type:        'independant_' + data.accountType,
-      subscription_status: 'en_cours',
-      subscription_start:  sysOn2 ? today2.toISOString().split('T')[0] : null,
-      subscription_end:    sysOn2 ? end2.toISOString().split('T')[0] : null,
-      created_at:          new Date().toISOString()
-    };
-
-    const { data: created, error } = await db.from(TABLES.SELLERS).insert(newSeller).select().single();
-    if (error || !created) { showToast('Erreur création du compte', 'error'); return; }
-
-    // Email admin — même Edge Function que l'inscription vendeur standard
-    await notifyAdminEmail({ seller: created });
+    if (!result.ok) { showToast(result.error || 'Erreur création du compte', 'error'); return; }
 
     document.getElementById('notifName').innerText = data.fullName;
-    document.getElementById('notifCode').innerText = sellerCode;
+    document.getElementById('notifCode').innerText = result.account.code;
     const _indepTarifsConfirm = { vendeur: '1 500', grossiste: '5 000', service: '3 000' };
     document.getElementById('notifTarif').innerText = 'Frais : ' + (_indepTarifsConfirm[_indepAccountType] || '1 500') + ' FCFA/mois après période promo de lancement.';
     showPage('registerSuccessPage');
@@ -4178,17 +4129,17 @@ async function registerDeliveryAgent() {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerText = 'Inscription...'; }
 
   const fullName    = document.getElementById('livreurFullName').value.trim();
-const countryCode = document.getElementById('livreurCountryCode').value;
-const rawPhone = document.getElementById('livreurPhone').value.trim();
-const phone = countryCode + rawPhone;
+  const countryCode = document.getElementById('livreurCountryCode').value;
+  const rawPhone = document.getElementById('livreurPhone').value.trim();
+  const phone = countryCode + rawPhone;
   const ville       = document.getElementById('livreurVille').value.trim();
   const quartier    = document.getElementById('livreurQuartier').value.trim();
   const moyen       = document.getElementById('livreurMoyen').value.trim();
   const description = document.getElementById('livreurDescription').value.trim();
   const photoInput = document.getElementById('livreurPhotoFile');
-const photoFile = photoInput && photoInput.files
-    ? photoInput.files[0]
-    : null;
+  const photoFile = photoInput && photoInput.files
+      ? photoInput.files[0]
+      : null;
 
   if (!fullName || !phone || !ville || !quartier || !moyen) {
     showToast('Remplissez tous les champs obligatoires', 'error');
@@ -4196,19 +4147,10 @@ const photoFile = photoInput && photoInput.files
     return;
   }
 
-  const { data: existing } = await db.from('delivery_agents')
-    .select('id').eq('phone', phone).maybeSingle();
-  if (existing) { showToast('Ce numéro est déjà inscrit comme livreur.', 'error'); _submittingLivreur = false; if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = '🚚 S\'inscrire comme livreur'; } return; }
-  
-  // Générer code livreur
-const { count } = await db.from('delivery_agents').select('*', { count: 'exact', head: true });
-const livreurCode = 'MBRL' + String((count || 0) + 1).padStart(4, '0') + 'R';
-
-// Récupérer PIN
-const pin = document.getElementById('pinLivreurInput').value.trim();
-const pinConfirm = document.getElementById('pinLivreurConfirmInput').value.trim();
-if (pin.length < 4) { showToast('PIN trop court', 'error'); _submittingLivreur = false; return; }
-if (pin !== pinConfirm) { showToast('PINs différents', 'error'); _submittingLivreur = false; return; }
+  const pin = document.getElementById('pinLivreurInput').value.trim();
+  const pinConfirm = document.getElementById('pinLivreurConfirmInput').value.trim();
+  if (pin.length < 4) { showToast('PIN trop court', 'error'); _submittingLivreur = false; return; }
+  if (pin !== pinConfirm) { showToast('PINs différents', 'error'); _submittingLivreur = false; return; }
 
   let photoUrl = '';
   if (photoFile) {
@@ -4217,47 +4159,23 @@ if (pin !== pinConfirm) { showToast('PINs différents', 'error'); _submittingLiv
   }
 
   try {
-const { data: sysSetting3 } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
-    const sysOn3 = sysSetting3 && sysSetting3.value === 'on';
-    const today3 = new Date(); const end3 = new Date(today3); end3.setDate(end3.getDate()+30);
+    const res = await fetch(SUPABASE_URL + '/functions/v1/register-seller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({
+        type: 'livreur',
+        pin,
+        full_name: fullName, phone, ville, quartier, moyen, description, photo: photoUrl
+      })
+    });
+    const result = await res.json();
 
-const { data: createdLivreur, error } = await db.from('delivery_agents').insert({
-  code:        livreurCode,
-  pin_hash: await hashPin(pin),
-  full_name:   fullName,
-  phone:       phone,
-  ville:       ville,
-  quartier:    quartier,
-  moyen:       moyen,
-  description: description,
-  photo:       photoUrl,
-  is_active:   true,
-  is_blocked:  false,
-  subscription_status: 'en_cours',
-  subscription_start:  sysOn3 ? today3.toISOString().split('T')[0] : null,
-  subscription_end:    sysOn3 ? end3.toISOString().split('T')[0] : null,
-created_at:  new Date().toISOString()
-}).select().single();
-
-    if (error) { showToast('Erreur inscription: ' + error.message, 'error'); return; }
-
-    await notifyAdminEmail({ seller: {
-      full_name:    fullName,
-      phone:        phone,
-      category:     'Agent de Livraison',
-      moyen:        moyen,
-      ville:        ville,
-      quartier:     quartier,
-      description:  description,
-      account_type: 'livreur',
-      code:         livreurCode
-    }});
+    if (!result.ok) { showToast('Erreur inscription: ' + (result.error || ''), 'error'); return; }
 
     showToast('Inscription livreur réussie ! ✓', 'success');
 
-    // Afficher page succès livreur
     document.getElementById('livreurNotifName').innerText = fullName;
-    document.getElementById('livreurNotifCode').innerText = livreurCode;
+    document.getElementById('livreurNotifCode').innerText = result.account.code;
     showPage('livreurSuccessPage');
   } catch (e) {
     showToast('Erreur: ' + e.message, 'error');
@@ -4509,7 +4427,7 @@ function goBackToDashboard() {
   // Si currentSeller a été perdu (navigation longue), le recharger depuis localStorage
   if (!currentSeller && _loggedSellerCode) {
     // recharger depuis Supabase puis rediriger
-    db.from(TABLES.SELLERS).select('*').eq('code', _loggedSellerCode).maybeSingle()
+    db.from(TABLES.SELLERS).select('id, code, full_name, phone, quartier, address, ville, category, description, photo, is_blocked, is_active, account_type, subscription_status, subscription_start, subscription_end, stars, badge, position, dynamisme_score, is_verified, has_first_sale, is_reliable, pays, is_approved, created_at, last_published, whatsapp_clicks_today, whatsapp_clicks_total').eq('code', _loggedSellerCode).maybeSingle()
       .then(({ data }) => {
         if (data) {
           currentSeller = data;
@@ -4554,6 +4472,15 @@ function loadAdminStats() {
 // Identifiant gestionnaire VIP (vérifié dans Supabase table vip_managers)
 let _vipSessionToken = null;
 
+async function callLivreurAction(action, payload = {}) {
+  const token = localStorage.getItem('livreur_session_token');
+  const res = await fetch(SUPABASE_URL + '/functions/v1/staff-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ session_token: token, action, payload })
+  });
+  return await res.json();
+}
 async function callAdminAction(action, payload = {}) {
   const res = await fetch(SUPABASE_URL + '/functions/v1/staff-action', {
     method: 'POST',
@@ -4756,7 +4683,8 @@ async function openVIPList(type) {
 async function vipListLogin(code) {
   try {
     const { data: seller } = await db.from(TABLES.SELLERS)
-      .select('*').eq('code', code).maybeSingle();
+      .select('id, code, full_name, phone, quartier, address, ville, category, description, photo, is_blocked, is_active, account_type, subscription_status, subscription_start, subscription_end, stars, badge')
+      .eq('code', code).maybeSingle();
 
     if (!seller) { showToast('Compte introuvable', 'error'); return; }
     if (seller.is_blocked) { showToast('Compte bloqué', 'error'); return; }
@@ -4767,6 +4695,7 @@ async function vipListLogin(code) {
       if (!pin) return;
       const pinCheck = await verifyPin(code, pin, 'sellers');
       if (!pinCheck.ok) { showToast('PIN incorrect', 'error'); return; }
+      localStorage.setItem('seller_session_token', pinCheck.session_token);
     }
 
     currentSeller = seller;
@@ -4782,8 +4711,7 @@ async function vipListLogin(code) {
 async function toggleVIPBlock(id, isBlocked, type) {
   try {
   if (!confirm(`${isBlocked ? 'Débloquer' : 'Bloquer'} ce compte VIP ?`)) return;
-  const { error } = await db.from(TABLES.SELLERS)
-    .update({ is_blocked: !isBlocked }).eq('id', id);
+  const { error } = await callAdminAction('block_seller', { id, is_blocked: !isBlocked });
   if (error) { showToast('Erreur', 'error'); return; }
   showToast(isBlocked ? 'Compte débloqué ✓' : 'Compte bloqué ✓', 'success');
   openVIPList(type);
@@ -4885,7 +4813,8 @@ async function vipSellerLogin() {
 
   try {
     const { data: seller, error } = await db.from(TABLES.SELLERS)
-      .select('*').eq('code', code).maybeSingle();
+      .select('id, code, full_name, phone, quartier, address, ville, category, description, photo, is_blocked, is_active, account_type, subscription_status, subscription_start, subscription_end, stars, badge')
+      .eq('code', code).maybeSingle();
 
     if (error || !seller) { showToast('Code vendeur introuvable', 'error'); return; }
     if (!seller.account_type || !seller.account_type.startsWith('vip')) {
@@ -4899,6 +4828,7 @@ async function vipSellerLogin() {
 
     currentSeller = seller;
     localStorage.setItem('seller_code', code);
+    localStorage.setItem('seller_session_token', pinCheck.session_token);
     showToast('Connexion VIP réussie ! Bienvenue ' + seller.full_name, 'success');
 
     // Ouvrir le dashboard VIP client (5 boutons seulement)
@@ -4958,9 +4888,9 @@ async function submitVIPRegistration() {
   const btn = document.querySelector('[onclick="submitVIPRegistration()"]');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerText = 'Création...'; }
 
-const countryCode = document.getElementById('vipRegCountryCode').value;
-const rawPhone = document.getElementById('vipRegPhone').value.trim();
-const phone = countryCode + rawPhone;
+  const countryCode = document.getElementById('vipRegCountryCode').value;
+  const rawPhone = document.getElementById('vipRegPhone').value.trim();
+  const phone = countryCode + rawPhone;
   const fullName     = document.getElementById('vipRegFullName').value.trim();
   const quartier    = document.getElementById('vipRegQuartier').value.trim();
   const address     = document.getElementById('vipRegAddress').value.trim();
@@ -4974,54 +4904,25 @@ const phone = countryCode + rawPhone;
   }
   if (pin.length < 4) { showToast('PIN minimum 4 chiffres', 'error'); _submittingVIP = false; if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = '👑 Créer le compte VIP'; } return; }
 
-  const { data: existing } = await db.from(TABLES.SELLERS)
-    .select('id').eq('phone', phone).maybeSingle();
-  if (existing) { showToast('Ce numéro a déjà un compte', 'error'); _submittingVIP = false; if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = '👑 Créer le compte VIP'; } return; }
-
   try {
-    const { count } = await db.from(TABLES.SELLERS)
-      .select('*', { count: 'exact', head: true });
-    const sellerCode = generateSellerCode(count || 0);
+    const res = await fetch(SUPABASE_URL + '/functions/v1/register-seller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({
+        type: 'vip',
+        pin,
+        full_name: fullName, phone, quartier, address, ville, category, description,
+        vip_type: _vipRegType
+      })
+    });
+    const result = await res.json();
 
-    const { data: sysSetting4 } = await db.from('settings').select('value').eq('key','subscription_system').maybeSingle();
-    const sysOn4 = sysSetting4 && sysSetting4.value === 'on';
-    const today4 = new Date(); const end4 = new Date(today4); end4.setDate(end4.getDate()+30);
-
-    const { data: created, error } = await db.from(TABLES.SELLERS).insert({
-      code:          sellerCode,
-full_name:           data.fullName,
-      phone:               data.phone,
-      quartier:            data.quartier,
-      address:             data.address,
-      ville:               data.ville,
-      pays:                data.pays,
-      category:            data.category,
-      description:         data.description,
-      is_approved:         false,
-      pin_hash: await hashPin(pin),
-      photo:               '',
-      is_blocked:          false,
-      is_active:           true,
-      position:            0,
-      dynamisme_score:     0,
-      account_type:        'vip_' + _vipRegType,
-      subscription_status: 'en_cours',
-      subscription_start:  sysOn4 ? today4.toISOString().split('T')[0] : null,
-      subscription_end:    sysOn4 ? end4.toISOString().split('T')[0] : null,
-      created_at:          new Date().toISOString()
-    }).select().single();
-
-    if (error || !created) {
-      showToast(
-        'Erreur création: ' +
-        ((error && error.message) ? error.message : ''),
-        'error'
-      );
+    if (!result.ok) {
+      showToast('Erreur création: ' + (result.error || ''), 'error');
       return;
     }
 
-    await notifyAdminEmail({ seller: created });
-
+    const sellerCode = result.account.code;
     const resultDiv = document.getElementById('vipRegResult');
     resultDiv.style.display = 'block';
     resultDiv.innerHTML = `
@@ -5164,9 +5065,9 @@ async function saveLivreurProfil() {
   if (!fullName || !phone || !ville || !quartier || !moyen) {
     showToast('Remplissez tous les champs', 'error'); return;
   }
-  const { error } = await db.from('delivery_agents').update({
+  const { ok, error } = await callLivreurAction('update_own_livreur', {
     full_name: fullName, phone, ville, quartier, moyen, description
-  }).eq('id', l.id);
+  });
   if (error) { showToast('Erreur sauvegarde', 'error'); return; }
   window._currentLivreur = { ...l, fullName, phone, ville, quartier, moyen, description };
   showToast('Profil mis à jour ✓', 'success');
@@ -5190,7 +5091,7 @@ async function saveLivreurGrille() {
   };
 
   try {
-    const { error } = await db.from('delivery_agents').update(updates).eq('id', l.id);
+    const { ok, error } = await callLivreurAction('update_own_livreur', updates);
     if (error) {
       console.error('saveLivreurGrille error:', error);
       showToast('Erreur : ' + (error.message || 'impossible de sauvegarder'), 'error');

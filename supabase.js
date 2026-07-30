@@ -104,18 +104,18 @@ function checkSubscriptionExpiry(subscriptionEnd) {
 // ================================================================
 // BLOCAGE AUTOMATIQUE EN BASE
 // ================================================================
-async function autoBlockExpired(sellerId, table = 'sellers') {
+async function autoBlockExpired(sellerCode, table = 'sellers') {
   try {
-    await db.from(table).update({
-      is_blocked:          true,
-      subscription_status: 'expire'
-    }).eq('id', sellerId);
-    await logAdminAction('auto_block', table, sellerId, 'Blocage automatique — abonnement expiré');
+    const res = await fetch(SUPABASE_URL + '/functions/v1/account-actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check_and_block_expired', table, payload: { code: sellerCode } })
+    });
+    await res.json();
   } catch(e) {
     console.error('autoBlockExpired error:', e);
   }
 }
-
 
 // ================================================================
 // CATÉGORIES A (Importateurs & Grossistes)
@@ -464,6 +464,7 @@ function formatPrice(price) {
   return Number(price).toLocaleString('fr-FR');
 }
 
+
 // Bug 5 fix — _selectedVille déclarée ici (chargé avant sellers.js et search.js)
 // Elle sera écrasée par index.html si définie là-bas, sans conflit
 if (typeof _selectedVille === 'undefined') var _selectedVille = '';
@@ -490,14 +491,13 @@ async function recordVisit() {
 // ✅ Version unifiée — utilisée par supabase.js ET admin.js (supprimée dans admin.js)
 async function logAdminAction(action, targetTable, targetId = null, details = '', oldValue = null, newValue = null) {
   try {
-    await db.from(TABLES.ADMIN_LOGS).insert({
+    await callAdminAction('log_event', {
       action,
       target_table: targetTable,
       target_id:    targetId,
       details,
       old_value:    oldValue  ? oldValue  : null,
-      new_value:    newValue  ? newValue  : null,
-      created_at:   new Date().toISOString()
+      new_value:    newValue  ? newValue  : null
     });
   } catch (e) {
     console.error('logAdminAction error:', e);

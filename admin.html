@@ -794,7 +794,7 @@ const subtitle = (subtitleInput && subtitleInput.value)
       .update({ url, title, subtitle, updated_at: new Date().toISOString() })
       .eq('id', position);
   } else {
-    await db.from('banner_slides').insert({ id: position, url, title, subtitle });
+    await callAdminAction('create_banner', { id: position, url, title, subtitle });
   }
 
   await logAdminAction('Modifier banner', 'banner_slides', String(position), `Position ${position} mise à jour`);
@@ -883,7 +883,7 @@ async function resetBannerSlide(position) {
   try {
     if (!confirm(`Supprimer la photo personnalisée de la position ${position} ? L'image par défaut réapparaîtra.`)) return;
 
-    await db.from('banner_slides').delete().eq('id', position);
+    await callAdminAction('delete_banner', { id: position });
 
     const def = defaultBannerSlides[position];
     const preview = document.getElementById('preview_' + position);
@@ -1066,14 +1066,14 @@ async function sendAdminNotification() {
 
   try {
     if (_notifSelectedCode) {
-      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert({
+      const { error } = await callAdminAction('send_notification', {
         message, target_type: 'code', target_code: _notifSelectedCode
       });
       if (error) { console.error('sendAdminNotification supabase error:', error); showToast('Erreur envoi', 'error'); return; }
       showToast(`Notification envoyée à ${_notifSelectedCode} ✓`, 'success');
 
     } else if (document.getElementById('notifGroupAll').checked) {
-      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert({
+      const { error } = await callAdminAction('send_notification', {
         message, target_type: 'all'
       });
       if (error) { console.error('sendAdminNotification supabase error:', JSON.stringify(error)); showToast('Erreur envoi', 'error'); return; }
@@ -1083,8 +1083,8 @@ async function sendAdminNotification() {
       const checked = Array.from(document.querySelectorAll('.notifGroupBox:checked')).map(cb => cb.value);
       if (checked.length === 0) { showToast('Choisis au moins un destinataire', 'error'); return; }
 
-      const rows = checked.map(g => ({ message, target_type: 'group', target_group: g }));
-      const { error } = await db.from(TABLES.ADMIN_NOTIFICATIONS).insert(rows);
+      const results = await Promise.all(checked.map(g => callAdminAction('send_notification', { message, target_type: 'group', target_group: g })));
+      const error = results.find(r => !r.ok)?.error;
       if (error) { console.error('sendAdminNotification supabase error:', JSON.stringify(error)); showToast('Erreur envoi', 'error'); return; }
       showToast(`Notification envoyée à ${checked.length} groupe(s) ✓`, 'success');
     }
@@ -1136,7 +1136,7 @@ async function loadRecentNotifications() {
 async function resetPin(sellerId, name) {
   if (!confirm(`Réinitialiser le PIN de ${name} à 0000 ?`)) return;
   try {
-    const { error } = await db.from(TABLES.SELLERS).update({ pin_hash: await hashPin('0000') }).eq('id', sellerId);
+    const { error } = await callAdminAction('update_seller_admin', { id: sellerId, pin: '0000' });
     if (error) { showToast('Erreur: ' + error.message, 'error'); return; }
     showToast(`PIN de ${name} réinitialisé à 0000 ✓`, 'success');
     document.getElementById('resetPinResults').innerHTML = '';
@@ -1423,9 +1423,10 @@ async function blockSeller() {
   try {
   const code = document.getElementById('blockCode').value.trim().toUpperCase();
   if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
-  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  const { data: seller } = await db.from(TABLES.SELLERS).select('id, code, full_name, is_blocked').eq('code', code).maybeSingle();
   if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
-await db.from(TABLES.SELLERS).update({ is_blocked: true }).eq('id', seller.id);
+const { error } = await callAdminAction('block_seller', { id: seller.id, is_blocked: true });
+if (error) { showToast('Erreur: ' + error, 'error'); return; }
 await logAction('Blocage vendeur', code, seller.full_name, 'Bloqué par admin');
   showToast(`${code} bloqué ✓`, 'success');
   } catch(e) {
@@ -1438,9 +1439,10 @@ async function unblockSeller() {
   try {
   const code = document.getElementById('blockCode').value.trim().toUpperCase();
   if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
-  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  const { data: seller } = await db.from(TABLES.SELLERS).select('id, code, full_name, is_blocked').eq('code', code).maybeSingle();
   if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
-  await db.from(TABLES.SELLERS).update({ is_blocked: false }).eq('id', seller.id);
+  const { error } = await callAdminAction('block_seller', { id: seller.id, is_blocked: false });
+  if (error) { showToast('Erreur: ' + error, 'error'); return; }
   await logAction('Déblocage vendeur', code, seller.full_name, 'Débloqué par admin');
   showToast(`${code} débloqué ✓`, 'success');
   } catch(e) {
@@ -1453,7 +1455,7 @@ async function deleteSellerAdmin() {
   try {
   const code = document.getElementById('deleteCode').value.trim().toUpperCase();
   if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
-  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+const { data: seller } = await db.from(TABLES.SELLERS).select('id, code, full_name, is_blocked').eq('code', code).maybeSingle();
   if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
   if (!confirm(`Supprimer définitivement ${seller.full_name} (${code}) ?`)) return;
 
@@ -1480,7 +1482,7 @@ async function blockPhone() {
   const phone  = document.getElementById('blockPhone').value.trim();
   const reason = document.getElementById('blockReason').value.trim();
   if (!phone) { showToast('Entrez un numéro', 'error'); return; }
-  const { error } = await db.from(TABLES.BLOCKED_PHONES).insert({ phone, reason, blocked_by: 'admin' });
+  const { error } = await callAdminAction('block_phone', { phone, reason, blocked_by: 'admin' });
   if (error) { showToast('Erreur ou numéro déjà bloqué', 'error'); return; }
   await logAction('Blocage numéro', phone, '', reason);
   showToast(`${phone} bloqué ✓`, 'success');
@@ -1497,7 +1499,7 @@ async function updateSubscription() {
   const code   = document.getElementById('subCode').value.trim().toUpperCase();
   const status = document.getElementById('subStatus').value;
   if (!code) { showToast('Entrez un code vendeur', 'error'); return; }
-  const { data: seller } = await db.from(TABLES.SELLERS).select('*').eq('code', code).maybeSingle();
+  const { data: seller } = await db.from(TABLES.SELLERS).select('id, code, full_name, is_blocked').eq('code', code).maybeSingle();
   if (!seller) { showToast('Vendeur introuvable', 'error'); return; }
   const updateData = { subscription_status: status };
   if (status === 'en_cours') {
@@ -1508,7 +1510,7 @@ async function updateSubscription() {
     updateData.subscription_end   = end30.toISOString().split('T')[0];
     updateData.is_blocked         = false;
   }
-  await db.from(TABLES.SELLERS).update(updateData).eq('id', seller.id);
+  await callAdminAction('update_seller_admin', { id: seller.id, ...updateData });
   await logAction('Modification abonnement', code, seller.full_name, `Statut: ${status}`);
   showToast(`Abonnement ${code} mis à jour ✓`, 'success');
   } catch(e) {
@@ -1543,19 +1545,7 @@ async function loadLogs() {
 }
 
 async function runCleanup() {
-  if (!confirm('Lancer le nettoyage automatique ?')) return;
-  try {
-    const { error } = await db.rpc('clean_old_data');
-    if (error) {
-      showToast('Erreur nettoyage: ' + error.message, 'error');
-      return;
-    }
-    showToast('Nettoyage effectué ✓', 'success');
-    await logAction('Nettoyage automatique', '', '', 'Données nettoyées');
-    loadStats();
-  } catch(e) {
-    showToast('Erreur nettoyage', 'error');
-  }
+  showToast('Le nettoyage automatique s\'exécute désormais par tâche planifiée (cron), plus besoin de le déclencher manuellement.', 'success');
 }
 // ✅ logAction() → wrapper de logAdminAction() (définie dans supabase.js)
 // Conserve la signature locale utilisée partout dans admin.html
@@ -1620,7 +1610,7 @@ const phone = countryCode + rawPhone;
     const subEnd   = sysOn ? end30.toISOString().split('T')[0] : null;
     const subStart = sysOn ? today.toISOString().split('T')[0] : null;
 
-    const { data: created, error } = await db.from(TABLES.SELLERS).insert({
+    const { ok, data: created, error } = await callAdminAction('create_seller', {
       code:                sellerCode,
       full_name:           fullName,
       phone:               phone,
@@ -1629,7 +1619,7 @@ const phone = countryCode + rawPhone;
       ville:               ville,
       category:            category,
       description:         description,
-      pin_hash:            await hashPin(pin),
+      pin:                 pin,
       photo:               '',
       is_blocked:          false,
       is_active:           true,
@@ -1637,11 +1627,10 @@ const phone = countryCode + rawPhone;
       account_type:        type,
       subscription_status: 'en_cours',
       subscription_start:  subStart,
-      subscription_end:    subEnd,
-      created_at:          new Date().toISOString()
-    }).select().single();
+      subscription_end:    subEnd
+    });
 
-    if (error || !created) {
+    if (!ok || !created) {
 showToast(
     'Erreur création: ' + ((error && error.message) ? error.message : ''),
     'error'
@@ -1744,7 +1733,7 @@ async function loadLivreurs() {
   const div   = document.getElementById('livreursResults');
   div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
 
-  let query = db.from('delivery_agents').select('*').order('created_at', { ascending: false });
+  let query = db.from('delivery_agents').select('id, code, full_name, phone, quartier, ville, moyen, description, photo, is_blocked, is_active, stars, badge, subscription_status, subscription_start, subscription_end, created_at').order('created_at', { ascending: false });
   if (ville) query = query.ilike('ville', `%${ville}%`);
 
   const { data: agents, error } = await query;
@@ -1808,7 +1797,7 @@ async function toggleLivreur(id, isBlocked) {
 async function deleteLivreur(id, name) {
   try {
   if (!confirm(`Supprimer définitivement ${name} ?`)) return;
-  const { error } = await db.from('delivery_agents').delete().eq('id', id);
+  const { error } = await callAdminAction('delete_livreur', { id });
   if (error) { showToast('Erreur suppression', 'error'); return; }
   await logAction('Suppression livreur', id, name, 'Compte livreur supprimé');
   showToast('Livreur supprimé ✓', 'success');
@@ -1943,7 +1932,8 @@ const typeLabel = {
 async function adminGiveBadge(id, entityType, badge) {
   try {
     const table = entityType === 'livreur' ? 'delivery_agents' : TABLES.SELLERS;
-    const { error } = await db.from(table).update({ badge }).eq('id', id);
+    const action = entityType === 'livreur' ? 'update_livreur_admin' : 'update_seller_admin';
+    const { error } = await callAdminAction(action, { id, badge });
     if (error) { showToast('Erreur badge', 'error'); return; }
     await logAction('Badge attribué', id, badge, `Badge ${badge} attribué`);
     showToast(`Badge ${badge} attribué ✓`, 'success');
@@ -1994,7 +1984,8 @@ async function recalculateReliableBadges() {
 async function adminRemoveBadge(id, entityType) {
   try {
     const table = entityType === 'livreur' ? 'delivery_agents' : TABLES.SELLERS;
-    await db.from(table).update({ badge: null }).eq('id', id);
+    const action = entityType === 'livreur' ? 'update_livreur_admin' : 'update_seller_admin';
+    await callAdminAction(action, { id, badge: null });
     await logAction('Badge retiré', id, '', 'Badge retiré');
     showToast('Badge retiré ✓', 'success');
     loadSellersForBadge();
@@ -2095,7 +2086,7 @@ async function runAutoBlock() {
       .not('subscription_end', 'is', null);
 
     for (const s of (expiredSellers || [])) {
-      await db.from('sellers').update({ is_blocked: true, subscription_status: 'expire' }).eq('id', s.id);
+      await callAdminAction('update_seller_admin', { id: s.id, is_blocked: true, subscription_status: 'expire' });
       await logAdminAction('Bloquage automatique', s.code, s.full_name, `Abonnement expiré le ${s.subscription_end || '?'}`);
     }
 
@@ -2107,7 +2098,7 @@ async function runAutoBlock() {
       .not('subscription_end', 'is', null);
 
     for (const a of (expiredAgents || [])) {
-      await db.from('delivery_agents').update({ is_blocked: true, subscription_status: 'expire' }).eq('id', a.id);
+      await callAdminAction('update_livreur_admin', { id: a.id, is_blocked: true, subscription_status: 'expire' });
       await logAdminAction('Bloquage automatique livreur', a.code, a.full_name, `Abonnement expiré`);
     }
 
@@ -2215,17 +2206,18 @@ async function validerPaiement() {
   base.setMonth(base.getMonth() + mois);
   const newEnd = base.toISOString().split('T')[0];
   try {
-    await db.from('payments').insert({
+    await callAdminAction('record_payment', {
       seller_id: _paiementSeller.id, seller_code: _paiementSeller.code||'',
       account_type: type, table_source: tarif.table, montant, duree_mois: mois,
       moyen, reference: reference||null,
       subscription_end_avant: _paiementSeller.subscription_end||null,
-      subscription_end_apres: newEnd, created_at: new Date().toISOString()
+      subscription_end_apres: newEnd
     });
-    await db.from(tarif.table).update({
+    await callAdminAction(tarif.table === 'delivery_agents' ? 'update_livreur_admin' : 'update_seller_admin', {
+      id: _paiementSeller.id,
       subscription_end: newEnd, subscription_status: 'en_cours',
       subscription_start: new Date().toISOString().split('T')[0], is_blocked: false
-    }).eq('id', _paiementSeller.id);
+    });
     await logAdminAction('Paiement enregistré', _paiementSeller.code||'', _paiementSeller.full_name,
       `${montant.toLocaleString('fr-FR')} FCFA · ${duree} · ${moyen}${reference?' · Réf:'+reference:''} · Expire: ${newEnd}`);
     showToast(`✅ Paiement validé — expire le ${new Date(newEnd).toLocaleDateString('fr-FR')}`, 'success');
@@ -2287,17 +2279,7 @@ async function loadPaiementsDashboard() {
     </div>`;
   }
 }
-async function logAdminAction(action, targetTable, targetId, details) {
-  try {
-    await db.from(TABLES.ADMIN_LOGS).insert({
-      action,
-      target_table: targetTable || 'admin',
-      target_id:    targetId    || null,
-      details:      details     || '',
-      created_at:   new Date().toISOString()
-    });
-  } catch(e) { console.warn('logAdminAction error:', e); }
-}
+
 // ================================================================
 // FOURNISSEURS EXPORT
 // ================================================================
@@ -2377,7 +2359,7 @@ async function toggleBlockFournisseur(id, isBlocked) {
     const end   = new Date(today); end.setDate(end.getDate() + 30);
     const upd   = { is_blocked: !isBlocked, subscription_status: isBlocked ? 'en_cours' : 'expire' };
     if (isBlocked) { upd.subscription_start = today.toISOString().split('T')[0]; upd.subscription_end = end.toISOString().split('T')[0]; }
-    await db.from(TABLES.SELLERS).update(upd).eq('id', id);
+    await callAdminAction('update_seller_admin', { id, ...upd });
     showToast(isBlocked ? 'Fournisseur débloqué ✓' : 'Fournisseur bloqué ✓', 'success');
     await logAction(isBlocked ? 'Déblocage fournisseur' : 'Blocage fournisseur', id, '', '');
     loadFournisseurs();
@@ -2387,7 +2369,7 @@ async function toggleBlockFournisseur(id, isBlocked) {
 async function toggleApproveFournisseur(id, isApproved) {
   try {
     if (!confirm(`${isApproved ? 'Suspendre (masquer)' : 'Approuver et publier'} ce fournisseur export ?`)) return;
-    const { error } = await db.from(TABLES.SELLERS).update({ is_approved: !isApproved }).eq('id', id);
+    const { error } = await callAdminAction('update_seller_admin', { id, is_approved: !isApproved });
     if (error) { showToast('Erreur', 'error'); return; }
     showToast(isApproved ? 'Fournisseur suspendu' : 'Fournisseur approuvé et publié ✓', 'success');
     await logAction(isApproved ? 'Suspension fournisseur' : 'Approbation fournisseur', id, '', '');
@@ -2398,7 +2380,7 @@ async function toggleApproveFournisseur(id, isApproved) {
 async function toggleVerifyFournisseur(id, isVerified) {
   try {
     if (!confirm(`${isVerified ? 'Retirer la vérification de' : 'Marquer comme "Fournisseur vérifié"'} ce fournisseur ?`)) return;
-    const { error } = await db.from(TABLES.SELLERS).update({ is_verified: !isVerified }).eq('id', id);
+    const { error } = await callAdminAction('update_seller_admin', { id, is_verified: !isVerified });
     if (error) { showToast('Erreur vérification', 'error'); return; }
     showToast(isVerified ? 'Vérification retirée' : 'Fournisseur vérifié ✓', 'success');
     await logAction(isVerified ? 'Retrait vérification fournisseur' : 'Vérification fournisseur', id, '', '');
