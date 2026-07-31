@@ -713,6 +713,18 @@ async function callAdminAction(action, payload = {}) {
   });
   return await res.json();
 }
+async function logAdminAction(action, targetTable, targetId, details) {
+  try {
+    await callAdminAction('log_event', {
+      action,
+      target_table: targetTable || 'admin',
+      target_id: targetId || null,
+      details: details || ''
+    });
+  } catch(e) {
+    console.warn('logAdminAction error:', e);
+  }
+}
 
 const TABLES = {
   SELLERS:         'sellers',
