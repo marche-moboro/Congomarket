@@ -787,6 +787,11 @@ header p { font-size: 12px; opacity: .80; }
 </head>
 <body>
 
+<div id="appLoader" style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <img src="icon-192.png" alt="Marché Moboro" style="width:64px;height:64px;border-radius:16px;">
+  <div style="width:32px;height:32px;border:3px solid #e6f0ff;border-top-color:#1677FF;border-radius:50%;animation:appLoaderSpin 0.8s linear infinite;"></div>
+</div>
+<style>@keyframes appLoaderSpin { to { transform: rotate(360deg); } }</style>
 <!-- ========== HEADER ========== -->
 <header>
   <div class="header-top">
@@ -2883,6 +2888,16 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
+<div class="modal" id="productReviewsListModal">
+  <div class="modal-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;">💬 Avis sur ce produit</h2>
+      <button onclick="closeProductReviewsListModal()" style="background:none;border:none;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="productReviewsListBody" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- Modal abonnement expiré -->
 <div class="modal" id="abonnementExpireModal" style="display:none;">
   <div class="modal-content" style="text-align:center;">
@@ -3841,13 +3856,24 @@ function checkRegisterParam() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   loadCart();
-  showPage('homePage');
-  await checkSession();
+  await checkSession(); // redirige déjà vers le bon tableau de bord si connecté, sinon reste sur homePage (déjà visible par défaut)
   updateProfileIcon();
   showFournisseurExportBtn();
   recordVisit();
   await initBanner();
   checkRegisterParam();
+
+  // Si checkSession() a redirigé directement vers un tableau de bord,
+  // on remplace l'entrée d'historique plutôt que d'en empiler une —
+  // pas de "retour vers l'accueil" indésirable via le bouton physique
+  // au tout premier chargement.
+  const activePage = document.querySelector('.page[style*="display: flex"], .page[style*="display: block"], .page[style*="display:flex"], .page[style*="display:block"]');
+  if (activePage && activePage.id && activePage.id !== 'homePage') {
+    history.replaceState({ pageId: activePage.id }, '', '#' + activePage.id);
+  }
+
+  const loader = document.getElementById('appLoader');
+  if (loader) loader.style.display = 'none';
 });
 
 // ================================================================

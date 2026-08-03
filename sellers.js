@@ -119,7 +119,7 @@ async function loadProductReviewsSummary(productId, elementId) {
       return;
     }
     const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
-    el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis vérifiés)</span>`;
+    el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis vérifiés)</span> <button onclick="openProductReviewsListModal('${productId}')" style="background:none;border:none;color:#1677FF;font-size:12px;text-decoration:underline;cursor:pointer;padding:0;margin-left:4px;">Voir plus</button>`;
   } catch (e) { console.error('loadProductReviewsSummary error:', e); }
 }
 
@@ -236,7 +236,13 @@ async function submitSellerReview() {
       client_phone: phone, client_name: name,
       rating, comment, created_at: new Date().toISOString()
     });
-    if (insertError) { errorEl.innerText = 'Erreur, réessayez.'; return; }
+    if (insertError) {
+      console.error('submitSellerReview insertError:', insertError);
+      errorEl.innerText = insertError.message.includes('Trop d\'avis')
+        ? 'Trop d\'avis envoyés récemment. Réessayez plus tard.'
+        : 'Erreur: ' + insertError.message;
+      return;
+    }
 
     showToast('✅ Merci pour votre avis !', 'success');
     closeSellerReviewModal();
@@ -284,12 +290,51 @@ function closeSellerReviewsListModal() {
   document.getElementById('sellerReviewsListModal').style.display = 'none';
 }
 
+async function openProductReviewsListModal(productId) {
+  const modal = document.getElementById('productReviewsListModal');
+  const body  = document.getElementById('productReviewsListBody');
+  body.innerHTML = '<div class="loading">Chargement...</div>';
+  modal.style.display = 'flex';
+
+  try {
+    const { data, error } = await db.from(TABLES.PRODUCT_REVIEWS)
+      .select('client_name, rating, comment, created_at')
+      .eq('product_id', productId)
+      .order('created_at', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      body.innerHTML = '<p style="text-align:center;color:#888;padding:20px 0;">Aucun avis pour le moment.</p>';
+      return;
+    }
+
+    body.innerHTML = data.map(r => `
+      <div style="border-bottom:1px solid #eee;padding:10px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <strong style="font-size:13px;">${escapeHtml(r.client_name || 'Client')}</strong>
+          <span style="font-size:11px;color:#999;">${new Date(r.created_at).toLocaleDateString('fr-FR')}</span>
+        </div>
+        ${renderStarsReadonly(r.rating)}
+        ${r.comment ? `<p style="font-size:13px;color:#444;margin-top:4px;">${escapeHtml(r.comment)}</p>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('openProductReviewsListModal error:', e);
+    body.innerHTML = '<p style="text-align:center;color:#f5222d;padding:20px 0;">Erreur de chargement.</p>';
+  }
+}
+
+function closeProductReviewsListModal() {
+  document.getElementById('productReviewsListModal').style.display = 'none';
+}
+
 window.loadSellerReviewsSummary   = loadSellerReviewsSummary;
 window.openSellerReviewModal      = openSellerReviewModal;
 window.closeSellerReviewModal     = closeSellerReviewModal;
 window.submitSellerReview         = submitSellerReview;
 window.openSellerReviewsListModal = openSellerReviewsListModal;
 window.closeSellerReviewsListModal = closeSellerReviewsListModal;
+window.openProductReviewsListModal = openProductReviewsListModal;
+window.closeProductReviewsListModal = closeProductReviewsListModal;
 
 // ================================================================
 // PRODUITS SIMILAIRES — tous vendeurs confondus, priorité au nom, pagination 15
