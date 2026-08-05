@@ -52,7 +52,7 @@ if (vipRes.ok) {
 
 if (code.startsWith('MBRL')) {
   const livRes = await verifyPin(code, pin, 'delivery_agents');
-  if (!livRes.ok) { showToast('Code ou PIN incorrect', 'error'); return; }
+  if (!livRes.ok) { showToast(livRes.error || 'Code ou PIN incorrect', 'error'); return; }
   const livreur = livRes.account;
       if (livreur.is_blocked) {
         showToast('Compte bloqué. Contactez l\'admin.', 'error');
@@ -89,7 +89,7 @@ if (code.startsWith('MBRL')) {
 
     // ── Connexion vendeur / grossiste / VIP / fournisseur ───────
     const selRes = await verifyPin(code, pin, 'sellers');
-if (!selRes.ok) { showToast('Code ou PIN incorrect', 'error'); return; }
+if (!selRes.ok) { showToast(selRes.error || 'Code ou PIN incorrect', 'error'); return; }
 const seller = selRes.account;
 
     if (seller.is_blocked) {

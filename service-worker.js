@@ -3,9 +3,9 @@
 // Cache optimisé — fichiers statiques + données réseau
 // ================================================================
 
-const CACHE_STATIC  = 'moboro-static-v15';
-const CACHE_DYNAMIC = 'moboro-dynamic-v15';
-const CACHE_API     = 'moboro-api-v15';
+const CACHE_STATIC  = 'moboro-static-v16';
+const CACHE_DYNAMIC = 'moboro-dynamic-v16';
+const CACHE_API     = 'moboro-api-v16';
 
 // Fichiers statiques — cachés à l'installation
 const ASSETS_TO_CACHE = [
@@ -32,7 +32,17 @@ const API_CACHE_TTL = 15 * 60 * 1000;
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
-      .then(cache => cache.addAll(ASSETS_TO_CACHE))
+      .then(cache => {
+        // ✅ Chaque fichier est mis en cache individuellement — si l'un
+        // d'eux échoue (réseau instable, fichier temporairement absent),
+        // ça ne fait plus échouer TOUTE l'installation du service worker
+        // (contrairement à cache.addAll, qui est tout-ou-rien).
+        return Promise.all(
+          ASSETS_TO_CACHE.map(url =>
+            cache.add(url).catch(e => console.warn('[SW] Échec cache pour', url, e))
+          )
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });

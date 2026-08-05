@@ -451,11 +451,20 @@ async function verifyPin(code, pin, table) {
         body: JSON.stringify({ code, pin, table })
       }
     );
-    if (!res.ok) return { ok: false, account: null };
+    if (!res.ok) return { ok: false, account: null, error: 'Erreur serveur. Réessayez.' };
     return await res.json();
   } catch (e) {
     console.error('verifyPin exception:', e);
-    return { ok: false, account: null };
+    // Une exception ici (fetch qui échoue avant même de recevoir une réponse)
+    // signifie presque toujours une absence de connexion internet, jamais
+    // un mauvais code/PIN — on ne doit pas laisser croire l'inverse.
+    return {
+      ok: false,
+      account: null,
+      error: navigator.onLine === false
+        ? 'Pas de connexion internet. Vérifiez votre réseau et réessayez.'
+        : 'Erreur de connexion. Vérifiez votre réseau et réessayez.'
+    };
   }
 }
 
