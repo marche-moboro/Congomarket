@@ -5,12 +5,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Marché Moboro - Le meilleur marché local-digital au Congo</title>
+<title>Marché Moboro</title>
   <meta name="description" content="Marché Moboro : achetez et vendez près de chez vous. Vendeurs, grossistes, importateurs et agents livreurs — inscription 100% gratuite au Congo.">
   <link rel="canonical" href="https://marche-moboro.github.io/Congomarket/">
   <meta name="robots" content="index, follow">
   <meta name="google-site-verification" content="ni0KGhlLFFeMrFdLsc6wBs1PsUYjRzB-MlxWq1FBmE4" />
-  <meta property="og:title" content="Marché Moboro - Le meilleur marché local-digital">
+  <meta property="og:title" content="Marché Moboro">
   <meta property="og:description" content="Achetez et vendez près de chez vous. Inscription 100% gratuite.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://marche-moboro.github.io/Congomarket/">
@@ -37,6 +37,15 @@
 <link rel="shortcut icon" href="icon-512.png">
   <style>/* ==================== RESET & BASE ==================== */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+* { border-radius: 0 !important; box-shadow: none !important; }
+/* Exceptions : éléments qui doivent rester ronds */
+.profile-icon, .banner-nav, .dot, .cart-circle, .cart-count,
+.seller-avatar, .seller-mini-img, .cart-bar {
+  border-radius: 50% !important;
+}
+.home-sidebar-fab {
+  border-radius: 0 999px 999px 0 !important;
+}
 
 body {
   background: #f5f7fb;
@@ -52,7 +61,7 @@ body {
 header {
   background: linear-gradient(135deg, #1677FF, #0d5bd1);
   color: white;
-  padding: 12px 15px;
+  padding: 10px 15px 8px;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -61,9 +70,9 @@ header {
 
 .header-top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 #headerTitles {
@@ -79,8 +88,31 @@ header {
   overflow: hidden;
 }
 
-header h1 { font-size: 26px; font-weight: 700; }
+header h1 { font-size: 24px; font-weight: 700; }
 header p { font-size: 12px; opacity: .80; }
+
+/* ==================== HEADER SECOND ROW (recherche + carrousel) ==================== */
+.header-second-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-input-wrap .search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  opacity: .5;
+  pointer-events: none;
+}
 
 .profile-icon {
   width: 40px; height: 40px;
@@ -96,27 +128,29 @@ header p { font-size: 12px; opacity: .80; }
 
 /* ==================== SEARCH ==================== */
 .search-box {
-  padding: 10px 15px;
-  background: #1677FF;
+  padding: 0 15px 10px;
+  background: linear-gradient(135deg, #1677FF, #0d5bd1);
   position: sticky;
-  top: 50px;
+  top: 58px;
   z-index: 999;
   transition: top 0.3s ease;
 }
 
 .search-box.at-top {
   top: 0;
+  padding-top: 10px;
 }
 
 .search-box input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 0 16px 0 38px;
   border: none;
-  border-radius: 14px;
+  border-radius: 20px;
   font-size: 14px;
   outline: none;
   box-shadow: 0 4px 12px rgba(0,0,0,.1);
   background: white;
+  height: 40px;
 }
 
 .search-box.at-top input {
@@ -190,6 +224,35 @@ header p { font-size: 12px; opacity: .80; }
   transition: .3s;
 }
 .dot.active { background: white; width: 18px; border-radius: 3px; }
+
+/* ==================== BANNER RÉDUITE (header, défilement vertical) ==================== */
+.banner-mini { flex-shrink: 0; }
+.banner-mini .banner-box {
+  height: 62px; width: 96px;
+}
+.banner-mini .banner-text {
+  padding: 4px 5px 3px;
+}
+.banner-mini .banner-text h2 {
+  font-size: 7px; margin-bottom: 0; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.banner-mini .banner-text p { display: none; }
+.banner-mini .banner-nav {
+  width: 18px; height: 18px; font-size: 14px;
+  left: 50%; top: auto;
+  transform: translateX(-50%) rotate(90deg);
+}
+.banner-mini .banner-nav:active { transform: translateX(-50%) rotate(90deg) scale(.9); }
+.banner-mini .banner-prev { top: 2px; }
+.banner-mini .banner-next { bottom: 2px; top: auto; }
+.banner-mini .banner-dots {
+  bottom: auto; right: 3px; top: 50%;
+  transform: translateY(-50%);
+  flex-direction: column; gap: 3px;
+}
+.banner-mini .dot { width: 4px; height: 4px; }
+.banner-mini .dot.active { width: 4px; height: 12px; border-radius: 3px; }
 
 /* ==================== CATEGORIES ==================== */
 .section-label {
@@ -300,7 +363,7 @@ header p { font-size: 12px; opacity: .80; }
   background: white;
   border-radius: 20px;
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   box-shadow: 0 4px 14px rgba(0,0,0,.08);
 }
 
@@ -326,11 +389,11 @@ header p { font-size: 12px; opacity: .80; }
 
 /* ==================== CART BAR ==================== */
 .cart-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  position: fixed; bottom: 58px; left: 0; right: 0;
   background: white; padding: 12px 15px;
   display: none; justify-content: space-between; align-items: center;
   box-shadow: 0 -4px 20px rgba(0,0,0,.12);
-  z-index: 2000;
+  z-index: 1600;
 }
 
 .cart-left { display: flex; align-items: center; gap: 10px; }
@@ -796,57 +859,45 @@ header p { font-size: 12px; opacity: .80; }
 <header>
   <div class="header-top">
     <div style="display:flex;align-items:center;gap:10px;" id="headerTitles">
-      <img src="data:image/jpeg;base64,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" style="width:44px;height:44px;border-radius:10px;object-fit:contain;background:white;padding:3px;" alt="Moboro">
+      <img src="data:image/jpeg;base64,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" style="width:44px;height:44px;border-radius:10px!important;object-fit:contain;background:white;padding:3px;" alt="Moboro">
       <div>
       <h1>Marché Moboro</h1>
-      <p>Le plus grand marché local-digital à proximité de chez vous!</p>
     </div>
     </div>
   </div>
 </header>
+<div id="installBanner" style="display:none;background:#1677FF;color:#fff;padding:10px 14px;align-items:center;justify-content:space-between;gap:10px;">
+  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+    <img src="icon-192.png" style="width:32px;height:32px;border-radius:8px;flex-shrink:0;" alt="">
+    <span style="font-size:13px;font-weight:600;">Installez l'application Marché Moboro</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+    <button id="installBannerBtn" onclick="installApp()" style="background:#fff;color:#1677FF;border:none;border-radius:20px;padding:6px 14px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">Installer</button>
+    <button onclick="dismissInstallBanner()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+  </div>
+</div>
 
 <!-- ========== SEARCH ========== -->
 <div class="search-box">
-  <div style="display:flex;gap:6px;position:relative;">
-    <input type="text" id="searchInput" placeholder="Produit, vendeur, quartier, ville..."
-      oninput="handleSearch()" style="flex:1;">
+  <div class="header-second-row">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Produit, vendeur, quartier, ville..."
+        oninput="handleSearch()">
+    </div>
 
-    <!-- Custom dropdown ville -->
-    <div id="villeDropdown" style="position:relative;flex-shrink:0;">
-      <button onclick="toggleVilleDropdown(event)"
-        style="display:flex;align-items:center;gap:3px;padding:0 10px;height:100%;
-               background:white;border:none;border-radius:12px;font-size:11px;font-weight:700;
-               color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);
-               white-space:nowrap;min-width:72px;justify-content:center;">
-        <span id="villeDropdownLabel">📍 Où acheter</span>
-        <span style="font-size:9px;opacity:.5;">▼</span>
-      </button>
-      <div id="villeDropdownMenu"
-        style="display:none;position:absolute;right:0;top:calc(100% + 4px);
-               background:white;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);
-               z-index:9999;min-width:150px;overflow:hidden;max-height:260px;overflow-y:auto;">
-        <div onclick="selectVille('','📍Toutes')"
-          class="ville-opt" style="padding:10px 14px;font-size:13px;font-weight:700;color:#1677FF;border-bottom:1px solid #f0f0f0;">
-          📍 Choisi la ville où achetez?
+    <!-- Carrousel (déplacé ici, à droite de la barre de recherche) -->
+    <div class="banner banner-mini">
+      <div class="banner-box">
+        <img id="bannerImg" src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200" loading="lazy" onclick="openLightbox(this.src)" style="cursor:zoom-in;">
+        <!-- Boutons navigation haut/bas -->
+        <button class="banner-nav banner-prev" onclick="bannerPrev()" aria-label="Précédent">&#8249;</button>
+        <button class="banner-nav banner-next" onclick="bannerNext()" aria-label="Suivant">&#8250;</button>
+        <div class="banner-text">
+          <h2 id="bannerTitle">Bienvenue sur Marché Moboro</h2>
+          <p id="bannerSubtitle">Achetez facilement auprès des vendeurs de qualité</p>
         </div>
-        <div onclick="selectVille('Brazzaville','Brazzaville')"         class="ville-opt">Brazzaville</div>
-        <div onclick="selectVille('Pointe-Noire','Pointe-Noire')"       class="ville-opt">Pointe-Noire</div>
-        <div onclick="selectVille('Dolisie','Dolisie')"                 class="ville-opt">Dolisie</div>
-        <div onclick="selectVille('Nkayi','Nkayi')"                     class="ville-opt">Nkayi</div>
-        <div onclick="selectVille('Oyo','Oyo')"                         class="ville-opt">Oyo</div>
-        <div onclick="selectVille('Bétou','Bétou')"                     class="ville-opt">Bétou</div>
-        <div onclick="selectVille('Ouesso','Ouesso')"                   class="ville-opt">Ouesso</div>
-        <div onclick="selectVille('Impfondo','Impfondo')"               class="ville-opt">Impfondo</div>
-        <div onclick="selectVille('Madingou','Madingou')"               class="ville-opt">Madingou</div>
-        <div onclick="selectVille('Owando','Owando')"                   class="ville-opt">Owando</div>
-        <div onclick="selectVille('Sibiti','Sibiti')"                   class="ville-opt">Sibiti</div>
-        <div onclick="selectVille('Mossaka','Mossaka')"                 class="ville-opt">Mossaka</div>
-        <div onclick="selectVille('Gamboma','Gamboma')"                 class="ville-opt">Gamboma</div>
-        <div onclick="selectVille('Djambala','Djambala')"               class="ville-opt">Djambala</div>
-        <div onclick="selectVille('Makoua','Makoua')"                   class="ville-opt">Makoua</div>
-        <div onclick="selectVille('Kinkala','Kinkala')"                 class="ville-opt">Kinkala</div>
-        <div onclick="selectVille('Ewo','Ewo')"                         class="ville-opt">Ewo</div>
-        <div onclick="selectVille('Dongou','Dongou')"                   class="ville-opt">Dongou</div>
+        <div class="banner-dots" id="bannerDots"></div>
       </div>
     </div>
 
@@ -855,149 +906,88 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
+<!-- SIDEBAR GLOBALE (tiroir + bouton flottant, visible sur toutes les pages) -->
+<div id="homeCatSidebarOverlay" class="cat-sidebar-overlay" onclick="closeHomeSidebar()"></div>
+<div id="homeCatSidebar" class="cat-sidebar">
+  <button class="cat-sidebar-close" onclick="closeHomeSidebar()">✕</button>
+
+  <div class="cat-sidebar-section">
+    <div class="cat-sidebar-title">📍 Ville</div>
+    <div id="homeCatSidebarVilles" class="cat-sidebar-scroll"></div>
+  </div>
+
+  <div class="cat-sidebar-section">
+    <div class="cat-sidebar-title">📂 Sous-catégories</div>
+    <div id="homeCatSidebarSubcats" class="cat-sidebar-scroll"></div>
+  </div>
+
+  <div class="cat-sidebar-section cat-sidebar-section-grow">
+    <div class="cat-sidebar-title">🏪 Vendeurs</div>
+    <div id="homeCatSidebarSellers" class="cat-sidebar-scroll"></div>
+  </div>
+
+  <a href="https://wa.me/242050672009" target="_blank" class="cat-sidebar-contact-btn">
+    💬 Nous contacter
+  </a>
+</div>
+<button id="homeSidebarToggleBtn" class="home-sidebar-fab">›</button>
+
+<!-- MENU "COMPTE" (choix connexion / inscription) -->
+<div id="accountChoiceOverlay" class="cat-sidebar-overlay" onclick="closeAccountChoice()"></div>
+<div id="accountChoiceSheet" class="account-choice-sheet">
+  <div class="account-choice-handle"></div>
+  <div class="account-choice-title">👤 Mon compte</div>
+  <button class="account-choice-btn account-choice-login" onclick="closeAccountChoice(); openSellerLogin();">🔑 Se connecter</button>
+  <button class="account-choice-btn account-choice-register" onclick="closeAccountChoice(); openInscriptionChoice();">✏️ Créer mon compte</button>
+</div>
+
+<!-- BARRE DE NAVIGATION FIXE (bas) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-item active" data-tab="accueil" onclick="bottomNavGo('accueil')">
+    <span class="bottom-nav-icon">🏠</span><span>Accueil</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="grossiste" onclick="bottomNavGo('grossiste')">
+    <span class="bottom-nav-icon">🏭</span><span>Grossiste</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="service" onclick="bottomNavGo('service')">
+    <span class="bottom-nav-icon">⭐</span><span>Service</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="compte" onclick="bottomNavGo('compte')">
+    <span class="bottom-nav-icon">👤</span><span>Compte</span>
+  </button>
+</nav>
+
 <!-- ========== HOME PAGE ========== -->
 <div class="page" id="homePage">
 
-  <!-- BANNER -->
-  <div class="banner">
-    <div class="banner-box">
-      <img id="bannerImg" src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200" loading="lazy" onclick="openLightbox(this.src)" style="cursor:zoom-in;">
-      <!-- Boutons navigation avant/arrière -->
-      <button class="banner-nav banner-prev" onclick="bannerPrev()" aria-label="Précédent">&#8249;</button>
-      <button class="banner-nav banner-next" onclick="bannerNext()" aria-label="Suivant">&#8250;</button>
-      <div class="banner-text">
-        <h2 id="bannerTitle">Bienvenue sur Marché Moboro</h2>
-        <p id="bannerSubtitle">Achetez facilement auprès des vendeurs de qualité</p>
+  
+<!-- BANDEAU PROMO ACCUEIL — Grossiste / Service (défilement auto, top 10 en position) -->
+  <div class="home-promo-split">
+    <div class="home-promo-half" id="homePromoGrossiste" onclick="openCategoryTree(TREE_A,'A','🏭 Importateur & Grossiste')">
+      <img class="home-promo-img" id="homePromoGrossisteImg" src="" alt="">
+      <div class="home-promo-overlay">
+        <span class="home-promo-tag">🏭 Grossiste</span>
+        <span class="home-promo-name" id="homePromoGrossisteName"></span>
       </div>
-      <div class="banner-dots" id="bannerDots"></div>
+    </div>
+    <div class="home-promo-half" id="homePromoService" onclick="openCategoryTree(TREE_B1,'A','⭐ Multi-Services & Commerces')">
+      <img class="home-promo-img" id="homePromoServiceImg" src="" alt="">
+      <div class="home-promo-overlay">
+        <span class="home-promo-tag">⭐ Service</span>
+        <span class="home-promo-name" id="homePromoServiceName"></span>
+      </div>
     </div>
   </div>
-  
-<!-- TOP ACTIONS — 2 colonnes -->
-  <div class="categories" style="padding-top:10px;">
-  <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);color:white;" onclick="openCategoryTree(TREE_A,'A','🏭 Importateur & Grossiste')">🏭 Importateurs &amp; Grossistes</button>
-    <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#722ed1,#531dab);color:white;" onclick="openCategoryTree(TREE_B1,'A','⭐ Multi-Services & Commerces')">⭐ Multi-Services &amp; Commerces</button>
-  </div>
 
-  <!-- TOP ACTIONS 2 — 3 colonnes -->
-  <div class="categories" style="grid-template-columns:1fr 1fr 1fr;">
-  <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#52c41a,#389e0d);color:white;" onclick="openInscriptionChoice()">✏️ S'inscrire</button>
-    <button class="cat-btn cat-btn-lg promo-btn" onclick="loadAllPromos()">🔥 Toutes les Promos</button>
-   <button class="cat-btn cat-btn-lg" style="background:linear-gradient(135deg,#13c2c2,#08979c);color:white;" onclick="openSellerLogin()">🔑 Se connecter</button>
-  </div>
-
-<!-- CATÉGORIE B -->
- <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;padding-right:15px;">🛍️ Boutiques & Vendeurs<button class="cat-btn" style="width:auto;padding:8px 22px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#fa8c16,#d46b08);color:white;border-radius:20px;" onclick="openContactDelivery()">🛵 Taxi</button></div>
-  <div class="categories" id="boutiqueGrid">
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chemise','B')">👔 Chemise</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('polo','B')">🙋 Polo</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('lacoste-h','B')">🐊 Lacoste Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('djine','B')">👖 Djine</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('basin-h','B')">🧵 Basin Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-djokingue','B')">👬 Pantalon Djokingue</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-tissu','B')">🪡 Pantalon Tissu</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('costume-h','B')">🕴️ Costume Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('vareuse','B')">🏃 Vareuse</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('jogging','B')">🏌️ Jogging</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('short','B')">🩳 Short</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('maillot-bain-h','B')">🩱 Maillot de Bain</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('ceinture','B')">🪢 Ceinture</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('cravate','B')">👔 Cravate</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chapeau','B')">🎩 Chapeau</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('montre-chainette','B')">🔗 Montre, Chainette & Autres</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussettes','B')">🧦 Chaussettes</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('sous-vetements-h','B')">🩲 Sous-vêtements</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c18','B')">🕴️ Veste & Chaussures de Luxe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c4','B')">👗 Prêt à Porter</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('robe','B')">👘 Robe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('basin-f','B')">🥻 Basin Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('jupe','B')">🎀 Jupe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pantalon-f','B')">🎽 Pantalon Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('costume-f','B')">👩‍💼 Costume Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c12','B')">🎗️ Lingerie Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('super-wax','B')">🎨 Super Wax</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('lacoste-f','B')">🦎 Lacoste Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('maillot-bain-f','B')">👙 Maillot de Bain Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c6','B')">👜 Sacs à Main</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('sacs-voyage','B')">🧳 Sacs de Voyage</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('valisette','B')">💼 Valisette</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('bijoux','B')">💍 Bijoux</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('foulard','B')">🧣 Foulard</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('robe-soiree','B')">💃 Robe de Soirée</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussures-h','B')">👞 Chaussures Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c5','B')">👠 Chaussures Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chaussures-enfant','B')">🩰 Chaussures Enfant</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c1','B')">👟 Basket</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-h','B')">🧍‍♂️ Mannequin Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-f','B')">🧍‍♀️ Mannequin Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('mannequin-enfant','B')">🧒 Mannequin Enfant</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('sandales-h','B')">🩴 Sandales Homme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('sandales-f','B')">👡 Sandales Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('talons','B')">🥿 Talons</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('bottes','B')">🥾 Bottes</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c10','B')">👶 Vêtements Bébé</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('vetements-garcon','B')">👦 Vêtements Garçon</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('vetements-fille','B')">👧 Vêtements Fille</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('jouets','B')">🧸 Jouets</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('velo-enfant','B')">🚲 Vélo</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c3','B')">💄 Beauté & Cosmétiques</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c9','B')">🌸 Parfums de Luxe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c8','B')">🧼 Savon Artisanal</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c11','B')">💇 Perruques & Mèches</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('produit-bain','B')">🛁 Produit de Bain</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('produit-capillaire','B')">💆 Produit Capillaire</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c13','B')">💊 Santé & Bien-être Femme</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('telephone','B')">📱 Téléphone</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('ordinateur','B')">💻 Ordinateur</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('tablette','B')">📟 Tablette</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('chargeur','B')">🔌 Chargeur</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('casque-ecouteurs','B')">🎧 Casque & Écouteurs</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c2','B')">🛡️ Étui Téléphone</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('montre-connectee','B')">⌚ Montre Connectée</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('television','B')">📺 Télévision</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('ventilateur','B')">🌀 Ventilateur</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('console-jeux','B')">🎮 Console & Jeux Vidéo</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('drones-camera','B')">🚁 Drones & Caméra</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c20','B')">🔋 Électronique</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('meubles','B')">🛋️ Meubles</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('electromenager','B')">🍳 Électroménager</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('cuisine-vaisselle','B')">🍽️ Cuisine & Vaisselle</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('literie','B')">🛏️ Literie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c7','B')">🏠 Décoration Maison</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('rideau-tapis','B')">🪟 Rideau & Tapis</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c19','B')">🧴 Plastique Ménager</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('eponge','B')">🧽 Éponge</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c22','B')">🎉 Anniversaire & Objet Jetable</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('alimentation','B')">🛒 Épicerie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('fruits-legumes','B')">🍎 Fruits & Légumes</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('boucherie-poissonnerie','B')">🥩 Boucherie & Poissonnerie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('boulangerie','B')">🥖 Boulangerie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('boissons-jus','B')">🧃 Boissons & Jus</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('produits-bio','B')">🌱 Produits Bio</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c17','B')">🎂 Pâtisserie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c15','B')">📏 Tissus au Mètre</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pagnes','B')">🌺 Pagnes</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c14','B')">♻️ Friperie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('c16','B')">🚢 Occasion d'Europe</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('habit-travail','B')">🦺 Habit de Travail</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('artisanat-local','B')">🪘 Artisanat Local & Monde</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('accessoires-auto','B')">🚗 Accessoires Auto</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('pieces-auto','B')">🔧 Pièces Détachées Auto</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('location-voiture','B')">🚙 Location Voiture</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('voiture-vente','B')">🚘 Voiture en Vente</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('moto-vente','B')">🏍️ Vente des Motos</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('velo-vente','B')">🚴 Vente des Vélos</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('patin-skate','B')">🛼 Patin & Skate</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('articles-sport','B')">⚽ Articles de Sport</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('librairie','B')">📚 Librairie</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('instrument-musique','B')">🎸 Instrument de Musique</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('peche-camping','B')">🎣 Objets de Pêche & Camping</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('articles-religieux','B')">📿 Articles Religieux</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('sacs-scolaires','B')">🎒 Sacs</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('cahiers','B')">📓 Cahiers</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('tenue-cousue','B')">✂️ Tenue Cousue</button>
-    <button class="cat-btn cat-btn-lg" onclick="openCategory('autre-b2','B')">➕ Autre</button>
-  </div>
+<!-- CATÉGORIE B — grille produits personnalisée -->
+ <div class="home-section-header">
+   <span class="home-section-title">🛍️ Boutiques &amp; Vendeurs</span>
+   <div class="home-section-actions">
+     <button class="home-pill-btn" style="background:linear-gradient(135deg,#ff4d4f,#d42020);" onclick="loadAllPromos()">🔥 Promos</button>
+     <button class="home-pill-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="openContactDelivery()">🛵 Taxi</button>
+   </div>
+ </div>
+  <div id="homeProductsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 15px 74px;"></div>
 
   <!-- FOOTER -->
   <div class="footer-bar">
@@ -1070,7 +1060,9 @@ header p { font-size: 12px; opacity: .80; }
     </div>
     <div id="sellerNameMeta" style="padding-bottom:8px;"></div>
   </div>
+
   <div id="productsList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;"></div>
+  <div id="similarSellersBlock"></div>
 </div>
 <!-- ========== PROMOS PAGE ========== -->
 <div class="page" id="promosPage">
@@ -3147,6 +3139,7 @@ function goHome() {
   showPage('homePage');
   updateCartUI();
   window.currentViewedSeller = null;
+  if (typeof initHomeSidebarAndFeed === 'function') initHomeSidebarAndFeed();
 }
 // ================================================================
 // NOTIFICATIONS ADMIN — affichage + fermeture mémorisée (localStorage)
@@ -3854,6 +3847,71 @@ function checkRegisterParam() {
   }
 }
 
+// ================================================================
+// INSTALLATION PWA — bannière "Installer l'application"
+// ================================================================
+let deferredInstallPrompt = null;
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function isIOSDevice() {
+  return /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+}
+
+function isKaiOSDevice() {
+  return /kaios/.test(navigator.userAgent.toLowerCase());
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isStandalone() && !localStorage.getItem('install_banner_dismissed')) {
+    const banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'flex';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  dismissInstallBanner();
+});
+
+async function installApp() {
+  if (isIOSDevice()) {
+    showToast('Sur iPhone : appuyez sur 📤 Partager puis "Sur l\'écran d\'accueil"', 'info');
+    return;
+  }
+  if (isKaiOSDevice()) {
+    showToast('Ouvrez le menu du navigateur puis "Ajouter à l\'écran d\'accueil"', 'info');
+    return;
+  }
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  dismissInstallBanner();
+}
+
+function dismissInstallBanner() {
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'none';
+  localStorage.setItem('install_banner_dismissed', '1');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if ((isIOSDevice() || isKaiOSDevice()) && !isStandalone() && !localStorage.getItem('install_banner_dismissed')) {
+    const banner = document.getElementById('installBanner');
+    const btn = document.getElementById('installBannerBtn');
+    if (banner) banner.style.display = 'flex';
+    if (btn) btn.innerText = 'Comment faire';
+  }
+});
+
+window.installApp = installApp;
+window.dismissInstallBanner = dismissInstallBanner;
+
 window.addEventListener('DOMContentLoaded', async () => {
   loadCart();
   await checkSession(); // redirige déjà vers le bon tableau de bord si connecté, sinon reste sur homePage (déjà visible par défaut)
@@ -3862,7 +3920,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   recordVisit();
   await initBanner();
   checkRegisterParam();
-
+  if (typeof initHomeSidebarAndFeed === 'function') initHomeSidebarAndFeed();
   // Si checkSession() a redirigé directement vers un tableau de bord,
   // on remplace l'entrée d'historique plutôt que d'en empiler une —
   // pas de "retour vers l'accueil" indésirable via le bouton physique
@@ -4368,6 +4426,7 @@ let _villeDropdownOpen = false;
 function toggleVilleDropdown(e) {
   e.stopPropagation();
   const menu = document.getElementById('villeDropdownMenu');
+  if (!menu) return;
   _villeDropdownOpen = !_villeDropdownOpen;
   menu.style.display = _villeDropdownOpen ? 'block' : 'none';
 }
@@ -4384,9 +4443,11 @@ function toggleVilleDropdown(e) {
 // Fermer si clic ailleurs
 document.addEventListener('click', function(e) {
   const villeDropdown = document.getElementById('villeDropdown');
+  const villeDropdownMenu = document.getElementById('villeDropdownMenu');
+  if (!villeDropdownMenu) return; // l'ancien sélecteur ville a été retiré de la page d'accueil
 
 if (!villeDropdown || !villeDropdown.contains(e.target)) {
-    document.getElementById('villeDropdownMenu').style.display = 'none';
+    villeDropdownMenu.style.display = 'none';
     _villeDropdownOpen = false;
   }
 });
@@ -4399,10 +4460,13 @@ if (!villeDropdown || !villeDropdown.contains(e.target)) {
 function selectVille(value, label) {
   _selectedVille = value;
 
-  document.getElementById('villeDropdownLabel').innerText =
-    label.length > 8 ? label.substring(0,8) + '…' : label;
+  const labelEl = document.getElementById('villeDropdownLabel');
+  if (labelEl) {
+    labelEl.innerText = label.length > 8 ? label.substring(0,8) + '…' : label;
+  }
 
-  document.getElementById('villeDropdownMenu').style.display = 'none';
+  const menuEl = document.getElementById('villeDropdownMenu');
+  if (menuEl) menuEl.style.display = 'none';
   _villeDropdownOpen = false;
 
   if (value) {
@@ -4435,6 +4499,16 @@ function hideVilleBanner() {
   if (banner) banner.style.display = 'none';
 }
 
+async function callSellerAction(action, payload = {}) {
+  const token = localStorage.getItem('seller_session_token');
+  const res = await fetch(SUPABASE_URL + '/functions/v1/staff-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ session_token: token, action, payload })
+  });
+  return await res.json();
+}
+window.callSellerAction = callSellerAction;
 // ================================================================
 // ANTI DOUBLE-CLIC — flags globaux
 // ================================================================

@@ -413,12 +413,10 @@ if (!name || !price) {
 
    // Score cumulatif — augmente à chaque publication, jamais réduit
     const _currentScore = currentSeller.dynamisme_score || 0;
-    await db.from(TABLES.SELLERS)
-      .update({
-        last_published:  new Date().toISOString(),
-        dynamisme_score: _currentScore + 1
-      })
-      .eq('id', currentSeller.id);
+    await callSellerAction('update_own_seller', {
+      last_published:  new Date().toISOString(),
+      dynamisme_score: _currentScore + 1
+    });
     currentSeller.dynamisme_score = _currentScore + 1;
 
     showToast(`Produit publié avec ${imageUrls.length} photo(s) ✓`, 'success');

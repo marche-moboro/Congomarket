@@ -539,9 +539,13 @@ async function openCategory(catId, type) {
   document.getElementById('sellerNameTitle').innerText    = title;
   document.getElementById('sellerNameSubtitle').innerText = '';
 
+_recordCategoryVisit(catId);
+
   showPage('productsPage');
 document.getElementById('productsList').innerHTML =
     '<div class="loading">Chargement...</div>';
+  const simBlock = document.getElementById('similarSellersBlock');
+  if (simBlock) simBlock.innerHTML = '';
   updateCartUI();
 
   const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
@@ -594,6 +598,7 @@ let _sellersTotal = 0;
 let _sellersCatId = '';
 let _productsAll      = [];
 let _productsPage     = 0;
+let _sidebarContext   = 'home'; // 'home' | 'category' — contexte de la sidebar partagée
 const PRODUCTS_PER_PAGE = 8;
 
 async function loadSellers(catId, append = false) {
@@ -740,14 +745,13 @@ async function openSellerProducts(sellerId, type) {
     loadSellerReviewsSummary(seller.id);
 
     showPage('productsPage');
-
-    showPage('productsPage');
+    closeHomeSidebar();
     document.getElementById('productsList').innerHTML =
       '<div class="loading">Chargement...</div>';
 
     const { data: products, error: prodError } = await db
       .from(TABLES.PRODUCTS)
-.select('id, namey, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
+.select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
 .eq('seller_id', sellerId)
 .eq('is_active', true)
 .order('created_at', { ascending: false });
@@ -757,6 +761,7 @@ async function openSellerProducts(sellerId, type) {
     }
 
     renderProducts(products || [], type);
+    loadSimilarSellers(seller.id, seller.category);
 
     // Enregistrer 1 vue page_open par visite vendeur (Bug 9 fix)
     recordProductView(null, sellerId, 'page_open');
@@ -773,9 +778,12 @@ async function openSellerProducts(sellerId, type) {
 // Carte produit minimale — tout reste dans le zoom, sauf :
 // prix (badge rouge), nom (bandeau bas), avis (bandeau bas)
 // ================================================================
-function _productCardHtml(p) {
+function _productCardHtml(p, showSeller) {
   const isGrossiste = typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(p.seller_category);
   const tierLine = isGrossiste ? renderQuantityTiersCompact(p) : '';
+  const sellerLine = (showSeller && p.sellers)
+    ? `<div class="product-seller-overlay" onclick="event.stopPropagation(); openSellerProducts('${p.sellers.id}', currentCategoryType || 'B')">🏪 ${escapeHtml(p.sellers.full_name)}</div>`
+    : '';
 
   return `
     <div class="product-card">
@@ -792,6 +800,7 @@ function _productCardHtml(p) {
         <span class="product-price-badge">${formatPrice(p.price)} FCFA</span>
         ${tierLine ? `<span class="product-tier-badge">📦 ${tierLine}</span>` : ''}
         <div class="product-name-overlay">${escapeHtml(p.name)}</div>
+        ${sellerLine}
         <div class="product-reviews-overlay" id="reviews-${p.id}">Chargement...</div>
       </div>
     </div>
@@ -805,20 +814,40 @@ function renderProducts(products, type) {
   _productsAll  = products;
   _productsPage = 0;
   const list = document.getElementById('productsList');
+
   if (!products.length) {
     list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
     return;
   }
   list.innerHTML = '';
 
-  // Mode catégorie multi-boutiques : les produits portent p.sellers (jointure)
-  if (products[0] && products[0].sellers) {
+  const isMultiServices = typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory);
+
+  // Mode "Boutique & Vendeur" (détail) : grille plate + sidebar filtres partagée
+  if (products[0] && products[0].sellers && !isMultiServices) {
+    list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
+    _renderProductsFlat();
+    _sidebarContext = 'category';
+    _populateHomeSidebarStatic();
+    _populateHomeSidebarSellersFromProducts(_productsAll);
+  }
+  // Mode multi-services (groupé par boutique, inchangé)
+  else if (products[0] && products[0].sellers) {
     list.style.cssText = 'display:block;padding:8px 15px 80px;';
     _renderProductsGroupedBySeller();
-  } else {
+  }
+  // Mode boutique unique (page vendeur)
+  else {
     list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
     _appendProducts(type);
   }
+}
+
+// ---- Mode "Boutique & Vendeur" : grille plate avec nom vendeur sur chaque carte ----
+function _renderProductsFlat() {
+  const list = document.getElementById('productsList');
+  list.innerHTML = _productsAll.map(p => _productCardHtml(p, true)).join('');
+  _productsAll.forEach(p => loadProductReviewsSummary(p.id));
 }
 
 // ---- Mode boutique unique (pagination classique) ----
@@ -885,6 +914,55 @@ list.innerHTML = groups.map(g => `
   _productsAll.forEach(p => loadProductReviewsSummary(p.id));
   groups.forEach(g => loadSellerReviewsSummary(g.seller.id));
 }
+
+// ================================================================
+// SIDEBAR CATÉGORIE — fusionnée avec la sidebar globale (voir plus bas
+// _populateHomeSidebarStatic / openHomeSidebar / homeSidebarSelectVille).
+// openCategory() appelle directement ces fonctions partagées.
+// ================================================================
+
+// ================================================================
+// Vendeurs similaires — affichés en bas d'une page vendeur
+// ================================================================
+async function loadSimilarSellers(sellerId, category) {
+  const block = document.getElementById('similarSellersBlock');
+  if (!block) return;
+  if (!category) { block.innerHTML = ''; return; }
+  try {
+    const { data: sellers, error } = await db
+      .from(TABLES.SELLERS)
+      .select('id, full_name, photo, category, stars, badge')
+      .eq('category', category)
+      .eq('is_blocked', false)
+      .eq('is_active', true)
+      .neq('id', sellerId)
+      .order('dynamisme_score', { ascending: false })
+      .limit(10);
+
+    if (error || !sellers || sellers.length === 0) { block.innerHTML = ''; return; }
+
+    block.innerHTML = `
+      <div style="padding:4px 15px 30px;">
+        <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px;">🏪 Vendeurs similaires</div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">
+          ${sellers.map(s => `
+            <div style="min-width:90px;max-width:90px;text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B')">
+              <img src="${escapeHtml(s.photo) || 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'}"
+                onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'"
+                style="width:70px;height:70px;border-radius:50%;object-fit:cover;">
+              <div style="font-size:11px;font-weight:600;color:#222;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.full_name)}</div>
+              <div style="font-size:10px;color:#888;">⭐ ${s.stars || 0}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    console.error('loadSimilarSellers error:', e);
+    block.innerHTML = '';
+  }
+}
+window.loadSimilarSellers = loadSimilarSellers;
 
 function loadMoreProducts() {
   _productsPage++;
@@ -1031,3 +1109,405 @@ window.trackWhatsappClick          = trackWhatsappClick;
 // addToCartFromBtn est exportée automatiquement par cart.js (déclaration globale)
 window.loadMoreProducts            = loadMoreProducts;
 window.subscribeSellerPush = subscribeSellerPush;
+// ================================================================
+// PAGE D'ACCUEIL — Sidebar + grille personnalisée "Boutiques & Vendeurs"
+// ================================================================
+
+// ---- Historique de consultation (localStorage) ----
+const HOME_HISTORY_KEY = 'moboro_visit_history';
+
+function _recordCategoryVisit(catId) {
+  if (typeof TREE_B2 === 'undefined') return;
+  const isB2 = TREE_B2.some(c => c.id === catId);
+  if (!isB2) return;
+  try {
+    const history = JSON.parse(localStorage.getItem(HOME_HISTORY_KEY) || '{}');
+    const entry = history[catId] || { count: 0, lastTs: 0 };
+    entry.count += 1;
+    entry.lastTs = Date.now();
+    history[catId] = entry;
+    localStorage.setItem(HOME_HISTORY_KEY, JSON.stringify(history));
+  } catch (e) { console.error('_recordCategoryVisit error:', e); }
+}
+window._recordCategoryVisit = _recordCategoryVisit;
+
+function _computeHomeFeedCategoryIds() {
+  let history = {};
+  try { history = JSON.parse(localStorage.getItem(HOME_HISTORY_KEY) || '{}'); } catch (e) {}
+  if (typeof TREE_B2 === 'undefined') return [];
+  const b2Ids = new Set(TREE_B2.map(c => c.id));
+  const now = Date.now();
+  const scored = Object.keys(history)
+    .filter(id => b2Ids.has(id))
+    .map(id => ({
+      id,
+      score: history[id].count + ((now - history[id].lastTs) < 86400000 * 3 ? 5 : 0)
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map(x => x.id);
+  return scored.length ? scored : TREE_B2.map(c => c.id);
+}
+
+// ---- Grille produits personnalisée ----
+let _homeFeedPage = 0;
+
+async function loadHomeFeed(append = false) {
+  const list = document.getElementById('homeProductsGrid');
+  if (!list) return;
+
+  if (!append) {
+    _homeFeedPage = 0;
+    list.innerHTML = '<div class="loading">Chargement...</div>';
+  }
+
+  const from = _homeFeedPage * 20;
+  const to = from + 19;
+  const catIds = _computeHomeFeedCategoryIds();
+  if (!catIds.length) { list.innerHTML = ''; return; }
+
+  const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+
+  try {
+    let query = db
+      .from(TABLES.PRODUCTS)
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .in('seller_category', catIds)
+      .eq('is_active', true)
+      .eq('sellers.is_blocked', false)
+      .eq('sellers.is_active', true);
+
+    if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
+
+    const { data, error } = await query.order('created_at', { ascending: false }).range(from, to);
+
+    if (error) {
+      console.error('loadHomeFeed error:', JSON.stringify(error));
+      if (!append) list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+      return;
+    }
+
+    const oldBtn = document.getElementById('loadMoreHomeFeed');
+    if (oldBtn) oldBtn.remove();
+    if (!append) list.innerHTML = '';
+
+    if (!append && (!data || data.length === 0)) {
+      list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
+      return;
+    }
+
+    list.insertAdjacentHTML('beforeend', (data || []).map(p => _productCardHtml(p, true)).join(''));
+    (data || []).forEach(p => loadProductReviewsSummary(p.id));
+
+    if (!append) _populateHomeSidebarSellersFromProducts(data || []);
+
+    if (data && data.length === 20) {
+      list.insertAdjacentHTML('beforeend', `
+        <div id="loadMoreHomeFeed" style="grid-column:1 / -1;text-align:center;padding:16px;">
+          <button onclick="_homeFeedPage++; loadHomeFeed(true);" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
+            Voir plus
+          </button>
+        </div>
+      `);
+    }
+  } catch (e) {
+    console.error('loadHomeFeed exception:', e);
+  }
+}
+window.loadHomeFeed = loadHomeFeed;
+
+// ---- Sidebar accueil : liste des vendeurs, dérivée des produits chargés ----
+// (sellers.category n'est pas fiable pour les vendeurs indépendants — non
+// envoyé à l'inscription. La vraie source de vérité est products.seller_category,
+// donc on déduplique les vendeurs à partir des produits déjà chargés par loadHomeFeed,
+// exactement comme _populateCatSidebar() le fait sur la page catégorie.)
+function _populateHomeSidebarSellersFromProducts(products) {
+  const sellersEl = document.getElementById('homeCatSidebarSellers');
+  if (!sellersEl) return;
+
+  const seen = new Set();
+  const sellersList = [];
+  products.forEach(p => {
+    if (p.sellers && !seen.has(p.sellers.id)) {
+      seen.add(p.sellers.id);
+      sellersList.push(p.sellers);
+    }
+  });
+
+  sellersEl.innerHTML = sellersList.length
+    ? sellersList.map(s => `
+      <div class="seller-mini-card" onclick="openSellerFromHomeSidebar('${s.id}')">
+        <img class="seller-mini-img" src="${escapeHtml(s.photo) || 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'}" onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'">
+        <div class="seller-mini-info">
+          <div class="seller-mini-name">🏪 ${escapeHtml(s.full_name)}</div>
+          <div class="seller-mini-meta">⭐ ${s.stars || 0} avis</div>
+        </div>
+      </div>
+    `).join('')
+    : '<p style="font-size:12px;color:#888;padding:6px;">Aucun vendeur.</p>';
+}
+window._populateHomeSidebarSellersFromProducts = _populateHomeSidebarSellersFromProducts;
+
+// ---- Sidebar accueil : villes + sous-catégories ----
+function _populateHomeSidebarStatic() {
+  const villes = ['Brazzaville','Pointe-Noire','Dolisie','Nkayi','Oyo','Bétou','Ouesso','Impfondo','Madingou','Owando','Sibiti','Mossaka','Gamboma','Djambala','Makoua','Kinkala','Ewo','Dongou'];
+  const currentVille = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+
+  const villesEl = document.getElementById('homeCatSidebarVilles');
+  if (villesEl) {
+    villesEl.innerHTML =
+      `<button class="cat-sidebar-ville-opt${!currentVille ? ' active' : ''}" onclick="homeSidebarSelectVille('','📍Toutes')">📍 Toutes les villes</button>` +
+      villes.map(v =>
+        `<button class="cat-sidebar-ville-opt${currentVille === v ? ' active' : ''}" onclick="homeSidebarSelectVille('${v}','${v}')">${v}</button>`
+      ).join('');
+  }
+
+  if (typeof TREE_B2 !== 'undefined') {
+    const subcatsEl = document.getElementById('homeCatSidebarSubcats');
+    if (subcatsEl) {
+      subcatsEl.innerHTML = TREE_B2.map(c =>
+        `<button class="cat-sidebar-subcat-btn${(_sidebarContext === 'category' && currentCategory === c.id) ? ' active' : ''}" onclick="openCategory('${c.id}','B')">${c.label}</button>`
+      ).join('');
+    }
+  }
+}
+
+// ---- (ancienne requête directe sellers.category — retirée, non fiable, voir
+// _populateHomeSidebarSellersFromProducts ci-dessus pour la logique actuelle) ----
+
+// ---- Ouverture / fermeture du tiroir accueil ----
+function openHomeSidebar() {
+  const sb = document.getElementById('homeCatSidebar');
+  const ov = document.getElementById('homeCatSidebarOverlay');
+  if (sb) sb.classList.add('open');
+  if (ov) ov.classList.add('open');
+}
+function closeHomeSidebar() {
+  const sb = document.getElementById('homeCatSidebar');
+  const ov = document.getElementById('homeCatSidebarOverlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+}
+function toggleHomeSidebar() {
+  const sb = document.getElementById('homeCatSidebar');
+  if (!sb) return;
+  sb.classList.contains('open') ? closeHomeSidebar() : openHomeSidebar();
+}
+function homeSidebarSelectVille(value, label) {
+  selectVille(value, label);
+  _populateHomeSidebarStatic();
+  if (_sidebarContext === 'category' && currentCategory) {
+    openCategory(currentCategory, currentCategoryType);
+  } else {
+    loadHomeFeed();
+  }
+  closeHomeSidebar();
+}
+function openSellerFromHomeSidebar(sellerId) {
+  closeHomeSidebar();
+  openSellerProducts(sellerId, currentCategoryType || 'B');
+}
+window.openHomeSidebar          = openHomeSidebar;
+window.closeHomeSidebar         = closeHomeSidebar;
+window.toggleHomeSidebar        = toggleHomeSidebar;
+window.homeSidebarSelectVille   = homeSidebarSelectVille;
+window.openSellerFromHomeSidebar = openSellerFromHomeSidebar;
+
+// ---- Initialisation complète de l'accueil ----
+function initHomeSidebarAndFeed() {
+  _sidebarContext = 'home';
+  _populateHomeSidebarStatic();
+  loadHomeFeed();
+  loadHomePromoPanels();
+  openHomeSidebar();
+}
+window.initHomeSidebarAndFeed = initHomeSidebarAndFeed;
+
+// ================================================================
+// BARRE DE NAVIGATION FIXE (bas) — Accueil / Grossiste / Service / Compte
+// ================================================================
+function bottomNavGo(tab) {
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.bottom-nav-item[data-tab="${tab}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  if (tab === 'accueil') {
+    goHome();
+  } else if (tab === 'grossiste') {
+    if (typeof TREE_A !== 'undefined') openCategoryTree(TREE_A, 'A', '🏭 Importateur & Grossiste');
+  } else if (tab === 'service') {
+    if (typeof TREE_B1 !== 'undefined') openCategoryTree(TREE_B1, 'A', '⭐ Multi-Services & Commerces');
+  } else if (tab === 'compte') {
+    openAccountChoice();
+  }
+}
+function openAccountChoice() {
+  const sheet   = document.getElementById('accountChoiceSheet');
+  const overlay = document.getElementById('accountChoiceOverlay');
+  if (sheet)   sheet.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+}
+function closeAccountChoice() {
+  const sheet   = document.getElementById('accountChoiceSheet');
+  const overlay = document.getElementById('accountChoiceOverlay');
+  if (sheet)   sheet.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  // Remettre "Accueil" actif visuellement puisque le menu Compte n'est qu'un choix, pas une page
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const homeBtn = document.querySelector('.bottom-nav-item[data-tab="accueil"]');
+  if (homeBtn) homeBtn.classList.add('active');
+}
+window.bottomNavGo        = bottomNavGo;
+window.openAccountChoice  = openAccountChoice;
+window.closeAccountChoice = closeAccountChoice;
+
+// ================================================================
+// BANDEAU PROMO ACCUEIL — Grossiste / Service (top 10 en position, défilement auto)
+// ================================================================
+let _homePromoGrossiste = { items: [], idx: 0, timer: null };
+let _homePromoService   = { items: [], idx: 0, timer: null };
+
+async function _fetchHomePromoSellers(accountTypes) {
+  try {
+    const { data: sellers, error } = await db
+      .from(TABLES.SELLERS)
+      .select('id, full_name')
+      .in('account_type', accountTypes)
+      .eq('is_blocked', false)
+      .eq('is_active', true)
+      .order('position', { ascending: true })
+      .order('dynamisme_score', { ascending: false })
+      .limit(10);
+
+    if (error || !sellers || !sellers.length) return [];
+
+    const sellerIds = sellers.map(s => s.id);
+    const nameById = {};
+    sellers.forEach(s => { nameById[s.id] = s.full_name; });
+
+    const { data: products, error: prodError } = await db
+      .from(TABLES.PRODUCTS)
+      .select('id, name, image, seller_id, created_at')
+      .in('seller_id', sellerIds)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(40);
+
+    if (prodError || !products) return [];
+
+    // Un seul (le plus récent) par vendeur, dans l'ordre de position déjà trié
+    const bySeller = {};
+    products.forEach(p => {
+      if (!bySeller[p.seller_id]) bySeller[p.seller_id] = p;
+    });
+
+    return sellerIds
+      .filter(id => bySeller[id])
+      .map(id => ({
+        image: bySeller[id].image,
+        name: bySeller[id].name,
+        sellerName: nameById[id] || ''
+      }));
+  } catch (e) {
+    console.error('_fetchHomePromoSellers error:', e);
+    return [];
+  }
+}
+
+function _renderHomePromoFrame(state, imgId, nameId) {
+  const imgEl  = document.getElementById(imgId);
+  const nameEl = document.getElementById(nameId);
+  if (!imgEl || !state.items.length) return;
+  const item = state.items[state.idx];
+  imgEl.style.opacity = '0';
+  setTimeout(() => {
+    imgEl.src = item.image;
+    if (nameEl) nameEl.innerText = item.sellerName;
+    imgEl.style.opacity = '1';
+  }, 250);
+}
+
+function _startHomePromoRotation(state, imgId, nameId) {
+  if (state.timer) clearInterval(state.timer);
+  if (!state.items.length) return;
+  _renderHomePromoFrame(state, imgId, nameId);
+  state.timer = setInterval(() => {
+    state.idx = (state.idx + 1) % state.items.length;
+    _renderHomePromoFrame(state, imgId, nameId);
+  }, 3500);
+}
+
+async function loadHomePromoPanels() {
+  const [grossisteItems, serviceItems] = await Promise.all([
+    _fetchHomePromoSellers(['independant_grossiste', 'vip_grossiste']),
+    _fetchHomePromoSellers(['independant_service'])
+  ]);
+
+  _homePromoGrossiste.items = grossisteItems;
+  _homePromoGrossiste.idx   = 0;
+  _startHomePromoRotation(_homePromoGrossiste, 'homePromoGrossisteImg', 'homePromoGrossisteName');
+
+  _homePromoService.items = serviceItems;
+  _homePromoService.idx   = 0;
+  _startHomePromoRotation(_homePromoService, 'homePromoServiceImg', 'homePromoServiceName');
+}
+window.loadHomePromoPanels = loadHomePromoPanels;
+
+// ================================================================
+// BOUTON FLOTTANT SIDEBAR — déplaçable verticalement le long du bord,
+// position mémorisée. Un tap (sans glissement) ouvre/ferme la sidebar.
+// ================================================================
+(function initSidebarFabDrag() {
+  const FAB_POS_KEY = 'moboro_fab_top_pos';
+
+  function setup() {
+    const fab = document.getElementById('homeSidebarToggleBtn');
+    if (!fab) return;
+
+    // Restaurer la position mémorisée
+    const savedTop = localStorage.getItem(FAB_POS_KEY);
+    if (savedTop) {
+      fab.style.top = savedTop;
+      fab.style.transform = 'none';
+    }
+
+    let startY = 0, startTop = 0, dragging = false, moved = false;
+
+    fab.addEventListener('touchstart', e => {
+      dragging = true; moved = false;
+      startY = e.touches[0].clientY;
+      startTop = fab.getBoundingClientRect().top;
+    }, { passive: true });
+
+    fab.addEventListener('touchmove', e => {
+      if (!dragging) return;
+      const dy = e.touches[0].clientY - startY;
+      if (Math.abs(dy) > 6) moved = true;
+      let newTop = startTop + dy;
+      const maxTop = window.innerHeight - fab.offsetHeight - 66; // dégage la barre du bas
+      newTop = Math.max(60, Math.min(newTop, maxTop));
+      fab.style.top = newTop + 'px';
+      fab.style.transform = 'none';
+    }, { passive: true });
+
+    fab.addEventListener('touchend', () => {
+      dragging = false;
+      if (moved) {
+        localStorage.setItem(FAB_POS_KEY, fab.style.top);
+      } else {
+        toggleHomeSidebar();
+      }
+    });
+
+    // Souris (pour test bureau)
+    fab.addEventListener('click', () => {
+      if (!('ontouchstart' in window)) toggleHomeSidebar();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();

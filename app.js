@@ -14,16 +14,11 @@
 async function initBanner() {
   // Slides par défaut (Unsplash) — utilisés si Supabase ne retourne rien
   const defaultSlides = [
-    { url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200', title: '🛍️ Mode & Tendances',         subtitle: 'Les meilleures boutiques vous attendent' },
-    { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=1200', title: '💄 Beauté & Cosmétiques',      subtitle: 'Les meilleures marques à prix imbattables' },
-    { url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200',    title: '👟 Chaussures & Basket',       subtitle: 'Des styles pour toutes les occasions' },
-    { url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200', title: '🔥 Promos Exclusives',         subtitle: 'Des réductions exceptionnelles chaque jour !' },
-    { url: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=1200', title: '👗 Vêtements Femme',           subtitle: 'Robes, ensembles tendance — livraison à domicile' },
-    { url: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200',    title: '🚚 Commandez Facilement',     subtitle: 'Recevez vos achats directement chez vous' },
-    { url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?q=80&w=1200',    title: '🏪 Ouvrez Votre Boutique !',  subtitle: 'Inscription 100% gratuite — Gardez 100% de vos ventes' },
-    { url: 'https://images.unsplash.com/photo-1573408301185-9519f94816b5?q=80&w=1200', title: '📈 Développez Votre Activité', subtitle: 'Touchez des milliers de clients au Congo' },
-    { url: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=1200',    title: '💰 Zéro Commission !',         subtitle: 'Vendez plus, gagnez plus — Rejoignez Marché Moboro' },
-    { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200', title: '🤝 Rejoignez Notre Communauté', subtitle: '500 FCFA/sem seulement — Inscrivez-vous maintenant !' }
+    { url: 'images/banner/tour-nabemba.jpg',          title: '🏙️ Tour Nabemba',           subtitle: 'Le symbole de Brazzaville' },
+    { url: 'images/banner/tours-jumelles-mpila.jpg',   title: '🌆 Tours Jumelles — Mpila',  subtitle: 'La modernité au cœur du Congo' },
+    { url: 'images/banner/pont-nuit.jpg',              title: '🌉 Un Congo qui brille',     subtitle: 'Nos villes s\'illuminent chaque nuit' },
+    { url: 'images/banner/marche-total.jpg',           title: '🛒 Marché Total',            subtitle: 'La vie du grand marché local' },
+    { url: 'images/banner/marche-vendeuse.jpg',         title: '🤝 Nos Vendeurs Locaux',     subtitle: 'Le vrai visage du commerce congolais' }
   ];
 
   let bannerImages = [...defaultSlides];
@@ -70,12 +65,20 @@ async function initBanner() {
 
   function updateBanner(index) {
     const slide = bannerImages[index];
-    bannerImg.style.opacity = '0';
+    bannerImg.style.transition = 'opacity .3s ease, transform .3s ease';
+    bannerImg.style.opacity   = '0';
+    bannerImg.style.transform = 'translateY(-16px)';
     setTimeout(() => {
       bannerImg.src            = slide.url;
       if (bannerTitle)    bannerTitle.innerText    = slide.title;
       if (bannerSubtitle) bannerSubtitle.innerText = slide.subtitle;
-      bannerImg.style.opacity  = '1';
+      bannerImg.style.transition = 'none';
+      bannerImg.style.transform  = 'translateY(16px)';
+      // Forcer le navigateur à appliquer la position de départ avant l'animation
+      void bannerImg.offsetWidth;
+      bannerImg.style.transition = 'opacity .3s ease, transform .3s ease';
+      bannerImg.style.opacity    = '1';
+      bannerImg.style.transform  = 'translateY(0)';
     }, 300);
     document.querySelectorAll('.dot').forEach((dot, i) => {
       dot.classList.toggle('active', i === index);
@@ -113,12 +116,12 @@ async function initBanner() {
   // Démarrer le défilement automatique
   resetAutoSlide();
 
-  // Swipe tactile
-  let touchStartX = 0;
-  bannerImg.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive:true});
+  // Swipe tactile (vertical : haut ↔ bas)
+  let touchStartY = 0;
+  bannerImg.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, {passive:true});
   bannerImg.addEventListener('touchend', e => {
-    const diff = touchStartX - e.changedTouches[0].screenX;
-    if (Math.abs(diff) > 50) {
+    const diff = touchStartY - e.changedTouches[0].screenY;
+    if (Math.abs(diff) > 30) {
       if (diff > 0) window.bannerNext();
       else          window.bannerPrev();
     }

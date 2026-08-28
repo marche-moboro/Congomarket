@@ -217,51 +217,12 @@
       <div class="form-card">
         <h2>📋 Positions par catégorie</h2>
         <select id="catSelect" onchange="loadPositions(this.value)">
-          <option value="">Choisir catégorie</option>
-          <optgroup label="⭐ Catégorie A — Importateurs & Grossistes">
-            <option value="ig">🌟 Importateurs & Grossistes de Brazzaville</option>
-            <option value="immo">🏠 Immobilier</option>
-            <option value="coiffure">✂️ Grand Salon de Coiffure</option>
-            <option value="hotel">🏨 Hôtel, Jardin & Tourisme</option>
-            <option value="deco-mariage">💍 Décoration Mariage</option>
-            <option value="menage">🧹 Service de Ménage</option>
-            <option value="demenagement">🚛 Service de Déménagement</option>
-            <option value="auto">🚗 Automobile & Dépannage</option>
-            <option value="couture">🧵 Couture & Styliste</option>
-            <option value="pharmacie">💊 Pharmacie</option>
-            <option value="clinique">🏥 Prinsingue</option>
-            <option value="librairie">📚 Librairie & Papeterie</option>
-            <option value="construction">🏗️ Matériaux de Construction</option>
-            <option value="photoshop">📸 Photo Shop</option>
-            <option value="alimentation">🛒 Alimentation</option>
-            <option value="oeufs">🥚 Grossiste Œufs</option>
-          </optgroup>
-          <optgroup label="🛍️ Catégorie B — Boutiques & Vendeurs">
-            <option value="c1">👟 Chaussures & Basket</option>
-            <option value="c2">📱 Accessoires Téléphone</option>
-            <option value="c3">💄 Beauté & Cosmétiques</option>
-            <option value="c4">👗 Vêtements Femme</option>
-            <option value="c5">👠 Chaussures Femme</option>
-            <option value="c6">👜 Sacs & Accessoires Mode</option>
-            <option value="c7">🏠 Maison & Décoration</option>
-            <option value="c8">🧼 Savon Artisanal</option>
-            <option value="c9">🌸 Parfums & Soins Luxe</option>
-            <option value="c10">👶 Bébé & Enfants</option>
-            <option value="c11">💇 Perruques & Mèches</option>
-            <option value="c12">🩱 Lingerie & Rideau</option>
-            <option value="c13">💊 Santé & Bien-être</option>
-            <option value="c14">👔 Friperie & Habit de Travail</option>
-            <option value="c15">🧵 Tissus & Pagnes</option>
-            <option value="c16">🚢 Occasion d'Europe</option>
-            <option value="c17">🎂 Pâtisserie</option>
-            <option value="c18">🕴️ Veste & Chaussures Luxe</option>
-            <option value="c19">🧴 Plastique</option>
-            <option value="c20">📺 Électronique</option>
-            <option value="c21">🎉 Anniversaire & Objet Jetable</option>
-          </optgroup>
-          <optgroup label="🌍 Fournisseurs Export">
-            <option value="fournisseur_export">🌍 Tous les Fournisseurs Export</option>
-          </optgroup>
+          <option value="">Choisir un groupe</option>
+          <option value="livreur_taxi">🚚 Taxi (Livreurs)</option>
+          <option value="account_vendeur">🛍️ Boutique & Vendeur</option>
+          <option value="account_grossiste">🏭 Importateur & Grossiste</option>
+          <option value="account_service">🧰 Multi-Services & Commerce</option>
+          <option value="fournisseur_export">🌍 Fournisseurs Export</option>
         </select>
       </div>
       <div id="positionsList"></div>
@@ -1257,7 +1218,7 @@ async function searchSellers() {
   if (!q) return;
 
   const { data: sellers } = await db.from(TABLES.SELLERS)
-    .select('*')
+    .select('id, code, full_name, phone, quartier, ville, category, is_blocked, is_approved, account_type, subscription_status, subscription_end')
     .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
     .order('created_at', { ascending: false });
 
@@ -1352,21 +1313,31 @@ async function loadPositions(catId) {
   try {
   if (!catId) return;
 
-  let query = db.from(TABLES.SELLERS)
-    .select('*')
+  const isLivreur = catId === 'livreur_taxi';
+  const table = isLivreur ? TABLES.DELIVERY_AGENTS : TABLES.SELLERS;
+
+  let query = db.from(table)
+    .select('id, code, full_name, position')
     .order('position', { ascending: true });
 
   if (catId === 'fournisseur_export') {
     query = query.eq('account_type', 'fournisseur_export');
-  } else {
-    query = query.eq('category', catId).eq('is_blocked', false);
+  } else if (catId === 'account_vendeur') {
+    query = query.eq('account_type', 'independant_vendeur').eq('is_blocked', false);
+  } else if (catId === 'account_grossiste') {
+    query = query.eq('account_type', 'independant_grossiste').eq('is_blocked', false);
+  } else if (catId === 'account_service') {
+    query = query.eq('account_type', 'independant_service').eq('is_blocked', false);
+  } else if (isLivreur) {
+    query = query.eq('is_blocked', false);
   }
 
-  const { data: sellers } = await query;
+  const { data: sellers, error: queryError } = await query;
+  if (queryError) console.error('loadPositions query error:', queryError);
 
   const list = document.getElementById('positionsList');
   if (!sellers || sellers.length === 0) {
-    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucun vendeur dans cette catégorie.</p>';
+    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucun compte dans ce groupe.</p>';
     return;
   }
 
@@ -1398,13 +1369,24 @@ async function savePosition(sellerId, catId, total) {
     if (!newPos || newPos < 1 || newPos > total) {
       showToast(`Position invalide (1 à ${total})`, 'error'); return;
     }
-    let query = db.from(TABLES.SELLERS)
-      .select('id, position').order('position', { ascending: true });
+
+    const isLivreur = catId === 'livreur_taxi';
+    const table = isLivreur ? TABLES.DELIVERY_AGENTS : TABLES.SELLERS;
+    const action = isLivreur ? 'update_livreur_admin' : 'update_seller_admin';
+
+    let query = db.from(table).select('id, position').order('position', { ascending: true });
     if (catId === 'fournisseur_export') {
       query = query.eq('account_type', 'fournisseur_export');
-    } else {
-      query = query.eq('category', catId).eq('is_blocked', false);
+    } else if (catId === 'account_vendeur') {
+      query = query.eq('account_type', 'independant_vendeur').eq('is_blocked', false);
+    } else if (catId === 'account_grossiste') {
+      query = query.eq('account_type', 'independant_grossiste').eq('is_blocked', false);
+    } else if (catId === 'account_service') {
+      query = query.eq('account_type', 'independant_service').eq('is_blocked', false);
+    } else if (isLivreur) {
+      query = query.eq('is_blocked', false);
     }
+
     const { data: sellers } = await query;
     if (!sellers) return;
     const oldIndex = sellers.findIndex(s => s.id === sellerId);
@@ -1413,12 +1395,10 @@ async function savePosition(sellerId, catId, total) {
     const reordered = [...sellers];
     const [moved] = reordered.splice(oldIndex, 1);
     reordered.splice(newIndex, 0, moved);
-  for (let i = 0; i < reordered.length; i++) {
-      await db.from(TABLES.SELLERS)
-        .update({ position: i + 1 })
-        .eq('id', reordered[i].id);
+    for (let i = 0; i < reordered.length; i++) {
+      await callAdminAction(action, { id: reordered[i].id, position: i + 1 });
     }
-showToast('Position mise à jour ✓', 'success');
+    showToast('Position mise à jour ✓', 'success');
     setTimeout(() => {
       const catSelect = document.getElementById('catSelect');
       const currentCat = catSelect ? catSelect.value : catId;
@@ -1694,11 +1674,11 @@ async function loadVIPAccounts() {
   div.innerHTML = '<p style="color:#888;font-size:13px;">Chargement...</p>';
 
   const { data: sellers } = await db.from(TABLES.SELLERS)
-    .select('*')
-    .or('account_type.eq.vip_vendeur,account_type.eq.vip_grossiste')
+    .select('id, code, full_name, phone, quartier, ville, category, is_blocked, is_approved, account_type, subscription_status, subscription_end')
+    .or(`code.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`)
     .order('created_at', { ascending: false });
 
-  if (!sellers || sellers.length === 0) {
+  if (!llers || sellers.length === 0) {
     div.innerHTML = '<p style="color:#888;font-size:13px;padding:12px;">Aucun compte VIP.</p>';
     return;
   }
