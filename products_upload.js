@@ -340,26 +340,14 @@ if (!name || !price) {
       return;
     }
 
-    // Catégorie de publication — obligatoire, dépend du compte / du choix de groupe
-    const retailRadioEl = document.getElementById('pubGroupChoiceRetail');
-    const retailCatEl   = document.getElementById('pubRetailCategory');
-    const ownCatEl       = document.getElementById('pubOwnCategory');
-    const useRetail = !!(retailRadioEl && retailRadioEl.checked);
-
-    let sellerCategoryToUse;
-    if (useRetail) {
-      if (!retailCatEl || !retailCatEl.value) {
-        showToast('Choisissez une catégorie détail', 'error');
-        return;
-      }
-      sellerCategoryToUse = retailCatEl.value;
-    } else {
-      if (!ownCatEl || !ownCatEl.value) {
-        showToast('Choisissez une catégorie', 'error');
-        return;
-      }
-      sellerCategoryToUse = ownCatEl.value;
+    // Catégorie de publication — obligatoire, dépend de la section choisie
+    // juste avant (window._pubSection, via choosePubSection())
+    const ownCatEl = document.getElementById('pubOwnCategory');
+    if (!ownCatEl || !ownCatEl.value) {
+      showToast('Choisissez une catégorie', 'error');
+      return;
     }
+    const sellerCategoryToUse = ownCatEl.value;
     if (isNaN(Number(price)) || Number(price) <= 0) {
       showToast('Prix invalide', 'error');
       return;
@@ -426,12 +414,8 @@ if (!name || !price) {
   const el = document.getElementById(id);
   if (el) el.value = '';
 });
-const ownRadioReset = document.getElementById('pubGroupChoiceOwn');
-if (ownRadioReset) { ownRadioReset.checked = true; if (typeof updatePubGroupChoice === 'function') updatePubGroupChoice(); }
 const ownCatReset = document.getElementById('pubOwnCategory');
 if (ownCatReset) ownCatReset.value = '';
-const retailCatReset = document.getElementById('pubRetailCategory');
-if (retailCatReset) retailCatReset.value = '';
     const titlePreview = document.getElementById('pubTitlePreview');
     if (titlePreview) titlePreview.style.display = 'none';
 
@@ -460,10 +444,15 @@ async function viewMyProducts() {
   try {
   if (!currentSeller) return;
 
+  const section = window._pubSection || 'B2';
+  const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
+  const catIds = (tree || []).map(c => c.id);
+
   const { data: products, error } = await db.from(TABLES.PRODUCTS)
-    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere')
+    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
     .eq('seller_id', currentSeller.id)
     .eq('is_active',  true)
+    .in('seller_category', catIds)
     .order('created_at', { ascending: false });
 
   if (error) console.error('viewMyProducts error:', JSON.stringify(error));
@@ -474,7 +463,7 @@ async function viewMyProducts() {
   list.innerHTML  = '';
 
   if (!_myProductsAll.length) {
-    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication.</p>';
+    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication dans cette section.</p>';
   } else {
     _appendMyProducts();
   }
@@ -488,14 +477,14 @@ async function viewMyProducts() {
 
 function _appendMyProducts() {
   const list  = document.getElementById('myProductsList');
-  const isGrossiste = ['independant_grossiste','vip_grossiste','fournisseur_export']
-    .includes(currentSeller.account_type);
   const start = _myProductsPage * MY_PRODUCTS_PER_PAGE;
   const slice = _myProductsAll.slice(start, start + MY_PRODUCTS_PER_PAGE);
   const oldBtn = document.getElementById('loadMoreMyProducts');
   if (oldBtn) oldBtn.remove();
 
-  list.insertAdjacentHTML('beforeend', slice.map(p => `
+  list.insertAdjacentHTML('beforeend', slice.map(p => {
+    const isGrossiste = typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(p.seller_category);
+    return `
     <div class="my-product-card">
       <img src="${escapeHtml(p.image)}"
         onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
@@ -511,7 +500,8 @@ function _appendMyProducts() {
         </div>
       </div>
     </div>
-  `).join(''));
+  `;
+  }).join(''));
 
   const loaded = start + slice.length;
   if (loaded < _myProductsAll.length) {
@@ -569,10 +559,10 @@ async function openEditProduct(productId) {
       .select('*').eq('id', productId).maybeSingle();
     if (!p) { showToast('Produit introuvable', 'error'); return; }
 
-    const isGrossiste = ['independant_grossiste','vip_grossiste','fournisseur_export']
-      .includes(currentSeller.account_type);
+    const isGrossiste = typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(p.seller_category);
 
     document.getElementById('editProductId').value      = p.id;
+    document.getElementById('editProductCategory').value = p.seller_category || '';
     document.getElementById('editPubName').value        = p.name        || '';
     document.getElementById('editPubPrice').value       = p.price       || '';
     document.getElementById('editPubDescription').value = p.description || '';
@@ -610,8 +600,8 @@ async function saveEditProduct() {
       return;
     }
 
-    const isGrossiste = ['independant_grossiste','vip_grossiste','fournisseur_export']
-      .includes(currentSeller.account_type);
+    const isGrossiste = typeof TREE_A_IDS !== 'undefined' &&
+      TREE_A_IDS.has(document.getElementById('editProductCategory')?.value);
 
     const updateData = {
       name,
@@ -655,17 +645,22 @@ async function openSendToPromo() {
   try {
   if (!currentSeller) return;
 
+  const section = window._pubSection || 'B2';
+  const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
+  const catIds = (tree || []).map(c => c.id);
+
 const { data: products } = await db.from(TABLES.PRODUCTS)
-.select('id, name, price, image, is_active, qte_min, prix_min, qte_max, prix_max')
+.select('id, name, price, image, is_active, qte_min, prix_min, qte_max, prix_max, seller_category')
   .eq('seller_id', currentSeller.id)
   .eq('is_active', true)
+  .in('seller_category', catIds)
   .order('created_at', { ascending: false });
 
   const list = document.getElementById('promoSelectList');
 
   if (!products || products.length === 0) {
     list.innerHTML =
-      '<p style="text-align:center;padding:20px;color:#888;">Aucune publication à promouvoir.</p>';
+      '<p style="text-align:center;padding:20px;color:#888;">Aucune publication à promouvoir dans cette section.</p>';
   } else {
 list.innerHTML = products.map(p => `
       <div class="promo-select-card">
@@ -695,6 +690,7 @@ list.innerHTML = products.map(p => `
             data-id="${p.id}"
             data-name="${escapeHtml(p.name)}"
             data-image="${escapeHtml(p.image)}"
+            data-category="${escapeHtml(p.seller_category || '')}"
             data-original-price="${p.price}"
             data-qte-min="${p.qte_min || ''}"
             data-prix-min="${p.prix_min || ''}"
@@ -731,9 +727,8 @@ const promoPrice      = promoPriceInput ? promoPriceInput.value : '';
     return;
   }
 
-  const type = currentSeller.account_type === 'fournisseur_export'
-    ? 'A'
-    : (Object.keys(CATEGORIES_A).includes(currentSeller.category) ? 'A' : 'B');
+  const category = btn ? btn.dataset.category : (currentSeller.category || '');
+  const type = (typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(category)) ? 'A' : 'B';
 
   const qteMin  = btn ? btn.dataset.qteMin  : '';
   const prixMin = btn ? btn.dataset.prixMin : '';
@@ -749,7 +744,7 @@ const promoPrice      = promoPriceInput ? promoPriceInput.value : '';
     seller_id:           currentSeller.id,
     seller_name:         currentSeller.full_name,
     seller_phone:        currentSeller.phone,
-    seller_category:     currentSeller.category,
+    seller_category:     category,
     seller_account_type: currentSeller.account_type || 'independant_vendeur',
     promo_type:          type,
     product_id:      productId,
@@ -799,8 +794,13 @@ async function viewMyPromos() {
   try {
   if (!currentSeller) return;
 
+  const section = window._pubSection || 'B2';
+  const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
+  const catIds = (tree || []).map(c => c.id);
+
   const { data: promos, error } = await db.from(TABLES.PROMOS)
       .select('*').eq('seller_id', currentSeller.id).eq('is_active', true)
+      .in('seller_category', catIds)
       .order('created_at', { ascending: false });
 
   if (error) console.error('viewMyPromos error:', JSON.stringify(error));
@@ -811,7 +811,7 @@ async function viewMyPromos() {
   list.innerHTML = '';
 
   if (!_myPromosAll.length) {
-    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune promotion.</p>';
+    list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune promotion dans cette section.</p>';
   } else {
     _appendMyPromos();
   }

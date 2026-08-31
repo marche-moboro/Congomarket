@@ -196,92 +196,85 @@ async function saveNewPin() {
 function openPublishPage() {
   if (!currentSeller) { showPage('loginPage'); return; }
 
-  const isGrossiste = ['independant_grossiste','vip_grossiste','fournisseur_export']
-    .includes(currentSeller.account_type);
+  const section = window._pubSection || 'B2'; // 'B2' Boutique | 'A' Grossiste | 'B1' Service
+  const isGrossiste = (section === 'A');
 
   const qteSection = document.getElementById('pubQteSection');
   if (qteSection) qteSection.style.display = isGrossiste ? 'block' : 'none';
 
-  // Choix "mon groupe" vs "Boutique & Vendeur" — pas pour fournisseur_export
-  const canChooseGroup = ['independant_grossiste','vip_grossiste','independant_service']
-    .includes(currentSeller.account_type);
-  const groupSection = document.getElementById('pubGroupChoiceSection');
-  if (groupSection) {
-    groupSection.style.display = canChooseGroup ? 'block' : 'none';
-    if (canChooseGroup) {
-      const ownLabel = document.getElementById('pubGroupChoiceOwnLabel');
-      if (ownLabel) {
-        ownLabel.innerText = currentSeller.account_type === 'independant_service'
-          ? '⭐ Dans mon groupe (Multi-Services & Commerces)'
-          : '🏭 Dans mon groupe (Grossiste & Importateur)';
-      }
-      const ownRadio = document.getElementById('pubGroupChoiceOwn');
-      if (ownRadio) ownRadio.checked = true;
-      populatePubRetailCategories();
-    }
-  }
-
   populatePubOwnCategories();
-  updatePubGroupChoice();
 
   showPage('publishPage');
 }
 
-// Remplit la liste "ma catégorie" selon le type de compte :
-// - Boutique & Vendeur → uniquement la grille Boutique & Vendeur (TREE_B2)
-// - Grossiste & Importateur (+ Fournisseur Export) → grille Grossiste (TREE_A)
-// - Multi-Services & Commerces → grille Multi-Services (TREE_B1)
+// Remplit la liste "catégorie" selon la section choisie juste avant
+// (window._pubSection, défini par choosePubSection()) :
+// - 'B2' → grille Boutique & Vendeur (TREE_B2)
+// - 'A'  → grille Grossiste (TREE_A)
+// - 'B1' → grille Service (TREE_B1)
 function populatePubOwnCategories() {
   const select = document.getElementById('pubOwnCategory');
   if (!select) return;
 
+  const section = window._pubSection || 'B2';
   let tree = null;
-  if (currentSeller.account_type === 'independant_vendeur' || currentSeller.account_type === 'vip_vendeur') {
-    tree = typeof TREE_B2 !== 'undefined' ? TREE_B2 : null;
-  } else if (['independant_grossiste','vip_grossiste','fournisseur_export'].includes(currentSeller.account_type)) {
-    tree = typeof TREE_A !== 'undefined' ? TREE_A : null;
-  } else if (currentSeller.account_type === 'independant_service') {
-    tree = typeof TREE_B1 !== 'undefined' ? TREE_B1 : null;
-  }
+  if (section === 'B2')      tree = typeof TREE_B2 !== 'undefined' ? TREE_B2 : null;
+  else if (section === 'A')  tree = typeof TREE_A  !== 'undefined' ? TREE_A  : null;
+  else if (section === 'B1') tree = typeof TREE_B1 !== 'undefined' ? TREE_B1 : null;
 
   select.innerHTML = '<option value="">Choisir une catégorie *</option>';
   if (tree) {
+    let group = null;
     tree.forEach(c => {
+      if (c.section && (!group || group.label !== c.section)) {
+        group = document.createElement('optgroup');
+        group.label = c.section;
+        select.appendChild(group);
+      }
       const opt = document.createElement('option');
       opt.value = c.id;
       opt.textContent = c.label;
-      select.appendChild(opt);
+      (group || select).appendChild(opt);
     });
   }
 }
 
-function populatePubRetailCategories() {
-  const select = document.getElementById('pubRetailCategory');
-  if (!select || select.dataset.filled === '1') return;
-  if (typeof TREE_B2 === 'undefined') return;
-  TREE_B2.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.label;
-    select.appendChild(opt);
-  });
-  select.dataset.filled = '1';
+// ================================================================
+// SÉLECTEUR DE SECTION — Publier / Mes publications / Envoyer en promo / Mes
+// promos passent tous par ce choix (Boutique & Vendeur / Grossiste / Service)
+// avant d'atteindre leur page cible.
+// ================================================================
+let _pendingPubAction = null;
+
+const _dashActionTitles = {
+  publish:    'Publier — choisir une section',
+  myproducts: 'Mes publications — choisir une section',
+  sendpromo:  'Envoyer en promo — choisir une section',
+  mypromos:   'Mes promos — choisir une section',
+};
+
+function _dashAction(action) {
+  if (!currentSeller) { showPage('loginPage'); return; }
+  _pendingPubAction = action;
+  const titleEl = document.getElementById('pubSectionChoiceTitle');
+  if (titleEl) titleEl.innerText = _dashActionTitles[action] || 'Choisir une section';
+  showPage('pubSectionChoicePage');
 }
 
-// Bascule entre "ma catégorie" (TREE_A ou TREE_B1) et "catégorie détail" (TREE_B2)
-function updatePubGroupChoice() {
-  const retailRadio  = document.getElementById('pubGroupChoiceRetail');
-  const retailSelect = document.getElementById('pubRetailCategory');
-  const ownSelect     = document.getElementById('pubOwnCategory');
-  const isRetail = !!(retailRadio && retailRadio.checked);
-
-  if (retailSelect) retailSelect.style.display = isRetail ? 'block' : 'none';
-  if (ownSelect)     ownSelect.style.display     = isRetail ? 'none'  : 'block';
+function choosePubSection(section) {
+  window._pubSection = section; // 'B2' Boutique | 'A' Grossiste | 'B1' Service
+  const action = _pendingPubAction;
+  _pendingPubAction = null;
+  if (action === 'publish')          openPublishPage();
+  else if (action === 'myproducts')  viewMyProducts();
+  else if (action === 'sendpromo')   openSendToPromo();
+  else if (action === 'mypromos')    viewMyPromos();
 }
+
+window._dashAction      = _dashAction;
+window.choosePubSection = choosePubSection;
 
 window.populatePubOwnCategories    = populatePubOwnCategories;
-window.populatePubRetailCategories = populatePubRetailCategories;
-window.updatePubGroupChoice        = updatePubGroupChoice;
 // pour que le wrapper safeAsync() dans index.html puisse les trouver
 window.saveNewPin       = saveNewPin;
 window.openPublishPage  = openPublishPage;

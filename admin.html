@@ -219,11 +219,15 @@
         <select id="catSelect" onchange="loadPositions(this.value)">
           <option value="">Choisir un groupe</option>
           <option value="livreur_taxi">🚚 Taxi (Livreurs)</option>
-          <option value="account_vendeur">🛍️ Boutique & Vendeur</option>
-          <option value="account_grossiste">🏭 Importateur & Grossiste</option>
-          <option value="account_service">🧰 Multi-Services & Commerce</option>
+          <option value="section_boutique">🛍️ Boutiques &amp; Vendeurs</option>
+          <option value="section_grossiste">🏭 Grossiste</option>
+          <option value="section_service">⭐ Service</option>
           <option value="fournisseur_export">🌍 Fournisseurs Export</option>
         </select>
+        <p style="font-size:12px;color:#888;margin-top:8px;">
+          Pour Boutiques &amp; Vendeurs / Grossiste / Service : classement automatique par nombre
+          de publications actives, sauf position manuelle définie ci-dessous (elle prime toujours).
+        </p>
       </div>
       <div id="positionsList"></div>
     </div>
@@ -686,6 +690,13 @@ async function logAdminAction(action, targetTable, targetId, details) {
     console.warn('logAdminAction error:', e);
   }
 }
+
+// Copie des IDs de catégorie (source : supabase.js, TREE_A/TREE_B1/TREE_B2).
+// admin.html est un fichier autonome (pas de <script src> partagé) : ces listes
+// doivent être régénérées ici si la liste des sous-catégories change côté site.
+const SECTION_IDS_GROSSISTE = ['riz-farine','farine-de-mais','mais-en-gros','spaghetti','sucre-lait','huile-d-arachide','huile-d-olive','huile-de-palme','epices-condiments-en-gros','oufs-en-carton','sel','produits-congeles','bisi-ya-mayi-en-gros','makayabo-poisson-sale-en-gros','mokalou-poisson-fume-en-gros','poisson-de-mer-en-gros','niama-zamba-en-gros','fruits-en-gros','miel','boissons-sans-alcool-en-gros','vins-boissons-alcoolisees-en-gros','sachets-d-eau-minerale-en-gros','ballot-de-friperie','ballot-de-tissus-pagnes','vetements-en-gros','chaussures-en-carton','accessoires-mode-en-gros','ciment-fer-carrelage-en-gros','quincaillerie-en-gros','peinture','bois-en-gros','charbon-de-bois-en-gros','gaz-combustible-en-gros','energie-solaire-en-gros','produits-d-entretien-pro','emballage-en-gros','autre','telephone-en-gros','electromenager-en-gros','materiel-informatique-en-gros','pneus-automobile-pieces-detachees-en-gros','essence-gasoil-en-fut','autre-tech-auto-in','couches-produits-bebe-en-gros','papeterie-fournitures-scolaires-en-gros','jouets-articles-de-fete-en-gros','objets-celebration-en-gros','autre-bebe-fete-di','produits-agricoles-en-gros','materiaux-et-produits-de-peche-en-gros','materiaux-de-chasse-en-gros','materiaux-du-sport-en-gros','materiaux-de-musique-en-gros','materiaux-du-multimedia-en-gros','autre-agriculture-'];
+const SECTION_IDS_SERVICE = ['plombier','electricien','macon','peintre','menuisier','jardinier-paysagiste','architecture','climatisation-froid','serrurerie','soudure-ferronnerie','location-de-materiel-de-chantier','chambre-froide','magasin-de-stockage','autre','garage-auto-mecanique','depannage-auto-a-domicile','lavage-parking-auto','vulcanisation','taulier-carrossier','auto-ecole','transport-local-moto-taxi-bus','location-de-camion-transport','voyage-en-bateau','voyage-en-baleiniere','voyage-en-camion','agence-de-voyage','guide-touristique','autre-auto-transpo','hopital-clinique','laboratoire-d-analyse','pharmacie','cabinet-dentaire','opticien','nounou-garde-d-enfant','garderie','aide-a-domicile','service-de-menage','blanchisserie-pressing','pompes-funebres','autre-sante-social','salon-de-coiffure','institut-de-beaute','coach-sportif-fitness','couture-styliste','broderie-personnalisation','reparation-chaussure','bijouterie','horlogerie','autre-beaute-mode','salle-de-fete','decoration-mariage','dj-sonorisation','photographe-videaste','location-chaise-tente-autres','traiteur','patisserie','restaurant','hotel','jardin-lieu-touristique','autre-evenementiel','developpement-web-app','marketing-digital','service-comptabilite','imprimerie','cyber-photocopie','centre-de-formation','cours-de-soutien-a-domicile-repetiteur','reparation-telephone-tablette','reparation-ordinateur','reparation-television-electromenager','recharge-telephonique-forfaits','autre-services-aux','agence-immobiliere','location-bureau-boutique','vente-terrain-maison','vente-de-gaz','vente-de-meubles','elevage-volaille-porcs-chevres','service-de-peche','gardiennage-securite','service-de-demenagement','autre-commerce-aut'];
+const SECTION_IDS_BOUTIQUE = ['robe','robe-de-soiree','jupe','pantalon-femme','costume-femme','lingerie-femme','basin-femme','pret-a-porter','super-wax','lipouta-tenues-traditionnelles','lacoste-femme','sous-vetements','maillot-de-bain','autre','chemise','polo','lacoste-homme','djine','pantalon-jogging','pantalon-tissu','costume-homme','chaussures-de-luxe','la-sape-mode-ambianceur','vareuse','basin-homme','short','maillot-de-bain-mode-homme','autre-mode-homme','vetements-bebe','vetements-garcon','vetements-fille','chaussures-enfant','jouets','autre-enfant-bebe','chaussures-homme','talons','chaussures-enfants','basket','securite','sandales-homme','sandales-femme','bottes','autre-chaussures','sacs-a-main','sacs-de-voyage','sacs-de-sortie','ceinture','cravate','chapeau','montre','chainette','montre-intelligent','bijoux','perles','bijoux-traditionnels','foulard','chaussettes','sous-vetements-accessoires-','autre-accessoires-','beaute-cosmetiques','parfums-de-luxe','savon-artisanal','produits-eclaircissants','perruques-meches','produit-capillaire','produit-de-bain','sante-bien-etre-femme','autres','telephone','ordinateur','tablette','television','casque-ecouteurs','chargeur','etui-telephone','console-jeux-video','drones-camera','electronique','pieces-accessoires','composants-electroniques','panneaux-solaires-kits-detail','cartes-sim','meubles','electromenager','cuisine-vaisselle','literie','decoration-maison','rideau-tapis','plastique-menager','eponge','autre-produits-de-','epicerie','fruits-legumes','boucherie-poissonnerie','boulangerie','patisserie','boissons-sans-alcool-p-jus','produits-bio','manioc-chikwangue-foufou','feuilles-de-manioc-legumes-locaux','poisson-sale-fume','chenilles-sechees','escargots','safou','bananes-plantain-igname-taro','arachides-pate-d-arachide','piment-local','vin-de-palme','miel-local','condiments-ou-en-epice-detail','accessoires-auto','pieces-detachees-auto','location-voiture','voiture-en-vente','vente-des-motos','vente-des-velos','patin-skate','articles-de-sport','objets-de-peche-camping','instrument-de-musique','autre-auto-sport-l','tissus-au-metre','occasion-d-europe','habit-de-travail','artisanat-local-monde','articles-religieux','librairie','cahiers','tenue-cousue','anniversaire-objet-jetable','charbon-de-bois','bois-de-chauffe','petrole-lampant-essence-au-detail','planche','fer','carreau','marbre','peinture','ciment','brique','bidet','baignoire','tapis','contreplaque','tole','autres-articles-couleur-different-tout-les-autres'];
 
 const TABLES = {
   SELLERS:         'sellers',
@@ -1309,31 +1320,77 @@ async function toggleBlock(sellerId, isBlocked) {
 }
 
 // ===== POSITIONS =====
+const SECTION_CONFIG = {
+  section_boutique:  { catIds: SECTION_IDS_BOUTIQUE,  posField: 'position_boutique'  },
+  section_grossiste: { catIds: SECTION_IDS_GROSSISTE, posField: 'position_grossiste' },
+  section_service:   { catIds: SECTION_IDS_SERVICE,   posField: 'position_service'   },
+};
+
+// Classement d'une section : priorité aux positions manuelles (ordre croissant),
+// puis les autres vendeurs par nombre de publications actives (ordre décroissant).
+async function _getSectionRanking(catId) {
+  const cfg = SECTION_CONFIG[catId];
+
+  const { data: products } = await db.from(TABLES.PRODUCTS)
+    .select('seller_id')
+    .in('seller_category', cfg.catIds)
+    .eq('is_active', true);
+
+  const counts = {};
+  (products || []).forEach(p => { counts[p.seller_id] = (counts[p.seller_id] || 0) + 1; });
+  const sellerIds = Object.keys(counts);
+  if (!sellerIds.length) return [];
+
+  const { data: sellers } = await db.from(TABLES.SELLERS)
+    .select(`id, code, full_name, is_blocked, ${cfg.posField}`)
+    .in('id', sellerIds)
+    .eq('is_blocked', false);
+
+  const list = (sellers || []).map(s => ({
+    id: s.id, code: s.code, full_name: s.full_name,
+    count: counts[s.id] || 0,
+    override: s[cfg.posField]
+  }));
+
+  list.sort((a, b) => {
+    const aHas = a.override !== null && a.override !== undefined;
+    const bHas = b.override !== null && b.override !== undefined;
+    if (aHas && bHas) return a.override - b.override;
+    if (aHas) return -1;
+    if (bHas) return 1;
+    return b.count - a.count;
+  });
+
+  return list;
+}
+
 async function loadPositions(catId) {
   try {
   if (!catId) return;
 
   const isLivreur = catId === 'livreur_taxi';
+  const isSection  = !!SECTION_CONFIG[catId];
   const table = isLivreur ? TABLES.DELIVERY_AGENTS : TABLES.SELLERS;
 
-  let query = db.from(table)
-    .select('id, code, full_name, position')
-    .order('position', { ascending: true });
+  let sellers;
 
-  if (catId === 'fournisseur_export') {
-    query = query.eq('account_type', 'fournisseur_export');
-  } else if (catId === 'account_vendeur') {
-    query = query.eq('account_type', 'independant_vendeur').eq('is_blocked', false);
-  } else if (catId === 'account_grossiste') {
-    query = query.eq('account_type', 'independant_grossiste').eq('is_blocked', false);
-  } else if (catId === 'account_service') {
-    query = query.eq('account_type', 'independant_service').eq('is_blocked', false);
-  } else if (isLivreur) {
-    query = query.eq('is_blocked', false);
+  if (isSection) {
+    sellers = await _getSectionRanking(catId);
+  } else {
+    let query = db.from(table)
+      .select('id, code, full_name, position')
+      .order('position', { ascending: true });
+
+    if (catId === 'fournisseur_export') {
+      query = query.eq('account_type', 'fournisseur_export');
+    } else if (isLivreur) {
+      query = query.eq('is_blocked', false);
+    }
+
+    const { data, error: queryError } = await query;
+    if (queryError) console.error('loadPositions query error:', queryError);
+    sellers = data;
   }
-
-  const { data: sellers, error: queryError } = await query;
-  if (queryError) console.error('loadPositions query error:', queryError);
 
   const list = document.getElementById('positionsList');
   if (!sellers || sellers.length === 0) {
@@ -1344,7 +1401,12 @@ async function loadPositions(catId) {
   list.innerHTML = sellers.map((s, i) => `
     <div class="position-item">
       <span class="pos-number">#${i+1}</span>
-      <span class="pos-name">${escapeHtml(s.full_name)} (${escapeHtml(s.code)})</span>
+      <span class="pos-name">
+        ${escapeHtml(s.full_name)} (${escapeHtml(s.code)})
+        ${isSection ? `<br><span style="font-size:11px;color:#888;font-weight:400;">
+          📦 ${s.count} publication${s.count > 1 ? 's' : ''}${(s.override !== null && s.override !== undefined) ? ' · position manuelle' : ' · classement auto'}
+        </span>` : ''}
+      </span>
       <div class="pos-controls">
         <input type="number" min="1" max="${sellers.length}" value="${i+1}"
           id="pos-input-${s.id}"
@@ -1353,6 +1415,10 @@ async function loadPositions(catId) {
         <button onclick="savePosition('${s.id}', '${catId}', ${sellers.length})"
           style="background:#52c41a;color:white;border:none;padding:6px 11px;
                  border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;">✓</button>
+        ${isSection ? `<button onclick="clearSectionPosition('${s.id}', '${catId}')"
+          title="Revenir au classement automatique"
+          style="background:#f0f0f0;color:#666;border:none;padding:6px 9px;
+                 border-radius:8px;cursor:pointer;font-size:12px;">↺</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -1362,27 +1428,36 @@ async function loadPositions(catId) {
   }
 }
 
+// Position manuelle pour une section : on écrit juste la valeur demandée sur
+// le vendeur concerné (pas besoin de renuméroter tout le monde comme avant,
+// puisque le reste du classement est automatique par nombre de publications).
 async function savePosition(sellerId, catId, total) {
   try {
     const input = document.getElementById('pos-input-' + sellerId);
     const newPos = parseInt(input.value);
-    if (!newPos || newPos < 1 || newPos > total) {
-      showToast(`Position invalide (1 à ${total})`, 'error'); return;
+    if (!newPos || newPos < 1) {
+      showToast('Position invalide', 'error'); return;
     }
 
     const isLivreur = catId === 'livreur_taxi';
+    const isSection  = !!SECTION_CONFIG[catId];
+
+    if (isSection) {
+      const cfg = SECTION_CONFIG[catId];
+      await callAdminAction('update_seller_admin', { id: sellerId, [cfg.posField]: newPos });
+      showToast('Position manuelle enregistrée ✓', 'success');
+      setTimeout(() => loadPositions(catId), 300);
+      return;
+    }
+
     const table = isLivreur ? TABLES.DELIVERY_AGENTS : TABLES.SELLERS;
     const action = isLivreur ? 'update_livreur_admin' : 'update_seller_admin';
+
+    if (newPos > total) { showToast(`Position invalide (1 à ${total})`, 'error'); return; }
 
     let query = db.from(table).select('id, position').order('position', { ascending: true });
     if (catId === 'fournisseur_export') {
       query = query.eq('account_type', 'fournisseur_export');
-    } else if (catId === 'account_vendeur') {
-      query = query.eq('account_type', 'independant_vendeur').eq('is_blocked', false);
-    } else if (catId === 'account_grossiste') {
-      query = query.eq('account_type', 'independant_grossiste').eq('is_blocked', false);
-    } else if (catId === 'account_service') {
-      query = query.eq('account_type', 'independant_service').eq('is_blocked', false);
     } else if (isLivreur) {
       query = query.eq('is_blocked', false);
     }
@@ -1407,6 +1482,21 @@ async function savePosition(sellerId, catId, total) {
   } catch(e) {
     console.error('savePosition error:', e);
     if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || 'inconnue'), 'error');
+  }
+}
+
+// Retire la position manuelle d'un vendeur dans une section => il repasse
+// au classement automatique (par nombre de publications).
+async function clearSectionPosition(sellerId, catId) {
+  try {
+    const cfg = SECTION_CONFIG[catId];
+    if (!cfg) return;
+    await callAdminAction('update_seller_admin', { id: sellerId, [cfg.posField]: null });
+    showToast('Position manuelle retirée ✓', 'success');
+    loadPositions(catId);
+  } catch(e) {
+    console.error('clearSectionPosition error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
   }
 }
 

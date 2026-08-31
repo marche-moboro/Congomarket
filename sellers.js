@@ -120,7 +120,10 @@ async function loadProductReviewsSummary(productId, elementId) {
     }
     const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
     el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis vérifiés)</span> <button onclick="openProductReviewsListModal('${productId}')" style="background:none;border:none;color:#1677FF;font-size:12px;text-decoration:underline;cursor:pointer;padding:0;margin-left:4px;">Voir plus</button>`;
-  } catch (e) { console.error('loadProductReviewsSummary error:', e); }
+  } catch (e) {
+    console.error('loadProductReviewsSummary error:', e);
+    el.innerHTML = `<span style="font-size:11px;color:#999;">Aucun avis vérifié pour le moment</span>`;
+  }
 }
 
 let _pendingReview = null;
@@ -784,6 +787,12 @@ function _productCardHtml(p, showSeller) {
   const sellerLine = (showSeller && p.sellers)
     ? `<div class="product-seller-overlay" onclick="event.stopPropagation(); openSellerProducts('${p.sellers.id}', currentCategoryType || 'B')">🏪 ${escapeHtml(p.sellers.full_name)}</div>`
     : '';
+  // Dans une grille (accueil/catégorie, showSeller=true) : le clic sur la photo
+  // ouvre la page du vendeur. Sur la page d'un vendeur (showSeller=false) : le
+  // clic ouvre toujours le zoom/lightbox, puisqu'on y est déjà.
+  const imgOnclick = (showSeller && p.sellers)
+    ? `openSellerProducts('${p.sellers.id}', currentCategoryType || 'B')`
+    : `openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)`;
 
   return `
     <div class="product-card">
@@ -794,8 +803,8 @@ function _productCardHtml(p, showSeller) {
           data-category="${escapeHtml(p.seller_category || '')}"
           data-name="${escapeHtml(p.name)}"
           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
-          onclick="openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)"
-          style="cursor:zoom-in;"
+          onclick="${imgOnclick}"
+          style="cursor:pointer;"
         >
         <span class="product-price-badge">${formatPrice(p.price)} FCFA</span>
         ${tierLine ? `<span class="product-tier-badge">📦 ${tierLine}</span>` : ''}
@@ -821,20 +830,14 @@ function renderProducts(products, type) {
   }
   list.innerHTML = '';
 
-  const isMultiServices = typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory);
-
-  // Mode "Boutique & Vendeur" (détail) : grille plate + sidebar filtres partagée
-  if (products[0] && products[0].sellers && !isMultiServices) {
+  // Grille plate + sidebar filtres partagée — même traitement pour Boutique & Vendeur,
+  // Grossiste & Importateur et Services (uniformisé, plus de mode "groupé" séparé).
+  if (products[0] && products[0].sellers) {
     list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
     _renderProductsFlat();
     _sidebarContext = 'category';
     _populateHomeSidebarStatic();
     _populateHomeSidebarSellersFromProducts(_productsAll);
-  }
-  // Mode multi-services (groupé par boutique, inchangé)
-  else if (products[0] && products[0].sellers) {
-    list.style.cssText = 'display:block;padding:8px 15px 80px;';
-    _renderProductsGroupedBySeller();
   }
   // Mode boutique unique (page vendeur)
   else {
@@ -944,9 +947,9 @@ async function loadSimilarSellers(sellerId, category) {
     block.innerHTML = `
       <div style="padding:4px 15px 30px;">
         <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px;">🏪 Vendeurs similaires</div>
-        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px 8px;">
           ${sellers.map(s => `
-            <div style="min-width:90px;max-width:90px;text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B')">
+            <div style="text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B')">
               <img src="${escapeHtml(s.photo) || 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'}"
                 onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'"
                 style="width:70px;height:70px;border-radius:50%;object-fit:cover;">
@@ -1151,6 +1154,7 @@ function _computeHomeFeedCategoryIds() {
 
 // ---- Grille produits personnalisée ----
 let _homeFeedPage = 0;
+let _homeFeedProducts = [];
 
 async function loadHomeFeed(append = false) {
   const list = document.getElementById('homeProductsGrid');
@@ -1193,13 +1197,16 @@ async function loadHomeFeed(append = false) {
 
     if (!append && (!data || data.length === 0)) {
       list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
+      _homeFeedProducts = [];
       return;
     }
+
+    _homeFeedProducts = append ? _homeFeedProducts.concat(data || []) : (data || []);
 
     list.insertAdjacentHTML('beforeend', (data || []).map(p => _productCardHtml(p, true)).join(''));
     (data || []).forEach(p => loadProductReviewsSummary(p.id));
 
-    if (!append) _populateHomeSidebarSellersFromProducts(data || []);
+    if (_sidebarContext === 'home') _populateHomeSidebarSellersFromProducts(_homeFeedProducts);
 
     if (data && data.length === 20) {
       list.insertAdjacentHTML('beforeend', `
@@ -1248,7 +1255,7 @@ function _populateHomeSidebarSellersFromProducts(products) {
 }
 window._populateHomeSidebarSellersFromProducts = _populateHomeSidebarSellersFromProducts;
 
-// ---- Sidebar accueil : villes + sous-catégories ----
+// ---- Sidebar accueil : villes + sous-catégories (dépend du contexte actif) ----
 function _populateHomeSidebarStatic() {
   const villes = ['Brazzaville','Pointe-Noire','Dolisie','Nkayi','Oyo','Bétou','Ouesso','Impfondo','Madingou','Owando','Sibiti','Mossaka','Gamboma','Djambala','Makoua','Kinkala','Ewo','Dongou'];
   const currentVille = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
@@ -1262,15 +1269,84 @@ function _populateHomeSidebarStatic() {
       ).join('');
   }
 
-  if (typeof TREE_B2 !== 'undefined') {
-    const subcatsEl = document.getElementById('homeCatSidebarSubcats');
-    if (subcatsEl) {
-      subcatsEl.innerHTML = TREE_B2.map(c =>
-        `<button class="cat-sidebar-subcat-btn${(_sidebarContext === 'category' && currentCategory === c.id) ? ' active' : ''}" onclick="openCategory('${c.id}','B')">${c.label}</button>`
-      ).join('');
-    }
+  // Choix de l'arbre de sous-catégories selon le contexte : sur la page catégorie
+  // (drill-down), on regarde à quel groupe appartient la catégorie ouverte ;
+  // sur l'accueil, chaque section (Boutique/Grossiste/Service) a son propre arbre.
+  let tree = null, treeType = 'B';
+  if (_sidebarContext === 'category' && typeof currentCategory !== 'undefined' && currentCategory) {
+    if (typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(currentCategory))       { tree = TREE_A;  treeType = 'A'; }
+    else if (typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory)) { tree = TREE_B1; treeType = 'A'; }
+    else if (typeof TREE_B2 !== 'undefined')                                          { tree = TREE_B2; treeType = 'B'; }
+  } else if (_sidebarContext === 'grossiste' && typeof TREE_A !== 'undefined') {
+    tree = TREE_A; treeType = 'A';
+  } else if (_sidebarContext === 'service' && typeof TREE_B1 !== 'undefined') {
+    tree = TREE_B1; treeType = 'A';
+  } else if (typeof TREE_B2 !== 'undefined') {
+    tree = TREE_B2; treeType = 'B'; // 'home' / 'boutique' par défaut
+  }
+
+  const subcatsEl = document.getElementById('homeCatSidebarSubcats');
+  if (subcatsEl && tree) {
+    // Regroupement en tiroirs repliables (accordéon) par section : un titre
+    // cliquable, suivi de ses sous-catégories cachées tant qu'on ne l'a pas ouvert.
+    const sections = [];
+    let current = null;
+    tree.forEach(c => {
+      const secTitle = c.section || '';
+      if (!current || current.title !== secTitle) {
+        current = { title: secTitle, items: [] };
+        sections.push(current);
+      }
+      current.items.push(c);
+    });
+
+    // Ouvre automatiquement la section qui contient la sous-catégorie active
+    const activeSection = _sidebarContext === 'category' && currentCategory
+      ? sections.find(s => s.items.some(c => c.id === currentCategory))
+      : null;
+
+    subcatsEl.innerHTML = sections.map((s, i) => {
+      const secId = `subcatDrawer${i}`;
+      const isOpen = activeSection === s;
+      return `
+        <button type="button" class="cat-sidebar-subcat-drawer-toggle${isOpen ? ' open' : ''}" onclick="_toggleSubcatDrawer('${secId}', this)">
+          <span>${escapeHtml(s.title)}</span>
+          <span class="cat-sidebar-subcat-drawer-arrow">›</span>
+        </button>
+        <div id="${secId}" class="cat-sidebar-subcat-drawer-body" style="display:${isOpen ? 'block' : 'none'};">
+          ${s.items.map(c => {
+            const isActive = _sidebarContext === 'category' && currentCategory === c.id;
+            return `<button class="cat-sidebar-subcat-btn${isActive ? ' active' : ''}" onclick="openCategory('${c.id}','${treeType}')">${escapeHtml(c.label)}</button>`;
+          }).join('')}
+        </div>
+      `;
+    }).join('');
   }
 }
+
+// ---- Tiroir de sous-catégories : un seul ouvert à la fois (accordéon) ----
+function _toggleSubcatDrawer(secId, btn) {
+  const body = document.getElementById(secId);
+  if (!body) return;
+  const wasOpen = body.style.display === 'block';
+
+  // Referme tous les autres tiroirs de la même liste
+  const container = btn.closest('#homeCatSidebarSubcats');
+  if (container) {
+    container.querySelectorAll('.cat-sidebar-subcat-drawer-body').forEach(el => el.style.display = 'none');
+    container.querySelectorAll('.cat-sidebar-subcat-drawer-toggle').forEach(el => el.classList.remove('open'));
+  }
+
+  if (!wasOpen) {
+    body.style.display = 'block';
+    btn.classList.add('open');
+  }
+  if (typeof _updateSidebarScrollThumb === 'function') {
+    const scrollEl = document.getElementById('homeCatSidebarSubcats');
+    if (scrollEl) _updateSidebarScrollThumb(scrollEl);
+  }
+}
+window._toggleSubcatDrawer = _toggleSubcatDrawer;
 
 // ---- (ancienne requête directe sellers.category — retirée, non fiable, voir
 // _populateHomeSidebarSellersFromProducts ci-dessus pour la logique actuelle) ----
@@ -1281,6 +1357,9 @@ function openHomeSidebar() {
   const ov = document.getElementById('homeCatSidebarOverlay');
   if (sb) sb.classList.add('open');
   if (ov) ov.classList.add('open');
+  if (typeof _refreshAllSidebarScrollThumbs === 'function') {
+    setTimeout(_refreshAllSidebarScrollThumbs, 50); // après la transition d'ouverture
+  }
 }
 function closeHomeSidebar() {
   const sb = document.getElementById('homeCatSidebar');
@@ -1298,6 +1377,10 @@ function homeSidebarSelectVille(value, label) {
   _populateHomeSidebarStatic();
   if (_sidebarContext === 'category' && currentCategory) {
     openCategory(currentCategory, currentCategoryType);
+  } else if (_sidebarContext === 'grossiste') {
+    openGrossistePage();
+  } else if (_sidebarContext === 'service') {
+    openServicePage();
   } else {
     loadHomeFeed();
   }
@@ -1313,89 +1396,90 @@ window.toggleHomeSidebar        = toggleHomeSidebar;
 window.homeSidebarSelectVille   = homeSidebarSelectVille;
 window.openSellerFromHomeSidebar = openSellerFromHomeSidebar;
 
-// ---- Initialisation complète de l'accueil ----
-function initHomeSidebarAndFeed() {
-  _sidebarContext = 'home';
-  _populateHomeSidebarStatic();
-  loadHomeFeed();
-  loadHomePromoPanels();
-  openHomeSidebar();
-}
-window.initHomeSidebarAndFeed = initHomeSidebarAndFeed;
-
-// ================================================================
-// BARRE DE NAVIGATION FIXE (bas) — Accueil / Grossiste / Service / Compte
-// ================================================================
-function bottomNavGo(tab) {
-  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
-  const activeBtn = document.querySelector(`.bottom-nav-item[data-tab="${tab}"]`);
-  if (activeBtn) activeBtn.classList.add('active');
-
-  if (tab === 'accueil') {
-    goHome();
-  } else if (tab === 'grossiste') {
-    if (typeof TREE_A !== 'undefined') openCategoryTree(TREE_A, 'A', '🏭 Importateur & Grossiste');
-  } else if (tab === 'service') {
-    if (typeof TREE_B1 !== 'undefined') openCategoryTree(TREE_B1, 'A', '⭐ Multi-Services & Commerces');
-  } else if (tab === 'compte') {
-    openAccountChoice();
-  }
-}
-function openAccountChoice() {
-  const sheet   = document.getElementById('accountChoiceSheet');
-  const overlay = document.getElementById('accountChoiceOverlay');
-  if (sheet)   sheet.classList.add('open');
-  if (overlay) overlay.classList.add('open');
-}
-function closeAccountChoice() {
-  const sheet   = document.getElementById('accountChoiceSheet');
-  const overlay = document.getElementById('accountChoiceOverlay');
-  if (sheet)   sheet.classList.remove('open');
-  if (overlay) overlay.classList.remove('open');
-  // Remettre "Accueil" actif visuellement puisque le menu Compte n'est qu'un choix, pas une page
-  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
-  const homeBtn = document.querySelector('.bottom-nav-item[data-tab="accueil"]');
-  if (homeBtn) homeBtn.classList.add('active');
-}
-window.bottomNavGo        = bottomNavGo;
-window.openAccountChoice  = openAccountChoice;
-window.closeAccountChoice = closeAccountChoice;
-
 // ================================================================
 // BANDEAU PROMO ACCUEIL — Grossiste / Service (top 10 en position, défilement auto)
 // ================================================================
 let _homePromoGrossiste = { items: [], idx: 0, timer: null };
 let _homePromoService   = { items: [], idx: 0, timer: null };
 
-async function _fetchHomePromoSellers(accountTypes) {
+// ================================================================
+// CLASSEMENT DES VENDEURS PAR SECTION (Boutique & Vendeur / Grossiste / Service)
+// Priorité aux positions manuelles définies par l'admin (ordre croissant),
+// puis les autres vendeurs classés par nombre de publications actives dans
+// cette section (ordre décroissant) — ceux qui publient régulièrement montent,
+// ceux qui publient peu ou pas restent en bas.
+// ================================================================
+async function getSectionRankedSellers(section, limit) {
   try {
-    const { data: sellers, error } = await db
-      .from(TABLES.SELLERS)
-      .select('id, full_name')
-      .in('account_type', accountTypes)
+    const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
+    const posField = section === 'A' ? 'position_grossiste' : (section === 'B1' ? 'position_service' : 'position_boutique');
+    const catIds = (tree || []).map(c => c.id);
+    if (!catIds.length) return [];
+
+    // 1) Compter les publications actives par vendeur, dans cette section
+    const { data: products } = await db.from(TABLES.PRODUCTS)
+      .select('seller_id')
+      .in('seller_category', catIds)
+      .eq('is_active', true);
+
+    const counts = {};
+    (products || []).forEach(p => { counts[p.seller_id] = (counts[p.seller_id] || 0) + 1; });
+    const sellerIds = Object.keys(counts);
+    if (!sellerIds.length) return [];
+
+    // 2) Infos vendeur + position manuelle éventuelle (peut être NULL)
+    const { data: sellers } = await db.from(TABLES.SELLERS)
+      .select(`id, full_name, photo, ville, stars, badge, is_blocked, is_active, ${posField}`)
+      .in('id', sellerIds)
       .eq('is_blocked', false)
-      .eq('is_active', true)
-      .order('position', { ascending: true })
-      .order('dynamisme_score', { ascending: false })
-      .limit(10);
+      .eq('is_active', true);
 
-    if (error || !sellers || !sellers.length) return [];
+    const list = (sellers || []).map(s => ({
+      ...s,
+      _count: counts[s.id] || 0,
+      _override: s[posField]
+    }));
 
-    const sellerIds = sellers.map(s => s.id);
+    list.sort((a, b) => {
+      const aHas = a._override !== null && a._override !== undefined;
+      const bHas = b._override !== null && b._override !== undefined;
+      if (aHas && bHas) return a._override - b._override;
+      if (aHas) return -1;
+      if (bHas) return 1;
+      return b._count - a._count; // plus de publications = mieux classé
+    });
+
+    return limit ? list.slice(0, limit) : list;
+  } catch (e) {
+    console.error('getSectionRankedSellers error:', e);
+    return [];
+  }
+}
+window.getSectionRankedSellers = getSectionRankedSellers;
+
+async function _fetchHomePromoSellers(section) {
+  try {
+    const ranked = await getSectionRankedSellers(section, 10);
+    if (!ranked.length) return [];
+
+    const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
+    const catIds = (tree || []).map(c => c.id);
+    const sellerIds = ranked.map(s => s.id);
     const nameById = {};
-    sellers.forEach(s => { nameById[s.id] = s.full_name; });
+    ranked.forEach(s => { nameById[s.id] = s.full_name; });
 
     const { data: products, error: prodError } = await db
       .from(TABLES.PRODUCTS)
       .select('id, name, image, seller_id, created_at')
       .in('seller_id', sellerIds)
+      .in('seller_category', catIds)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(40);
+      .limit(60);
 
     if (prodError || !products) return [];
 
-    // Un seul (le plus récent) par vendeur, dans l'ordre de position déjà trié
+    // Un seul (le plus récent) par vendeur, dans l'ordre de classement déjà trié
     const bySeller = {};
     products.forEach(p => {
       if (!bySeller[p.seller_id]) bySeller[p.seller_id] = p;
@@ -1439,8 +1523,8 @@ function _startHomePromoRotation(state, imgId, nameId) {
 
 async function loadHomePromoPanels() {
   const [grossisteItems, serviceItems] = await Promise.all([
-    _fetchHomePromoSellers(['independant_grossiste', 'vip_grossiste']),
-    _fetchHomePromoSellers(['independant_service'])
+    _fetchHomePromoSellers('A'),
+    _fetchHomePromoSellers('B1')
   ]);
 
   _homePromoGrossiste.items = grossisteItems;
@@ -1452,6 +1536,124 @@ async function loadHomePromoPanels() {
   _startHomePromoRotation(_homePromoService, 'homePromoServiceImg', 'homePromoServiceName');
 }
 window.loadHomePromoPanels = loadHomePromoPanels;
+
+// ---- Initialisation complète de l'accueil ----
+function initHomeSidebarAndFeed() {
+  _sidebarContext = 'home';
+  _populateHomeSidebarStatic();
+  loadHomeFeed();
+  loadHomePromoPanels();
+  openHomeSidebar();
+}
+window.initHomeSidebarAndFeed = initHomeSidebarAndFeed;
+
+// ================================================================
+// BARRE DE NAVIGATION FIXE (bas) — Accueil / Grossiste / Service / Compte
+// ================================================================
+function bottomNavGo(tab) {
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.bottom-nav-item[data-tab="${tab}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  if (tab === 'accueil') {
+    goHome();
+  } else if (tab === 'grossiste') {
+    openGrossistePage();
+  } else if (tab === 'service') {
+    openServicePage();
+  } else if (tab === 'compte') {
+    openAccountChoice();
+  }
+}
+function openAccountChoice() {
+  const sheet   = document.getElementById('accountChoiceSheet');
+  const overlay = document.getElementById('accountChoiceOverlay');
+  if (sheet)   sheet.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+}
+function closeAccountChoice() {
+  const sheet   = document.getElementById('accountChoiceSheet');
+  const overlay = document.getElementById('accountChoiceOverlay');
+  if (sheet)   sheet.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
+  // Remettre "Accueil" actif visuellement puisque le menu Compte n'est qu'un choix, pas une page
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+  const homeBtn = document.querySelector('.bottom-nav-item[data-tab="accueil"]');
+  if (homeBtn) homeBtn.classList.add('active');
+}
+window.bottomNavGo        = bottomNavGo;
+window.openAccountChoice  = openAccountChoice;
+window.closeAccountChoice = closeAccountChoice;
+
+// ================================================================
+// PAGES DÉDIÉES — Grossiste & Importateur / Services
+// Même traitement que la page catégorie (openCategory) : titre + retour +
+// sidebar de filtres (villes, sous-catégories du groupe, vendeurs) + grille,
+// mais sur TOUTES les catégories du groupe d'un coup (pas une seule sous-catégorie).
+// ================================================================
+async function _openGroupPage(tree, title, ctx) {
+  try {
+    window.currentViewedSeller = null;
+    currentCategory     = null;
+    currentCategoryType = 'A';
+    _sidebarContext      = ctx; // avant showPage() : sert à synchroniser la barre du bas
+
+    document.getElementById('sellerNameTitle').innerText    = title;
+    document.getElementById('sellerNameSubtitle').innerText = '';
+
+    showPage('productsPage');
+    document.getElementById('productsList').innerHTML = '<div class="loading">Chargement...</div>';
+    const simBlock = document.getElementById('similarSellersBlock');
+    if (simBlock) simBlock.innerHTML = '';
+    updateCartUI();
+
+    const catIds = (tree || []).map(c => c.id);
+    if (!catIds.length) { renderProducts([], 'A'); return; }
+
+    const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+
+    let query = db
+      .from(TABLES.PRODUCTS)
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .in('seller_category', catIds)
+      .eq('is_active', true)
+      .eq('sellers.is_blocked', false)
+      .eq('sellers.is_active', true);
+
+    if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
+
+    const { data: products, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('_openGroupPage error:', JSON.stringify(error));
+      document.getElementById('productsList').innerHTML =
+        '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+      return;
+    }
+
+    renderProducts(products || [], 'A');
+
+    // renderProducts() remet _sidebarContext à 'category' (cas d'une seule
+    // sous-catégorie via openCategory) : on le corrige ici pour que la
+    // sidebar affiche bien tout l'arbre du groupe, sans sous-catégorie active.
+    _sidebarContext = ctx;
+    _populateHomeSidebarStatic();
+    _populateHomeSidebarSellersFromProducts(products || []);
+  } catch (e) {
+    console.error('_openGroupPage error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+
+function openGrossistePage() {
+  _openGroupPage(typeof TREE_A !== 'undefined' ? TREE_A : [], '🏭 Grossiste & Importateurs', 'grossiste');
+}
+window.openGrossistePage = openGrossistePage;
+
+function openServicePage() {
+  _openGroupPage(typeof TREE_B1 !== 'undefined' ? TREE_B1 : [], '⭐ Services', 'service');
+}
+window.openServicePage = openServicePage;
 
 // ================================================================
 // BOUTON FLOTTANT SIDEBAR — déplaçable verticalement le long du bord,
@@ -1471,40 +1673,107 @@ window.loadHomePromoPanels = loadHomePromoPanels;
       fab.style.transform = 'none';
     }
 
-    let startY = 0, startTop = 0, dragging = false, moved = false;
+    // Pointer Events : gère souris/tactile/stylet de façon unifiée et fiable
+    // (évite les soucis de "click" synthétique en double, et de touchcancel
+    // qui bloquait le bouton après un scroll).
+    let startY = 0, startTop = 0, dragging = false, moved = false, startTime = 0;
 
-    fab.addEventListener('touchstart', e => {
+    fab.addEventListener('pointerdown', e => {
       dragging = true; moved = false;
-      startY = e.touches[0].clientY;
+      startY = e.clientY;
       startTop = fab.getBoundingClientRect().top;
-    }, { passive: true });
+      startTime = Date.now();
+      try { fab.setPointerCapture(e.pointerId); } catch (err) {}
+    });
 
-    fab.addEventListener('touchmove', e => {
+    fab.addEventListener('pointermove', e => {
       if (!dragging) return;
-      const dy = e.touches[0].clientY - startY;
-      if (Math.abs(dy) > 6) moved = true;
-      let newTop = startTop + dy;
-      const maxTop = window.innerHeight - fab.offsetHeight - 66; // dégage la barre du bas
-      newTop = Math.max(60, Math.min(newTop, maxTop));
-      fab.style.top = newTop + 'px';
-      fab.style.transform = 'none';
-    }, { passive: true });
-
-    fab.addEventListener('touchend', () => {
-      dragging = false;
+      const dy = e.clientY - startY;
+      if (Math.abs(dy) > 10) moved = true;
       if (moved) {
-        localStorage.setItem(FAB_POS_KEY, fab.style.top);
-      } else {
-        toggleHomeSidebar();
+        let newTop = startTop + dy;
+        const maxTop = window.innerHeight - fab.offsetHeight - 66; // dégage la barre du bas
+        newTop = Math.max(60, Math.min(newTop, maxTop));
+        fab.style.top = newTop + 'px';
+        fab.style.transform = 'none';
       }
     });
 
-    // Souris (pour test bureau)
-    fab.addEventListener('click', () => {
-      if (!('ontouchstart' in window)) toggleHomeSidebar();
-    });
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      if (moved) {
+        localStorage.setItem(FAB_POS_KEY, fab.style.top);
+      } else if (Date.now() - startTime < 500) {
+        toggleHomeSidebar();
+      }
+    }
+
+    fab.addEventListener('pointerup', endDrag);
+    fab.addEventListener('pointercancel', () => { dragging = false; });
   }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+
+// ================================================================
+// INDICATEUR DE DÉFILEMENT CUSTOM (tiroir filtres) — toujours visible,
+// contrairement à la barre native qui s'estompe après le scroll sur mobile.
+// ================================================================
+function _updateSidebarScrollThumb(el) {
+  const wrap = el.closest('.cat-sidebar-scroll-wrap');
+  if (!wrap) return;
+  const thumb = wrap.querySelector('.cat-sidebar-scrollbar-thumb');
+  const track = wrap.querySelector('.cat-sidebar-scrollbar-track');
+  if (!thumb || !track) return;
+
+  const { scrollTop, scrollHeight, clientHeight } = el;
+  if (scrollHeight <= clientHeight + 1) {
+    // Rien à défiler : on cache la piste et le pouce
+    track.style.display = 'none';
+    thumb.style.display = 'none';
+    return;
+  }
+  track.style.display = 'block';
+  thumb.style.display = 'block';
+
+  const trackHeight = clientHeight;
+  const thumbHeight = Math.max(24, (clientHeight / scrollHeight) * trackHeight);
+  const maxThumbTop = trackHeight - thumbHeight;
+  const thumbTop = (scrollTop / (scrollHeight - clientHeight)) * maxThumbTop;
+
+  thumb.style.height = thumbHeight + 'px';
+  thumb.style.top = thumbTop + 'px';
+}
+window._updateSidebarScrollThumb = _updateSidebarScrollThumb;
+
+// Recalcule les 3 indicateurs (villes / sous-catégories / vendeurs) après
+// que leur contenu a été injecté dynamiquement en JS.
+function _refreshAllSidebarScrollThumbs() {
+  ['homeCatSidebarVilles', 'homeCatSidebarSubcats', 'homeCatSidebarSellers'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) _updateSidebarScrollThumb(el);
+  });
+}
+window._refreshAllSidebarScrollThumbs = _refreshAllSidebarScrollThumbs;
+
+// Observe les 3 listes : dès que leur innerHTML change (peu importe la
+// fonction qui les remplit), on recalcule l'indicateur automatiquement —
+// pas besoin de modifier chaque fonction de rendu une par une.
+(function initSidebarScrollObservers() {
+  function setup() {
+    ['homeCatSidebarVilles', 'homeCatSidebarSubcats', 'homeCatSidebarSellers'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const obs = new MutationObserver(() => _updateSidebarScrollThumb(el));
+      obs.observe(el, { childList: true, subtree: true, characterData: true });
+    });
+    window.addEventListener('resize', _refreshAllSidebarScrollThumbs);
+  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
   } else {
