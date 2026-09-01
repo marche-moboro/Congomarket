@@ -938,9 +938,9 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
 
-  <a href="https://wa.me/242050672009" target="_blank" class="cat-sidebar-contact-btn">
-    💬 Nous contacter
-  </a>
+  <button id="a2hsSidebarBtn" class="cat-sidebar-contact-btn" style="background:#1677FF;border:none;cursor:pointer;" onclick="handleA2HSClick()">
+    📲 Ajouter à l'écran d'accueil
+  </button>
 </div>
 <button id="homeSidebarToggleBtn" class="home-sidebar-fab">›</button>
 
@@ -2931,6 +2931,25 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
+<!-- MODAL AJOUTER À L'ÉCRAN D'ACCUEIL (instructions manuelles de secours) -->
+<div class="modal" id="a2hsInstructionsModal" style="display:none;">
+  <div class="modal-content" style="text-align:center;">
+    <div style="font-size:50px;margin-bottom:15px;">📲</div>
+    <h2 style="color:#1677FF;margin-bottom:12px;">Ajouter à l'écran d'accueil</h2>
+    <p id="a2hsInstructionsText" style="font-size:15px;line-height:1.7;margin-bottom:16px;color:#555;text-align:left;">
+    </p>
+    <p style="font-size:13px;line-height:1.6;margin-bottom:20px;color:#888;">
+      Cette option n'apparaît pas ? Ton navigateur actuel ne la propose peut-être pas — essaie avec
+      <strong>Firefox</strong> ou <strong>Opera</strong> (disponibles gratuitement sur le Play Store).
+    </p>
+    <button onclick="document.getElementById('a2hsInstructionsModal').style.display='none'"
+      style="width:100%;background:#1677FF;color:white;border:none;padding:13px;
+             border-radius:14px;font-weight:700;cursor:pointer;font-size:14px;">
+      J'ai compris
+    </button>
+  </div>
+</div>
+
 <!-- ========== TOAST ========== -->
 <div class="toast" id="toast"></div>
 
@@ -3892,6 +3911,35 @@ function dismissInstallBanner() {
   if (banner) banner.style.display = 'none';
   localStorage.setItem('install_banner_dismissed', '1');
 }
+
+// Bouton "Ajouter à l'écran d'accueil" du tiroir de filtres — déclenche
+// l'installation native si le navigateur la propose, sinon affiche des
+// instructions manuelles adaptées (et suggère un autre navigateur en dernier
+// recours, car aucune API web ne peut forcer l'installation).
+async function handleA2HSClick() {
+  if (isStandalone()) {
+    showToast('L\'application est déjà installée !', 'success');
+    return;
+  }
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    return;
+  }
+  if (isIOSDevice()) {
+    document.getElementById('a2hsInstructionsText').innerHTML =
+      'Sur iPhone/iPad : appuie sur <strong>📤 Partager</strong> en bas de Safari, puis choisis <strong>"Sur l\'écran d\'accueil"</strong>.';
+  } else if (isKaiOSDevice()) {
+    document.getElementById('a2hsInstructionsText').innerHTML =
+      'Ouvre le menu de ton navigateur, puis choisis <strong>"Ajouter à l\'écran d\'accueil"</strong>.';
+  } else {
+    document.getElementById('a2hsInstructionsText').innerHTML =
+      'Ouvre le menu ⋮ de ton navigateur (en haut à droite), puis cherche <strong>"Installer l\'application"</strong> ou <strong>"Ajouter à l\'écran d\'accueil"</strong>, généralement tout en bas du menu.';
+  }
+  document.getElementById('a2hsInstructionsModal').style.display = 'flex';
+}
+window.handleA2HSClick = handleA2HSClick;
 
 document.addEventListener('DOMContentLoaded', () => {
   if ((isIOSDevice() || isKaiOSDevice()) && !isStandalone() && !localStorage.getItem('install_banner_dismissed')) {
