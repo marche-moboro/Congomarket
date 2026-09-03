@@ -938,9 +938,9 @@ header p { font-size: 12px; opacity: .80; }
     </div>
   </div>
 
-  <button id="a2hsSidebarBtn" class="cat-sidebar-contact-btn" style="background:#1677FF;border:none;cursor:pointer;" onclick="handleA2HSClick()">
-    📲 Ajouter à l'écran d'accueil
-  </button>
+  <a id="a2hsSidebarBtn" href="#" class="cat-sidebar-contact-btn" style="background:#1677FF;border:none;cursor:pointer;" onclick="handleA2HSClick(event)">
+    📲 Télécharger l'application
+  </a>
 </div>
 <button id="homeSidebarToggleBtn" class="home-sidebar-fab">›</button>
 
@@ -3912,32 +3912,51 @@ function dismissInstallBanner() {
   localStorage.setItem('install_banner_dismissed', '1');
 }
 
-// Bouton "Ajouter à l'écran d'accueil" du tiroir de filtres — déclenche
-// l'installation native si le navigateur la propose, sinon affiche des
-// instructions manuelles adaptées (et suggère un autre navigateur en dernier
-// recours, car aucune API web ne peut forcer l'installation).
-async function handleA2HSClick() {
+// Emplacement du fichier APK (à uploader une seule fois à la racine du repo,
+// à côté de index.html — voir instructions données à l'utilisateur).
+const MOBORO_APK_URL = './moboro.apk';
+
+// Bouton "Télécharger l'application" du tiroir de filtres — facile pour les
+// visiteurs : sur Android/PC, lance directement le téléchargement du .apk
+// (aucun menu à chercher, marche même si le navigateur ne propose pas
+// l'installation PWA). Sur iPhone/KaiOS, le .apk ne s'applique pas : on
+// affiche les instructions adaptées à la place.
+async function handleA2HSClick(e) {
+  if (e) e.preventDefault();
+
   if (isStandalone()) {
     showToast('L\'application est déjà installée !', 'success');
     return;
   }
-  if (deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    return;
-  }
+
   if (isIOSDevice()) {
     document.getElementById('a2hsInstructionsText').innerHTML =
-      'Sur iPhone/iPad : appuie sur <strong>📤 Partager</strong> en bas de Safari, puis choisis <strong>"Sur l\'écran d\'accueil"</strong>.';
-  } else if (isKaiOSDevice()) {
+      'Sur iPhone/iPad : appuie sur <strong>📤 Partager</strong> en bas de Safari, puis choisis <strong>"Sur l\'écran d\'accueil"</strong>.<br><br>' +
+      'Le téléchargement direct (.apk) n\'est disponible que sur Android.';
+    document.getElementById('a2hsInstructionsModal').style.display = 'flex';
+    return;
+  }
+  if (isKaiOSDevice()) {
     document.getElementById('a2hsInstructionsText').innerHTML =
       'Ouvre le menu de ton navigateur, puis choisis <strong>"Ajouter à l\'écran d\'accueil"</strong>.';
-  } else {
-    document.getElementById('a2hsInstructionsText').innerHTML =
-      'Ouvre le menu ⋮ de ton navigateur (en haut à droite), puis cherche <strong>"Installer l\'application"</strong> ou <strong>"Ajouter à l\'écran d\'accueil"</strong>, généralement tout en bas du menu.';
+    document.getElementById('a2hsInstructionsModal').style.display = 'flex';
+    return;
   }
-  document.getElementById('a2hsInstructionsModal').style.display = 'flex';
+
+  // Android / autres : téléchargement direct du fichier .apk
+  try {
+    const check = await fetch(MOBORO_APK_URL, { method: 'HEAD' });
+    if (!check.ok) throw new Error('missing');
+    const link = document.createElement('a');
+    link.href = MOBORO_APK_URL;
+    link.download = 'MarcheMoboro.apk';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('Téléchargement lancé — ouvre le fichier une fois terminé pour installer', 'success');
+  } catch (err) {
+    showToast('Application pas encore disponible en téléchargement direct, réessaie plus tard', 'info');
+  }
 }
 window.handleA2HSClick = handleA2HSClick;
 
