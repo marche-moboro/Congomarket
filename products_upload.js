@@ -301,7 +301,11 @@ let _myPromosPage   = 0;
 const MY_PROMOS_PER_PAGE = 15;
 
 async function publishProduct() {
-  if (!currentSeller) return;
+  if (!currentSeller) {
+    showToast('Session expirée, reconnecte-toi', 'error');
+    showPage('loginPage');
+    return;
+  }
   if (_publishingProduct) return;
 
   // ── Vérification abonnement avant publication ──
@@ -442,7 +446,11 @@ if (ownCatReset) ownCatReset.value = '';
 // ================================================================
 async function viewMyProducts() {
   try {
-  if (!currentSeller) return;
+  if (!currentSeller) {
+    showToast('Session expirée, reconnecte-toi', 'error');
+    showPage('loginPage');
+    return;
+  }
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
@@ -489,7 +497,6 @@ function _appendMyProducts() {
       <img src="${escapeHtml(p.image)}"
         onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
       <div class="my-product-info">
-       <div class="my-product-info">
         <strong>${escapeHtml(p.name)}</strong>
         <span>${formatPrice(p.price)} FCFA / unité</span>
         ${renderSpecsHtml(p)}
@@ -591,6 +598,10 @@ async function openEditProduct(productId) {
 async function saveEditProduct() {
   try {
     const productId   = document.getElementById('editProductId').value;
+    if (!productId) {
+      showToast('Erreur : produit introuvable, réessaie depuis "Mes publications"', 'error');
+      return;
+    }
     const name        = document.getElementById('editPubName').value.trim();
     const price       = document.getElementById('editPubPrice').value.trim();
     const description = document.getElementById('editPubDescription').value.trim();
@@ -643,7 +654,11 @@ async function saveEditProduct() {
 // ================================================================
 async function openSendToPromo() {
   try {
-  if (!currentSeller) return;
+  if (!currentSeller) {
+    showToast('Session expirée, reconnecte-toi', 'error');
+    showPage('loginPage');
+    return;
+  }
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
@@ -792,7 +807,11 @@ const promoPrice      = promoPriceInput ? promoPriceInput.value : '';
 // ================================================================
 async function viewMyPromos() {
   try {
-  if (!currentSeller) return;
+  if (!currentSeller) {
+    showToast('Session expirée, reconnecte-toi', 'error');
+    showPage('loginPage');
+    return;
+  }
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);

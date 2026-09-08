@@ -542,8 +542,6 @@ async function openCategory(catId, type) {
   document.getElementById('sellerNameTitle').innerText    = title;
   document.getElementById('sellerNameSubtitle').innerText = '';
 
-_recordCategoryVisit(catId);
-
   showPage('productsPage');
 document.getElementById('productsList').innerHTML =
     '<div class="loading">Chargement...</div>';
@@ -1113,43 +1111,18 @@ window.trackWhatsappClick          = trackWhatsappClick;
 window.loadMoreProducts            = loadMoreProducts;
 window.subscribeSellerPush = subscribeSellerPush;
 // ================================================================
-// PAGE D'ACCUEIL — Sidebar + grille personnalisée "Boutiques & Vendeurs"
+// PAGE D'ACCUEIL — Sidebar + grille "Boutiques & Vendeurs" (tous les
+// produits actifs, du plus récent au plus ancien — plus de personnalisation
+// par historique de navigation)
 // ================================================================
 
-// ---- Historique de consultation (localStorage) ----
-const HOME_HISTORY_KEY = 'moboro_visit_history';
-
-function _recordCategoryVisit(catId) {
-  if (typeof TREE_B2 === 'undefined') return;
-  const isB2 = TREE_B2.some(c => c.id === catId);
-  if (!isB2) return;
-  try {
-    const history = JSON.parse(localStorage.getItem(HOME_HISTORY_KEY) || '{}');
-    const entry = history[catId] || { count: 0, lastTs: 0 };
-    entry.count += 1;
-    entry.lastTs = Date.now();
-    history[catId] = entry;
-    localStorage.setItem(HOME_HISTORY_KEY, JSON.stringify(history));
-  } catch (e) { console.error('_recordCategoryVisit error:', e); }
-}
-window._recordCategoryVisit = _recordCategoryVisit;
-
 function _computeHomeFeedCategoryIds() {
-  let history = {};
-  try { history = JSON.parse(localStorage.getItem(HOME_HISTORY_KEY) || '{}'); } catch (e) {}
+  // Simplifié : plus de personnalisation par historique (6 catégories les
+  // plus visitées) — l'accueil affiche désormais tous les produits actifs
+  // de toutes les catégories Boutique & Vendeur, du plus récent au plus
+  // ancien, jusqu'à suppression ou nouvelle publication qui les repousse.
   if (typeof TREE_B2 === 'undefined') return [];
-  const b2Ids = new Set(TREE_B2.map(c => c.id));
-  const now = Date.now();
-  const scored = Object.keys(history)
-    .filter(id => b2Ids.has(id))
-    .map(id => ({
-      id,
-      score: history[id].count + ((now - history[id].lastTs) < 86400000 * 3 ? 5 : 0)
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6)
-    .map(x => x.id);
-  return scored.length ? scored : TREE_B2.map(c => c.id);
+  return TREE_B2.map(c => c.id);
 }
 
 // ---- Grille produits personnalisée ----
@@ -1175,7 +1148,7 @@ async function loadHomeFeed(append = false) {
   try {
     let query = db
       .from(TABLES.PRODUCTS)
-      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_boutique)')
       .in('seller_category', catIds)
       .eq('is_active', true)
       .eq('sellers.is_blocked', false)
@@ -1183,7 +1156,13 @@ async function loadHomeFeed(append = false) {
 
     if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
 
-    const { data, error } = await query.order('created_at', { ascending: false }).range(from, to);
+    // Respect du positionnement/dynamisme du vendeur : ceux avec une position
+    // manuelle (admin) passent d'abord (1, 2, 3...), les autres suivent par
+    // ordre de publication la plus récente.
+    const { data, error } = await query
+      .order('position_boutique', { foreignTable: 'sellers', ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error('loadHomeFeed error:', JSON.stringify(error));
@@ -1614,7 +1593,7 @@ async function _openGroupPage(tree, title, ctx) {
 
     let query = db
       .from(TABLES.PRODUCTS)
-      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_grossiste, position_service)')
       .in('seller_category', catIds)
       .eq('is_active', true)
       .eq('sellers.is_blocked', false)
@@ -1622,7 +1601,11 @@ async function _openGroupPage(tree, title, ctx) {
 
     if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
 
-    const { data: products, error } = await query.order('created_at', { ascending: false });
+    // Respect du positionnement/dynamisme du vendeur, propre à chaque section.
+    const posField = ctx === 'grossiste' ? 'position_grossiste' : 'position_service';
+    const { data: products, error } = await query
+      .order(posField, { foreignTable: 'sellers', ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('_openGroupPage error:', JSON.stringify(error));
