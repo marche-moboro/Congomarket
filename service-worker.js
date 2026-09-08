@@ -116,20 +116,23 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ── 5. Fichiers statiques — Cache first ──
+  // ── 5. Fichiers statiques (HTML/JS/CSS/manifest) — Cache d'abord pour un
+  //       chargement instantané, MAIS mise à jour silencieuse en arrière-plan
+  //       à chaque requête (stale-while-revalidate). Le meilleur des deux :
+  //       rapide comme le cache, mais jamais bloqué longtemps sur une
+  //       ancienne version (le prochain chargement aura la nouvelle).
   event.respondWith(
     caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type === 'opaque') {
-          return response;
+      const fetchAndUpdate = fetch(event.request).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE_STATIC).then(cache => cache.put(event.request, clone));
         }
-        const clone = response.clone();
-        caches.open(CACHE_STATIC).then(cache => {
-          cache.put(event.request, clone);
-        });
         return response;
-      });
-    }).catch(() => caches.match('/Congomarket/index.html'))
+      }).catch(() => cached || caches.match('/Congomarket/index.html'));
+
+      return cached || fetchAndUpdate;
+    })
   );
 });
 
