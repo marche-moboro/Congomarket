@@ -499,6 +499,88 @@ header p { font-size: 12px; opacity: .80; }
 
 .form-card h2 { font-size: 22px; margin-bottom: 14px; }
 
+/* ==================== AIDE / TUTORIEL ==================== */
+.help-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin-bottom: 18px;
+}
+.help-step-num {
+  flex-shrink: 0; width: 28px; height: 28px;
+  background: #1677FF; color: white; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px;
+}
+.help-step strong { display: block; font-size: 14.5px; margin-bottom: 3px; color: #222; }
+.help-step p { font-size: 13px; color: #666; line-height: 1.5; margin: 0; }
+
+.tutorial-slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 26px 22px; text-align: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+  overflow-y: auto;
+}
+.tutorial-slide.active { opacity: 1; pointer-events: auto; }
+.tutorial-slide .emoji { font-size: 46px; margin: 10px 0 14px; }
+.tutorial-slide h2 { font-size: 19px; color: #222; margin-bottom: 8px; }
+.tutorial-slide p { font-size: 13.5px; color: #666; line-height: 1.55; max-width: 320px; }
+.tutorial-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #e0e0e0; transition: all .2s ease;
+}
+.tutorial-dot.active { background: #1677FF; width: 22px; border-radius: 4px; }
+
+/* ---- Mini-reproductions visuelles des vraies pages du site ---- */
+.tutorial-mockup {
+  width: 100%; max-width: 300px;
+  background: #f5f7fb; border: 1px solid #e5e8f0;
+  border-radius: 16px; padding: 14px;
+  margin: 14px 0 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+.tutorial-mockup-caption {
+  font-size: 11px; color: #999; margin-top: 8px; font-style: italic;
+}
+.tm-btn {
+  display: block; width: 100%; padding: 10px 14px;
+  border-radius: 30px; border: none; color: white;
+  font-weight: 700; font-size: 12.5px; margin-bottom: 8px;
+  text-align: center; box-sizing: border-box;
+}
+.tm-row { display: flex; gap: 8px; }
+.tm-row .tm-btn { margin-bottom: 0; }
+.tm-input {
+  width: 100%; padding: 9px 12px; border-radius: 20px;
+  border: 1px solid #ddd; background: white; font-size: 12px;
+  color: #999; text-align: left; margin-bottom: 8px; box-sizing: border-box;
+}
+.tm-search-icon { margin-right: 4px; }
+.tm-card {
+  background: white; border-radius: 12px; padding: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.06); text-align: left;
+}
+.tm-card img { width: 100%; height: 70px; object-fit: cover; border-radius: 8px; margin-bottom: 6px; }
+.tm-card-price { color: #ff4d4f; font-weight: 700; font-size: 12px; }
+.tm-card-name { font-size: 12px; color: #333; font-weight: 600; }
+.tm-icon-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 15px; flex-shrink: 0;
+}
+.tm-section-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11.5px; font-weight: 700; color: #666;
+  text-transform: uppercase; padding: 6px 2px; letter-spacing: .3px;
+}
+.tm-sidebar-item {
+  display: block; width: 100%; text-align: left;
+  padding: 5px 6px; font-size: 11.5px; color: #333;
+  border-radius: 6px;
+}
+.tm-sidebar-item.tm-active { background: #f0f7ff; color: #1677FF; font-weight: 700; }
+.tm-stars { color: #FFD700; font-size: 14px; letter-spacing: 1px; }
+
 .form-card input,
 .form-card select,
 .form-card textarea {
@@ -972,7 +1054,47 @@ header p { font-size: 12px; opacity: .80; }
   <button class="bottom-nav-item" data-tab="compte" onclick="bottomNavGo('compte')">
     <span class="bottom-nav-icon">👤</span><span>Compte</span>
   </button>
+  <button class="bottom-nav-item" data-tab="aide" onclick="bottomNavGo('aide')">
+    <span class="bottom-nav-icon">❓</span>
+  </button>
 </nav>
+
+<!-- ========== PAGE AIDE (permanente) ========== -->
+<div class="page" id="helpPage">
+  <div class="register-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="goHome()">←</button>
+      <div><div class="section-title">❓ Aide Moboro</div></div>
+    </div>
+    <div class="form-card">
+      <div style="background:#f0f7ff;border:1px solid #d6e8ff;border-radius:14px;padding:14px;margin-bottom:18px;">
+        <strong style="color:#1677FF;font-size:14px;">🇨🇬 Marché Moboro</strong>
+        <p style="font-size:13px;color:#555;line-height:1.6;margin:6px 0 0;">
+          Le plus grand marché local-digital du Congo. Achetez et vendez facilement depuis chez vous— boutiquier, grossistes et services —
+          commande par WhatsApp ou appel directe, 0% de commission.
+        </p>
+      </div>
+      <p style="text-align:center;color:#666;font-size:14px;margin-bottom:18px;">Tutoriel:</p>
+      <button class="primary-btn" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);" onclick="openTutorialOverlay('vendeur')">🛒 Créer mon compte vendeur</button>
+      <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#52c41a,#389e0d);" onclick="openTutorialOverlay('acheteur')">Comment acheter</button>
+      <button class="primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#fa8c16,#d46b08);" onclick="openTutorialOverlay('livreur')">🛵 Créé mon compte Taxi</button>
+      <a href="https://wa.me/242050672009" target="_blank" class="green-btn" style="margin-top:16px;">💬 Contacter le support</a>
+    </div>
+  </div>
+</div>
+
+<!-- ========== TUTORIEL ANIMÉ (carrousel vendeur ou acheteur) ========== -->
+<div id="tutorialOverlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:20000;flex-direction:column;">
+  <button onclick="finishTutorial()" style="position:absolute;top:14px;right:14px;z-index:1;background:rgba(0,0,0,.06);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;">✕</button>
+  <div id="tutorialSlides" style="flex:1;position:relative;overflow:hidden;"></div>
+  <div style="padding:14px 20px 22px;">
+    <div id="tutorialDots" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button id="tutorialPrevBtn" onclick="prevTutorialSlide()" style="flex:1;background:#f0f0f0;color:#555;border:none;padding:14px;border-radius:14px;font-weight:600;font-size:14px;cursor:pointer;">Précédent</button>
+      <button id="tutorialNextBtn" onclick="nextTutorialSlide()" style="flex:2;background:#1677FF;color:white;border:none;padding:14px;border-radius:14px;font-weight:700;font-size:14px;cursor:pointer;">Suiv</button>
+    </div>
+  </div>
+</div>
 
 <!-- ========== HOME PAGE ========== -->
 <div class="page" id="homePage">
@@ -1016,21 +1138,6 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 </div>
 
-<!-- ========== SUIVI DE COMMANDE (CLIENT, sans compte) ========== -->
-<div class="page" id="trackOrderPage">
-  <div class="register-page">
-    <div class="page-header">
-      <button class="back-btn" onclick="showPage('homePage')">←</button>
-      <div><div class="section-title">Suivre ma commande</div></div>
-    </div>
-    <div class="form-card">
-      <p style="font-size:12px;color:#888;margin-bottom:8px;">Entrez le numéro de téléphone utilisé lors de votre commande.</p>
-      <input type="tel" id="trackPhoneInput" placeholder="Votre numéro de téléphone *">
-      <button class="primary-btn" onclick="trackMyOrders()">🔍 Rechercher mes commandes</button>
-    </div>
-    <div id="trackOrdersResults" style="padding:0 16px;"></div>
-  </div>
-</div>
 <!-- ========== SEARCH RESULTS PAGE ========== -->
 <div class="page" id="searchResultsPage">
   <div class="sellers-page">
@@ -1325,7 +1432,7 @@ header p { font-size: 12px; opacity: .80; }
         <span id="livreurNotifCode" style="font-size:24px;letter-spacing:3px;"></span>
       </div>
       <div class="info-box">
-     💡 <strong>À noter :</strong> Abonnement — 1 000 FCFA/mois après période promo de lancement.<br><br>
+     💡 <strong>À noter :</strong> Abonnement — 500 FCFA/mois après période promo de lancement.<br><br>
         📌 Retournez à l'accueil pour vous connecter et modifier votre grille tarifaire.<br><br>
         Notre équipe reste disponible si vous avez besoin d'aide.
       </div>
@@ -2087,7 +2194,7 @@ header p { font-size: 12px; opacity: .80; }
         <h3>1. Inscription gratuite</h3>
         <p>L'inscription est 100% gratuite. Aucun frais lors de la création.</p>
         <h3>2. Frais d'abonnement</h3>
-        <p><span id="termsIndependantAbonnementLabel">Vendeur indépendant</span> : <strong id="termsIndependantAbonnementAmount">1 500 FCFA/mois</strong><br>
+        <p><span id="termsIndependantAbonnementLabel">Vendeur indépendant</span> : <strong id="termsIndependantAbonnementAmount">500 FCFA/mois</strong><br>
         après période promo de lancement.</p>
         <h3>3. Sans engagement</h3>
         <p>Arrêtez à tout moment sans pénalité.</p>
@@ -2311,8 +2418,8 @@ header p { font-size: 12px; opacity: .80; }
       </div>
       <div style="background:#f9f9f9;padding:14px;border-radius:14px;margin-bottom:16px;font-size:13px;line-height:1.8;">
         💰 <strong>Tarifs VIP :</strong><br>
-        • Vendeur VIP : <strong>5 000 FCFA/mois</strong> après période promo de lancement<br>
-        • Grossiste &amp; Importateur VIP : <strong>10 000 FCFA/mois</strong> après période promo de lancement
+        • Vendeur VIP : <strong>500 FCFA/mois</strong> après période promo de lancement<br>
+        • Grossiste &amp; Importateur VIP : <strong>500 FCFA/mois</strong> après période promo de lancement
         • Grossiste &amp; Importateur VIP : <strong>Période promo</strong>
       </div>
       <div class="info-box">
@@ -2338,7 +2445,7 @@ header p { font-size: 12px; opacity: .80; }
       <div class="info-box" style="background:#fff7e6;border:1px solid #ffd591;">
         <strong>🛵 Service Taxi Moboro</strong><br><br>
         Rejoignez notre réseau de Taxi et gagnez plus d'argent grâce à Moboro.<br><br>
-     💰 Abonnement : <strong>1 000 FCFA/mois</strong> après période promo de lancement
+     💰 Abonnement : <strong>500 FCFA/mois</strong> après période promo de lancement
       </div>
       <h2>Vos informations</h2>
       <input type="text" id="livreurFullName" placeholder="Nom complet *">
@@ -2546,7 +2653,7 @@ header p { font-size: 12px; opacity: .80; }
         <div>🚗 <strong>Moyen :</strong> <span id="livreurDashMoyen"></span></div>
         <div>📍 <strong>Quartiers :</strong> <span id="livreurDashQuartier"></span></div>
         <div>📝 <strong>Description :</strong> <span id="livreurDashDesc"></span></div>
-        <div>💰 <strong>Abonnement :</strong> 1 000 FCFA/mois après période promo de lancement</div>
+        <div>💰 <strong>Abonnement :</strong> 500 FCFA/mois après période promo de lancement</div>
       </div>
 
       <!-- Grille de tarification personnalisée -->
@@ -2872,10 +2979,10 @@ header p { font-size: 12px; opacity: .80; }
     <p style="font-size:13px;color:#888;margin-bottom:16px;">Votre abonnement a expiré le <strong id="expireDate" style="color:#ff4d4f;"></strong>.<br>Votre compte a été suspendu automatiquement.</p>
     <div style="background:#fff4d9;padding:14px;border-radius:14px;margin-bottom:16px;font-size:12px;line-height:1.9;text-align:left;">
       💳 <strong>Tarifs de renouvellement :</strong><br>
-      • 🚚 Livreur : <strong>1 500 FCFA/mois</strong><br>
-      • 🛍️ Vendeur Indép. : <strong>2 000 FCFA/mois</strong><br>
-      • 🏭 Grossiste Indép. : <strong>5 000 FCFA/mois</strong><br>
-      • 👑 Vendeur / Grossiste VIP : <strong>5 000 – 10 000 FCFA/mois</strong><br>
+      • 🚚 Livreur : <strong>500 FCFA/mois</strong><br>
+      • 🛍️ Vendeur Indép. : <strong>500 FCFA/mois</strong><br>
+      • 🏭 Grossiste Indép. : <strong>500 FCFA/mois</strong><br>
+      • 👑 Vendeur / Grossiste VIP : <strong>500 FCFA/mois</strong><br>
       • 📦 Fournisseur Export : <strong>20 000 FCFA/mois</strong>
     </div>
     <a id="expireWaBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#52c41a,#389e0d);color:white;padding:14px;border-radius:14px;font-weight:700;font-size:15px;text-decoration:none;margin-bottom:12px;">
@@ -3422,8 +3529,7 @@ function showPage(pageId, fromPopState = false) {
   // Sauvegarder scroll de la page actuelle avant de quitter
   const activePage = document.querySelector('.page[style*="display: block"], .page[style*="display:block"]');
   if (activePage && activePage.id) {
-    _scrollMemory[activePage.id] = window.scrollY;
-  }
+    _scrollMemory[activePage.id] = window.scrollY;  }
 
   // Reset uniquement du contexte "boutique consultée" (navigation publique).
   // ⚠️ Ne plus effacer currentSeller/_currentLivreur ici : ce sont les
@@ -3465,6 +3571,8 @@ function _syncBottomNavActiveTab(pageId) {
   let tab = null;
   if (pageId === 'homePage') {
     tab = 'accueil';
+  } else if (pageId === 'helpPage') {
+    tab = 'aide';
   } else if (pageId === 'productsPage') {
     if (typeof _sidebarContext !== 'undefined') {
       if (_sidebarContext === 'grossiste') tab = 'grossiste';
@@ -4127,7 +4235,7 @@ async function openIndependantVenteService() {
   document.getElementById('termsIndependantInfoBox').innerHTML =
     '<strong>🛒 Compte Vendeur, Grossiste & Service</strong><br><br>Publiez en Boutique & Vendeur, Grossiste et Service — un seul compte pour les 3.<br>Aucune commission sur vos transactions.';
   document.getElementById('termsIndependantAbonnementLabel').innerText = 'Vendeur, Grossiste & Service';
-  document.getElementById('termsIndependantAbonnementAmount').innerText = '1 000 FCFA/mois';
+  document.getElementById('termsIndependantAbonnementAmount').innerText = '500 FCFA/mois';
   showPage('termsIndependantPage');
 }
 
@@ -4219,8 +4327,8 @@ async function validateIndependantPin() {
 
     document.getElementById('notifName').innerText = data.fullName;
     document.getElementById('notifCode').innerText = result.account.code;
-    const _indepTarifsConfirm = { vendeur: '1 000' };
-    document.getElementById('notifTarif').innerText = 'Frais : ' + (_indepTarifsConfirm[_indepAccountType] || '1 500') + ' FCFA/mois après période promo de lancement.';
+    const _indepTarifsConfirm = { vendeur: '500' };
+    document.getElementById('notifTarif').innerText = 'Frais : ' + (_indepTarifsConfirm[_indepAccountType] || '500') + ' FCFA/mois après période promo de lancement.';
     showPage('registerSuccessPage');
     window._pendingIndepData = null;
 

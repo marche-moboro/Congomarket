@@ -1523,11 +1523,384 @@ function initHomeSidebarAndFeed() {
   loadHomeFeed();
   loadHomePromoPanels();
   openHomeSidebar();
+  _maybeShowFirstVisitTutorial();
 }
 window.initHomeSidebarAndFeed = initHomeSidebarAndFeed;
 
 // ================================================================
-// BARRE DE NAVIGATION FIXE (bas) — Accueil / Grossiste / Service / Compte
+// TUTORIEL ANIMÉ — carrousel affiché une seule fois à la toute première
+// ouverture du site (côté vendeur : inscription + publication), et
+// rejouable à tout moment depuis la page "Aide".
+// ================================================================
+const TUTORIAL_SEEN_KEY = 'moboro_tutorial_vendeur_vu';
+
+// ---- Tutoriel VENDEUR : inscription → publication → gestion ----
+const TUTORIAL_SLIDES_VENDEUR = [
+  {
+    emoji: '👋',
+    title: 'Bienvenue sur Marché Moboro',
+    text: "Le marché local-digital du Congo. Devenez vendeur en quelques minutes."
+  },
+  {
+    emoji: '🛒',
+    title: 'Comment crée ton compte',
+    text: "Cliquez sur COMPTE puis sur S'INSCRIRE. Un seul compte donne accès aux 3 sections ,.",
+    mockup: `
+      <div class="tm-btn" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);">🛒 Vendeur, Grossiste &amp; Service</div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);">🛵 Transport</div>
+      <div class="tutorial-mockup-caption">Page "Type de compte"</div>
+    `
+  },
+  {
+    emoji: '🎉',
+    title: 'Ton code vendeur',
+    text: "Une fois inscrit, note bien ton code vendeur — il te servira, avec ton PIN, à te connecter à chaque fois.",
+    mockup: `
+      <div class="tm-card" style="text-align:center;padding:14px;">
+        <div style="font-size:12.5px;color:#389e0d;font-weight:700;">🎉 Compte créé avec succès !</div>
+        <div style="margin-top:10px;padding:10px;background:#f0f7ff;border-radius:10px;">
+          <div style="font-size:10.5px;color:#888;">Votre code vendeur :</div>
+          <div style="font-size:19px;letter-spacing:3px;font-weight:700;color:#1677FF;">MBR0001A</div>
+        </div>
+      </div>
+      <div class="tutorial-mockup-caption">Page de confirmation d'inscription</div>
+    `
+  },
+  {
+    emoji: '📤',
+    title: 'Comment publie un produit',
+    text: "Depuis Mon espace dans votre tableau de bord, appuie sur Publier un produit."
+  },
+  {
+    emoji: '📂',
+    title: 'Choisis une section',
+    text: "Chaque publication commence par ce choix : où veux-tu vendre ce produit ?",
+    mockup: `
+      <div class="tm-btn" style="background:linear-gradient(135deg,#52c41a,#389e0d);">🛍️ Boutiques &amp; Vendeurs</div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);">🏭 Grossiste</div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);">⭐ Service</div>
+    `
+  },
+  {
+    emoji: '📝',
+    title: 'Remplis le formulaire',
+    text: "Nom, prix, catégorie précise, taille, matière et au moins une photo — c'est tout ce qu'il faut.",
+    mockup: `
+      <div class="tm-input">Nom du produit *</div>
+      <div class="tm-input">💰 Prix (FCFA) *</div>
+      <div class="tm-input">📂 Choisir une catégorie *</div>
+      <div class="tm-btn" style="background:#1677FF;margin-top:4px;">📷 Ajouter une photo</div>
+    `
+  },
+  {
+    emoji: '📦',
+    title: 'Gère tes publications',
+    text: "Retrouve tous tes produits dans Mes publications — modifie ou supprime à tout moment.",
+    mockup: `
+      <div class="tm-card">
+        <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200" alt="">
+        <div class="tm-card-name">Mon produit</div>
+        <div class="tm-card-price">15 000 FCFA</div>
+        <div class="tm-row" style="margin-top:8px;">
+          <div class="tm-btn" style="background:#1677FF;font-size:11px;padding:7px;">✏️ Modifier</div>
+          <div class="tm-btn" style="background:#ff4d4f;font-size:11px;padding:7px;">🗑 Supprimer</div>
+        </div>
+      </div>
+    `
+  },
+  {
+    emoji: '💰',
+    title: 'Modifie un prix',
+    text: "Dans Modifier, change n'importe quelle information — le prix, le nom, la photo — puis enregistre.",
+    mockup: `
+      <div class="tm-input" style="border-color:#1677FF;color:#333;">💰 15 000 → 12 000 FCFA</div>
+      <div class="tm-btn" style="background:#52c41a;">💾 Enregistrer</div>
+    `
+  },
+  {
+    emoji: '🔥',
+    title: 'Mets en promo',
+    text: "Envoyer en promo pour booster tes ventes avec un prix temporaire réduit, suivi dans Mes promos.",
+    mockup: `
+      <div class="tm-btn" style="background:linear-gradient(135deg,#ff4d4f,#d42020);">🔥 Envoyer en promo</div>
+    `
+  },
+  {
+    emoji: '❓',
+    title: "Besoin d'aide plus tard ?",
+    text: "Le bouton \"❓\" en bas de l'écran te permet de revoir ce tutoriel, ou celui des acheteurs, à tout moment."
+  },
+];
+
+// ---- Tutoriel ACHETEUR : sections, recherche, filtres, commande, avis ----
+const TUTORIAL_SLIDES_ACHETEUR = [
+  {
+    emoji: '👋',
+    title: 'Bienvenue sur Marché Moboro',
+    text: "Le marché local-digital du Congo. Voici comment trouver plus rapidement et commander, très simple."
+  },
+  {
+    emoji: '🗂️',
+    title: 'Les 3 sections',
+    text: "Chaque section a son propre catalogue — accessibles depuis la barre du bas.",
+    mockup: `
+      <div class="tm-section-header"><span>🛍️ Boutiques &amp; Vendeurs/ 🏠Acceuil</span></div>
+      <p style="font-size:11px;color:#888;text-align:left;margin:0 0 8px;">Vente au détail, tout type de produits</p>
+      <div class="tm-section-header"><span>🏭 Grossiste</span></div>
+      <p style="font-size:11px;color:#888;text-align:left;margin:0 0 8px;">Achats en grande quantité, prix de gros</p>
+      <div class="tm-section-header"><span>⭐ Service</span></div>
+      <p style="font-size:11px;color:#888;text-align:left;margin:0;">Prestataires : plombier, coiffeur, restaurant...</p>
+    `
+  },
+  {
+    emoji: '🔍',
+    title: 'Recherche un produit',
+    text: "La barre de recherche en haut de l'accueil trouve un produit, un vendeur ou même tout les vendeurs d'un quartier.",
+    mockup: `<div class="tm-input"><span class="tm-search-icon">🔍</span>Produit, vendeur, quartier...</div>`
+  },
+  {
+    emoji: '📂',
+    title: 'Filtre avec la sidebar',
+    text: "Le bouton bleu > sur le côté gauche de l'écran ouvre un tiroir pour filtrer par ville, sous-catégorie ou vendeur.",
+    mockup: `
+      <div class="tm-sidebar-item tm-active">📍 Toutes les villes</div>
+      <div class="tm-sidebar-item">Brazzaville</div>
+      <div class="tm-sidebar-item">Pointe-Noire</div>
+      <div style="height:6px;"></div>
+      <div class="tm-sidebar-item tm-active">👔 Mode Homme</div>
+      <div class="tm-sidebar-item">Chemise</div>
+    `
+  },
+  {
+    emoji: '📞',
+    title: 'Commande directement',
+    text: "Sur chaque fiche produit : WhatsApp pour discuter et négocier, ou l'appel pour aller plus vite. 0% de commission.",
+    mockup: `
+      <div class="tm-card">
+        <img src="https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200" alt="">
+        <div class="tm-card-name">Produit</div>
+        <div class="tm-card-price">15 000 FCFA</div>
+        <div class="tm-row" style="margin-top:8px;justify-content:center;">
+          <div class="tm-icon-btn" style="background:#25D366;">💬</div>
+          <div class="tm-icon-btn" style="background:#1677FF;">📞</div>
+          <div class="tm-icon-btn" style="background:#1677FF;">🛒</div>
+        </div>
+      </div>
+    `
+  },
+  {
+    emoji: '⭐',
+    title: 'Regarde les avis',
+    text: "Avant de commander, consulte la note du vendeur et les avis vérifiés d'autres acheteurs.",
+    mockup: `
+      <div class="tm-card" style="text-align:center;">
+        <div class="tm-stars">★★★★☆</div>
+        <div style="font-size:12px;color:#666;margin-top:4px;">4.2 (12 avis vérifiés)</div>
+      </div>
+    `
+  },
+  {
+    emoji: '❓',
+    title: "Besoin d'aide plus tard ?",
+    text: "Le bouton \"❓\" en bas de l'écran te permet de revoir ce tutoriel, ou celui des vendeurs, à tout moment."
+  },
+];
+
+// ---- Tutoriel TAXI (Livreur) : inscription → PIN → code livreur → grille de tarifs ----
+const TUTORIAL_SLIDES_LIVREUR = [
+  {
+    emoji: '🛵',
+    title: 'Comment créé ton compte pour le Taxi',
+    text: "Cliquez sur COMPTE visible sur la barre en bas puis S'INSCRIRE en suite choisis � TRANSPORT pour rejoindre le réseau de Taxi sur Moboro.",
+    mockup: `
+      <div class="tm-btn" style="background:linear-gradient(135deg,#1677FF,#0d5bd1);">🛒 Vendeur, Grossiste &amp; Service</div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);">🛵 Transport</div>
+      <div class="tutorial-mockup-caption">Page "Type de compte"</div>
+    `
+  },
+  {
+    emoji: '📝',
+    title: 'Remplissez le formulaire',
+    text: "Nom, téléphone, ville, quartiers desservis, type de véhicule (moto, voiture, minibus...) et une photo de profil.",
+    mockup: `
+      <div class="tm-input">Nom complet *</div>
+      <div class="tm-input">📞 Numéro complet *</div>
+      <div class="tm-input">🏙️ Choisir ta ville *</div>
+      <div class="tm-input">🛵 Type de véhicule *</div>
+    `
+  },
+  {
+    emoji: '🔒',
+    title: 'Crée le PIN',
+    text: "Un code PIN de 4 chiffres pour sécuriser ton compte, à confirmer une seconde fois.",
+    mockup: `
+      <div class="tm-input">Ton PIN (minimum 4 chiffres)</div>
+      <div class="tm-input">Confirmer ton PIN</div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#fa8c16,#d46b08);">🚚 Créer mon compte</div>
+    `
+  },
+  {
+    emoji: '🎉',
+    title: 'Ton code Taxi',
+    text: "Inscription réussie ! Note bien ton code livreur(capture d'écran)— il te servira, avec ton PIN, à te connecter.",
+    mockup: `
+      <div class="tm-card" style="text-align:center;padding:14px;">
+        <div style="font-size:12.5px;color:#389e0d;font-weight:700;">🎉 Inscription réussie !</div>
+        <div style="margin-top:10px;padding:10px;background:#fff7e6;border-radius:10px;">
+          <div style="font-size:10.5px;color:#888;">Votre code livreur :</div>
+          <div style="font-size:19px;letter-spacing:3px;font-weight:700;color:#fa8c16;">MBRL001A</div>
+        </div>
+      </div>
+      <div class="tutorial-mockup-caption">Page de confirmation d'inscription</div>
+    `
+  },
+  {
+    emoji: '📋',
+    title: 'Remplis la grille de tarifs',
+    text: "Connecte-toi puis, dans ton tableau de bord, appuie sur Modifier ma grille pour fixer tes prix par tranche de distance.",
+    mockup: `
+      <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
+        <div class="tm-input" style="margin:0;flex:1;">De...</div>
+        <div class="tm-input" style="margin:0;flex:1;">À...</div>
+        <div class="tm-input" style="margin:0;width:56px;">FCFA</div>
+      </div>
+      <div class="tm-btn" style="background:linear-gradient(135deg,#52c41a,#389e0d);margin-top:6px;">💾 Sauvegarder la grille</div>
+    `
+  },
+  {
+    emoji: '❓',
+    title: "Besoin d'aide plus tard ?",
+    text: "Le bouton \"❓\" en bas de l'écran te permet de revoir ce tutoriel, ou celui des vendeurs et acheteurs, à tout moment."
+  },
+];
+
+let _tutorialIndex = 0;
+let _tutorialActiveType = 'vendeur';
+
+function _tutorialSlidesFor(type) {
+  if (type === 'acheteur') return TUTORIAL_SLIDES_ACHETEUR;
+  if (type === 'livreur') return TUTORIAL_SLIDES_LIVREUR;
+  return TUTORIAL_SLIDES_VENDEUR;
+}
+
+function _renderTutorialSlides(type) {
+  const container = document.getElementById('tutorialSlides');
+  const dotsEl = document.getElementById('tutorialDots');
+  if (!container) return;
+  const slides = _tutorialSlidesFor(type);
+
+  container.innerHTML = slides.map((s, i) => `
+    <div class="tutorial-slide${i === 0 ? ' active' : ''}" data-slide="${i}">
+      <div class="emoji">${s.emoji}</div>
+      <h2>${escapeHtml(s.title)}</h2>
+      <p>${escapeHtml(s.text)}</p>
+      ${s.mockup ? `<div class="tutorial-mockup">${s.mockup}</div>` : ''}
+    </div>
+  `).join('');
+
+  dotsEl.innerHTML = slides.map((_, i) =>
+    `<div class="tutorial-dot${i === 0 ? ' active' : ''}" data-dot="${i}"></div>`
+  ).join('');
+
+  container.dataset.builtFor = type;
+}
+
+function _showTutorialSlide(index) {
+  _tutorialIndex = index;
+  document.querySelectorAll('#tutorialSlides .tutorial-slide').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.slide) === index);
+  });
+  document.querySelectorAll('#tutorialDots .tutorial-dot').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.dot) === index);
+  });
+  const nextBtn = document.getElementById('tutorialNextBtn');
+  const prevBtn = document.getElementById('tutorialPrevBtn');
+  const isLast = index === _tutorialSlidesFor(_tutorialActiveType).length - 1;
+  if (nextBtn) nextBtn.innerText = isLast ? "C'est parti !" : 'Suivant';
+  if (prevBtn) prevBtn.style.visibility = index === 0 ? 'hidden' : 'visible';
+}
+
+function nextTutorialSlide() {
+  if (_tutorialIndex >= _tutorialSlidesFor(_tutorialActiveType).length - 1) {
+    finishTutorial();
+    return;
+  }
+  _showTutorialSlide(_tutorialIndex + 1);
+}
+window.nextTutorialSlide = nextTutorialSlide;
+
+function prevTutorialSlide() {
+  if (_tutorialIndex <= 0) return;
+  _showTutorialSlide(_tutorialIndex - 1);
+}
+window.prevTutorialSlide = prevTutorialSlide;
+
+function finishTutorial() {
+  const overlay = document.getElementById('tutorialOverlay');
+  if (overlay) overlay.style.display = 'none';
+  try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch (e) {}
+}
+window.finishTutorial = finishTutorial;
+
+// ---- Glissement tactile (swipe) pour naviguer entre les slides ----
+let _tutorialSwipeInit = false;
+function _initTutorialSwipe() {
+  if (_tutorialSwipeInit) return;
+  _tutorialSwipeInit = true;
+  const el = document.getElementById('tutorialSlides');
+  if (!el) return;
+  let startX = 0, startY = 0, tracking = false;
+  el.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches.length) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    tracking = true;
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const touch = e.changedTouches && e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    // Ignore les glissements trop verticaux (scroll) ou trop courts.
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) {
+      nextTutorialSlide();
+    } else {
+      prevTutorialSlide();
+    }
+  }, { passive: true });
+}
+
+// type: 'vendeur' | 'acheteur' | 'livreur'
+function openTutorialOverlay(type) {
+  _tutorialActiveType = (type === 'acheteur' || type === 'livreur') ? type : 'vendeur';
+  _renderTutorialSlides(_tutorialActiveType);
+  _showTutorialSlide(0);
+  _initTutorialSwipe();
+  const overlay = document.getElementById('tutorialOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+window.openTutorialOverlay = openTutorialOverlay;
+
+// Appelée une seule fois, automatiquement, à la toute première visite
+// (tutoriel vendeur par défaut — l'acheteur reste accessible via "Aide").
+// Appelée une seule fois, automatiquement, à la toute première visite —
+// ouvre la page de choix ("Aide") plutôt qu'un tutoriel directement, pour
+// laisser la personne choisir vendeur ou acheteur (ou juste lire la
+// présentation du site).
+function _maybeShowFirstVisitTutorial() {
+  let seen = null;
+  try { seen = localStorage.getItem(TUTORIAL_SEEN_KEY); } catch (e) {}
+  if (!seen) {
+    showPage('helpPage');
+    try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch (e) {}
+  }
+}
+
+// ================================================================
+// BARRE DE NAVIGATION FIXE (bas) — Accueil / Grossiste / Service / Compte / Aide
 // ================================================================
 function bottomNavGo(tab) {
   document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
@@ -1542,6 +1915,8 @@ function bottomNavGo(tab) {
     openServicePage();
   } else if (tab === 'compte') {
     openAccountChoice();
+  } else if (tab === 'aide') {
+    showPage('helpPage');
   }
 }
 function openAccountChoice() {

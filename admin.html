@@ -303,8 +303,8 @@
       <div class="form-card">
         <h2>👑 Créer un compte VIP</h2>
         <select id="vipType">
-          <option value="vip_grossiste">🏭 Importateur &amp; Grossiste VIP — 10 000 FCFA/mois</option>
-          <option value="vip_vendeur">🛍️ Vendeur VIP — 5 000 FCFA/mois</option>
+          <option value="vip_grossiste">🏭 Importateur &amp; Grossiste VIP — 500 FCFA/mois</option>
+          <option value="vip_vendeur">🛍️ Vendeur VIP — 500 FCFA/mois</option>
         </select>
         <input type="text" id="vipFullName" placeholder="Nom complet *">
         <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -2194,10 +2194,10 @@ async function runAutoBlock() {
 // MODULE PAIEMENT
 // ================================================================
 const TARIFS_ADMIN = {
-  livreur:        { label:'🛵 Taxi',                     mensuel:1000, trimestriel:2700,  annuel:10000, table:'delivery_agents', db_type:null },
-  vendeur:        { label:'🛍️ Boutique & Vendeur',       mensuel:1500, trimestriel:4000,  annuel:15000, table:'sellers',         db_type:'independant_vendeur' },
-  multi_services: { label:'⭐ Multi-Services & Commerce', mensuel:3000, trimestriel:8000,  annuel:30000, table:'sellers',         db_type:'independant_service' },
-  grossiste:      { label:'🏭 Grossiste & Importateur',   mensuel:5000, trimestriel:13500, annuel:50000, table:'sellers',         db_type:'independant_grossiste' }
+  livreur:        { label:'🛵 Taxi',                     mensuel:500, trimestriel:1500, annuel:6000, table:'delivery_agents', db_type:null },
+  vendeur:        { label:'🛍️ Boutique & Vendeur',       mensuel:500, trimestriel:1500, annuel:6000, table:'sellers',         db_type:'independant_vendeur' },
+  multi_services: { label:'⭐ Multi-Services & Commerce', mensuel:500, trimestriel:1500, annuel:6000, table:'sellers',         db_type:'independant_service' },
+  grossiste:      { label:'🏭 Grossiste & Importateur',   mensuel:500, trimestriel:1500, annuel:6000, table:'sellers',         db_type:'independant_grossiste' }
 };
 let _paiementSeller = null;
 
