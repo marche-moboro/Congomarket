@@ -3,9 +3,9 @@
 // Cache optimisé — fichiers statiques + données réseau
 // ================================================================
 
-const CACHE_STATIC  = 'moboro-static-v23';
-const CACHE_DYNAMIC = 'moboro-dynamic-v23';
-const CACHE_API     = 'moboro-api-v23';
+const CACHE_STATIC  = 'moboro-static-v24';
+const CACHE_DYNAMIC = 'moboro-dynamic-v24';
+const CACHE_API     = 'moboro-api-v24';
 
 // Fichiers statiques — cachés à l'installation
 const ASSETS_TO_CACHE = [
