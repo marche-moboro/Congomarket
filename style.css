@@ -6,15 +6,13 @@
 .seller-avatar, .seller-mini-img, .cart-bar {
   border-radius: 50% !important;
 }
-.home-sidebar-fab {
-  border-radius: 0 999px 999px 0 !important;
-}
 
 body {
   background: #f5f7fb;
   color: #1a1a1a;
   overflow-x: hidden;
   padding-bottom: 20px;
+  padding-left: 26px; /* libère la place pour la bande toujours visible du tiroir catégories */
 }
 
 .page { display: none; }
@@ -160,7 +158,10 @@ header p { font-size: 12px; opacity: .85; }
   text-transform: uppercase;
   letter-spacing: .3px;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .home-section-actions {
   display: flex;
@@ -331,6 +332,11 @@ header p { font-size: 12px; opacity: .85; }
   padding: 14px 8px 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Sur la page d'un vendeur, il n'y a pas de bandeau vendeur sous le nom :
+   on remonte le nom juste au-dessus du bandeau avis pour éviter la bande vide. */
+.product-name-overlay.no-seller-line {
+  bottom: 18px;
+}
 .product-seller-overlay {
   position: absolute; left: 0; right: 0; bottom: 18px;
   background: rgba(22,119,255,.85);
@@ -379,14 +385,25 @@ header p { font-size: 12px; opacity: .85; }
 .cat-sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
   width: 52%; max-width: 200px;
-  background: #fff; z-index: 1900;
+  background: #fff; z-index: 1400;
   display: flex; flex-direction: column;
   padding: 10px 8px 8px;
-  transform: translateX(-100%);
+  transform: translateX(calc(-100% + 26px));
   transition: transform .25s ease;
   box-shadow: 4px 0 20px rgba(0,0,0,.15);
+  touch-action: pan-y;
 }
-.cat-sidebar.open { transform: translateX(0); }
+.cat-sidebar.open { transform: translateX(0); z-index: 1900; }
+.cat-sidebar-handle {
+  position: absolute; top: 50%; right: 0;
+  transform: translateY(-50%);
+  width: 26px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  color: #1677FF; font-size: 15px; font-weight: 900;
+  pointer-events: none; /* le clic est géré par .cat-sidebar elle-même */
+  transition: transform .25s ease;
+}
+.cat-sidebar.open .cat-sidebar-handle { transform: translateY(-50%) rotate(180deg); }
 .cat-sidebar-close {
   align-self: flex-end; background: #f0f0f0; border: none;
   width: 28px; height: 28px; border-radius: 50%;
@@ -516,8 +533,11 @@ header p { font-size: 12px; opacity: .85; }
   display: flex; flex-direction: column; gap: 1px;
 }
 .home-promo-tag {
-  font-size: 10px; font-weight: 800; color: #fff;
+  position: absolute; top: 6px; left: 8px; right: 8px;
+  font-size: 15px; font-weight: 800; color: #fff;
   text-transform: uppercase; letter-spacing: .3px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.55);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .home-promo-name {
   font-size: 10px; color: #fff; opacity: .9;
@@ -549,18 +569,7 @@ header p { font-size: 12px; opacity: .85; }
 .account-choice-register { background: linear-gradient(135deg,#52c41a,#389e0d); }
 
 /* ==================== CART BAR ==================== */
-.home-sidebar-fab {
-  position: fixed; top: 50%; left: 0; z-index: 500;
-  transform: translateY(-50%);
-  width: 18px; height: 38px;
-  background: #1677FF; color: #fff; border: none;
-  border-radius: 0 999px 999px 0;
-  font-size: 12px; font-weight: 900;
-  box-shadow: 2px 2px 6px rgba(0,0,0,.2);
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  touch-action: none;
-}
-.home-sidebar-fab:active { background: #0d5bd1; }
+
 .cart-bar {
   position: fixed; bottom: 84px; right: 16px;
   width: 56px; height: 56px; border-radius: 50%;

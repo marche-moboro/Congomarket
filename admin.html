@@ -126,6 +126,8 @@
 <div onclick="switchTab('paiements');loadSubscriptionToggle();loadPaiementsDashboard()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">💳<br>Paiements</div>
  <div onclick="switchTab('notifications')" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🔔<br>Notifications</div>
     <div onclick="switchTab('inscriptions');loadInscriptionToggles()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🔒<br>Inscriptions</div>
+    <div onclick="switchTab('allproducts');loadAllProducts()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">🗂️<br>Tout Produits</div>
+    <div onclick="switchTab('promo');loadPromoTab()" style="background:white;border-radius:12px;padding:12px 6px;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.07);font-size:12px;font-weight:600;color:#555;">📢<br>Promos</div>
   </div>
 
   <div class="form-card" style="margin-bottom:12px;">
@@ -730,13 +732,51 @@ const file = (document.getElementById('file_' + position) && document.getElement
 }
 
 // Upload photo + sauvegarder dans Supabase
+async function compressImageForBanner(file, maxKB = 150) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > 1000) { h = Math.round(h * 1000 / w); w = 1000; } // largeur max raisonnable pour une bannière
+
+        canvas.width  = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+        let quality = 0.85;
+        let result;
+        do {
+          result  = canvas.toDataURL('image/jpeg', quality);
+          quality -= 0.05;
+        } while (result.length > maxKB * 1024 * 1.37 && quality > 0.1);
+
+        const arr   = result.split(',');
+        const bstr  = atob(arr[1]);
+        const u8arr = new Uint8Array(bstr.length);
+        for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+
+        const compressed = new File([u8arr], (file.name || 'image') + '.jpg', { type: 'image/jpeg' });
+        console.log(`Compression banner: ${(file.size/1024).toFixed(0)}ko → ${(compressed.size/1024).toFixed(0)}ko`);
+        resolve(compressed);
+      };
+      img.onerror = () => resolve(file); // en cas d'échec, on garde le fichier original
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function uploadBannerSlide(position) {
   try {
 const fileInput = document.getElementById('file_' + position);
 const titleInput = document.getElementById('title_' + position);
 const subtitleInput = document.getElementById('subtitle_' + position);
 
-const file = (fileInput && fileInput.files)
+let file = (fileInput && fileInput.files)
     ? fileInput.files[0]
     : null;
 
@@ -751,6 +791,9 @@ const subtitle = (subtitleInput && subtitleInput.value)
     showToast('Remplissez tous les champs et choisissez une photo', 'error');
     return;
   }
+
+  showToast('Compression de la photo...', 'info');
+  file = await compressImageForBanner(file);
 
   showToast('Upload en cours...', 'info');
 
@@ -848,7 +891,7 @@ const defaultBannerSlides = {
 function renderBannerSlidesList() {
   const container = document.getElementById('bannerSlidesList');
   if (!container) return;
-  container.innerHTML = Array.from({length: 10}, (_, i) => {
+  container.innerHTML = Array.from({length: 9}, (_, i) => {
     const pos = i + 1;
     return `
     <div style="border:1.5px solid #e8e8e8;border-radius:12px;padding:12px;margin-bottom:10px;">
@@ -2657,6 +2700,52 @@ async function deleteVIPManager(id, name) {
   </div>
 </div>
 
+<!-- TAB TOUT PRODUITS -->
+<div class="tab-panel" id="tab-allproducts">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+  <div class="form-card">
+    <h2>🗂️ Tout Produits</h2>
+    <input type="text" id="allProductsSearch" placeholder="🔎 Nom du produit ou du vendeur..." oninput="renderAllProducts()">
+    <div style="display:flex;gap:6px;margin-top:6px;">
+      <button class="apc-sec-btn active" data-sec="vendeur" onclick="switchAllProductsSection('vendeur')" style="flex:1;border:1.5px solid #1677FF;background:#1677FF;color:white;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;">🛍️ Boutique &amp; Vendeur</button>
+      <button class="apc-sec-btn" data-sec="grossiste" onclick="switchAllProductsSection('grossiste')" style="flex:1;border:1.5px solid #e0e0e0;background:white;color:#555;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;">🏭 Grossiste</button>
+      <button class="apc-sec-btn" data-sec="service" onclick="switchAllProductsSection('service')" style="flex:1;border:1.5px solid #e0e0e0;background:white;color:#555;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;">⭐ Service</button>
+    </div>
+  </div>
+  <div id="allProductsList"></div>
+</div>
+
+<!-- TAB DÉTAIL PRODUIT (vraie page, plus un modal) -->
+<div class="tab-panel" id="tab-productdetail">
+  <button class="back-btn" onclick="switchTab('allproducts')">← Retour</button>
+  <div class="form-card" id="productDetailContent"></div>
+</div>
+
+<!-- TAB PROMOS (réutilise la position 10 du banner, hors carrousel) -->
+<div class="tab-panel" id="tab-promo">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+  <div class="form-card">
+    <h2>📢 Promo plein écran</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:12px;">
+      Photo et/ou texte affichés en avant-plan sur l'accueil du site (bouton ✕ ou tape n'importe où pour fermer), une seule fois par visiteur. "Restaurer par défaut" la fait disparaître du site.
+    </p>
+    <p id="promo10ViewsBox" style="font-weight:700;color:#1677FF;margin-bottom:10px;">👁️ …</p>
+    <img id="preview_10" src="" style="width:100%;height:160px;object-fit:cover;border-radius:12px;margin-bottom:8px;display:none;">
+    <input type="file" id="file_10" accept="image/*" onchange="previewBanner(10)">
+    <input type="text" id="title_10" placeholder="Titre" style="width:100%;margin:6px 0;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+    <input type="text" id="subtitle_10" placeholder="Sous-titre / texte" style="width:100%;margin-bottom:8px;padding:8px;border:1px solid #e0e0e0;border-radius:8px;">
+    <button class="btn-primary" onclick="uploadBannerSlide(10)">🚀 Envoyer la promo</button>
+    <button class="btn-danger" onclick="resetBannerSlide(10)" style="margin-top:5px;">🔄 Restaurer par défaut (désactiver)</button>
+  </div>
+</div>
+
+<script>
+async function loadPromoTab() {
+  await loadBannerSlides();
+  loadPromo10Views();
+}
+</script>
+
 <script>
 // ================================================================
 // CONTRÔLE DES INSCRIPTIONS
@@ -2712,6 +2801,149 @@ async function toggleInscription(key, btnId, statusId) {
     showToast('Erreur: ' + (e.message || ''), 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  }
+}
+</script>
+
+<script>
+// ================================================================
+// TOUT PRODUITS — liste par section + recherche + détail
+// La section (Boutique&Vendeur / Grossiste / Service) dépend de la
+// CATÉGORIE du produit (seller_category), pas du type de compte du
+// vendeur — un vendeur "indépendant" peut publier dans une catégorie
+// qui appartient à la liste Grossiste ou Service.
+// ================================================================
+const _APC_GROSSISTE_SET = new Set(SECTION_IDS_GROSSISTE);
+const _APC_SERVICE_SET    = new Set(SECTION_IDS_SERVICE);
+
+function _apcClassify(sellerCategory) {
+  if (_APC_GROSSISTE_SET.has(sellerCategory)) return 'grossiste';
+  if (_APC_SERVICE_SET.has(sellerCategory))   return 'service';
+  return 'vendeur'; // Boutique & Vendeur = tout le reste (comportement identique au site public)
+}
+
+let _allProductsData    = [];
+let _allProductsSection = 'vendeur';
+
+async function loadAllProducts() {
+  const container = document.getElementById('allProductsList');
+  container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">Chargement...</p>';
+  try {
+    const { data: products, error } = await db.from(TABLES.PRODUCTS)
+      .select('id, name, price, description, image, images, seller_id, seller_name, seller_phone, seller_category, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    _allProductsData = (products || []).map(p => ({
+      ...p,
+      _section: _apcClassify(p.seller_category)
+    }));
+
+    renderAllProducts();
+  } catch (e) {
+    console.error('loadAllProducts error:', e);
+    container.innerHTML = '<p style="text-align:center;color:#ff4d4f;padding:20px;">Erreur de chargement</p>';
+  }
+}
+
+function switchAllProductsSection(sec) {
+  _allProductsSection = sec;
+  document.querySelectorAll('.apc-sec-btn').forEach(b => {
+    const active = b.getAttribute('data-sec') === sec;
+    b.classList.toggle('active', active);
+    b.style.background  = active ? '#1677FF' : 'white';
+    b.style.color        = active ? 'white'   : '#555';
+    b.style.borderColor  = active ? '#1677FF' : '#e0e0e0';
+  });
+  renderAllProducts();
+}
+
+function renderAllProducts() {
+  const q = (document.getElementById('allProductsSearch').value || '').trim().toLowerCase();
+
+  let list = _allProductsData.filter(p => p._section === _allProductsSection);
+  if (q) {
+    list = list.filter(p =>
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.seller_name || '').toLowerCase().includes(q)
+    );
+  }
+
+  const container = document.getElementById('allProductsList');
+  if (!list.length) {
+    container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">Aucun produit trouvé</p>';
+    return;
+  }
+
+  container.innerHTML = list.map(p => `
+    <div class="log-item" style="display:flex;gap:10px;align-items:center;cursor:pointer;" onclick="openProductDetail('${p.id}')">
+      <img src="${escapeHtml(p.image || '')}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f0f0f0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.name || '')}</div>
+        <div style="font-size:12px;color:#888;">👤 ${escapeHtml(p.seller_name || '—')} · ${Number(p.price || 0).toLocaleString('fr-FR')} FCFA</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openProductDetail(id) {
+  const p = _allProductsData.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const date = p.created_at ? new Date(p.created_at).toLocaleString('fr-FR') : '—';
+  document.getElementById('productDetailContent').innerHTML = `
+    ${p.image ? `<img src="${escapeHtml(p.image)}" style="width:100%;height:200px;object-fit:cover;border-radius:14px;margin-bottom:12px;">` : ''}
+    <h2 style="margin-bottom:6px;">${escapeHtml(p.name || '')}</h2>
+    <p style="color:#1677FF;font-weight:700;font-size:18px;margin-bottom:10px;">${Number(p.price || 0).toLocaleString('fr-FR')} FCFA</p>
+    <p style="font-size:13px;color:#555;line-height:1.6;margin-bottom:10px;">${escapeHtml(p.description || '—')}</p>
+    <div class="notice">
+      👤 <strong>Vendeur :</strong> ${escapeHtml(p.seller_name || '—')}<br>
+      📞 <strong>Téléphone :</strong> ${escapeHtml(p.seller_phone || '—')}<br>
+      🕒 <strong>Publié le :</strong> ${date}
+    </div>
+    <button class="btn-danger" onclick="deleteProductForever('${p.id}')">🗑️ Supprimer définitivement</button>
+  `;
+  switchTab('productdetail');
+}
+
+function closeProductDetail() {
+  switchTab('allproducts');
+}
+
+async function deleteProductForever(id) {
+  const p = _allProductsData.find(x => String(x.id) === String(id));
+  if (!p) return;
+  if (!confirm(`Supprimer définitivement "${p.name}" ? Cette action est irréversible et le produit sera retiré partout, y compris chez le vendeur.`)) return;
+
+  try {
+    const { error } = await db.from(TABLES.PRODUCTS).delete().eq('id', id);
+    if (error) throw error;
+    await logAdminAction('Suppression produit', 'products', id, p.name || '');
+    _allProductsData = _allProductsData.filter(x => String(x.id) !== String(id));
+    showToast('🗑️ Produit supprimé définitivement', 'success');
+    switchTab('allproducts');
+    renderAllProducts();
+  } catch (e) {
+    console.error('deleteProductForever error:', e);
+    showToast('Erreur suppression: ' + (e.message || ''), 'error');
+  }
+}
+
+
+// ================================================================
+// PROMO PLEIN ÉCRAN — réutilise la position 10 du banner.
+// La position 10 n'apparaît plus dans le carrousel du site ;
+// elle s'affiche en avant-plan (voir index.html / app.js).
+// ================================================================
+async function loadPromo10Views() {
+  const box = document.getElementById('promo10ViewsBox');
+  if (!box) return;
+  try {
+    const { data } = await db.from(TABLES.SETTINGS).select('value').eq('key', 'promo10_views').maybeSingle();
+    box.textContent = '👁️ ' + (data && data.value ? data.value : '0') + ' vue(s)';
+  } catch (e) {
+    console.error('loadPromo10Views error:', e);
+    box.textContent = '👁️ —';
   }
 }
 </script>

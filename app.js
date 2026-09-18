@@ -29,6 +29,7 @@ async function initBanner() {
     if (supaSlides && supaSlides.length > 0) {
 // Remplacer uniquement les positions présentes dans Supabase (1-10)
       supaSlides.forEach(s => {
+        if (s.id === 10) return; // position 10 = promo plein écran, ne fait pas partie du carrousel
         const idx = s.id - 1; // position 1 → index 0, etc.
         if (idx >= 0 && idx < bannerImages.length) {
           bannerImages[idx] = {
@@ -213,8 +214,17 @@ function openPublishPage() {
 // - 'A'  → grille Grossiste (TREE_A)
 // - 'B1' → grille Service (TREE_B1)
 function populatePubOwnCategories() {
-  const select = document.getElementById('pubOwnCategory');
-  if (!select) return;
+  const picker = document.getElementById('pubCategoryPicker');
+  const label  = document.getElementById('pubOwnCategoryLabel');
+  const hidden = document.getElementById('pubOwnCategory');
+  if (!picker || !hidden) return;
+
+  // Réinitialise la sélection à chaque ouverture d'une nouvelle section
+  hidden.value = '';
+  if (label) { label.textContent = 'Choisir une catégorie *'; label.style.color = '#888'; }
+  const arrowEl = document.getElementById('pubOwnCategoryArrow');
+  if (arrowEl) arrowEl.style.transform = '';
+  picker.style.display = 'none';
 
   const section = window._pubSection || 'B2';
   let tree = null;
@@ -222,22 +232,76 @@ function populatePubOwnCategories() {
   else if (section === 'A')  tree = typeof TREE_A  !== 'undefined' ? TREE_A  : null;
   else if (section === 'B1') tree = typeof TREE_B1 !== 'undefined' ? TREE_B1 : null;
 
-  select.innerHTML = '<option value="">Choisir une catégorie *</option>';
-  if (tree) {
-    let group = null;
-    tree.forEach(c => {
-      if (c.section && (!group || group.label !== c.section)) {
-        group = document.createElement('optgroup');
-        group.label = c.section;
-        select.appendChild(group);
-      }
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.label;
-      (group || select).appendChild(opt);
-    });
+  if (!tree) { picker.innerHTML = ''; return; }
+
+  // Regroupe en tiroirs repliables (accordéon) par section, comme le tiroir
+  // catégories côté client (même style, même comportement).
+  const sections = [];
+  let current = null;
+  tree.forEach(c => {
+    const secTitle = c.section || '';
+    if (!current || current.title !== secTitle) {
+      current = { title: secTitle, items: [] };
+      sections.push(current);
+    }
+    current.items.push(c);
+  });
+
+  picker.innerHTML = sections.map((s, i) => {
+    const secId = `pubCatDrawer${i}`;
+    return `
+      <button type="button" class="cat-sidebar-subcat-drawer-toggle" onclick="_togglePubCatDrawer('${secId}', this)">
+        <span>${escapeHtml(s.title)}</span>
+        <span class="cat-sidebar-subcat-drawer-arrow">›</span>
+      </button>
+      <div id="${secId}" class="cat-sidebar-subcat-drawer-body" style="display:none;">
+        ${s.items.map(c =>
+          `<button type="button" class="cat-sidebar-subcat-btn" onclick="_selectPubCategory('${c.id}', '${escapeHtml(c.label).replace(/'/g, "\\'")}')">${escapeHtml(c.label)}</button>`
+        ).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+// Ouvre/ferme le panneau de choix de catégorie du formulaire de publication
+function _togglePubCategoryList() {
+  const picker = document.getElementById('pubCategoryPicker');
+  const arrowEl = document.getElementById('pubOwnCategoryArrow');
+  if (!picker) return;
+  const willOpen = picker.style.display === 'none';
+  picker.style.display = willOpen ? 'block' : 'none';
+  if (arrowEl) arrowEl.style.transform = willOpen ? 'rotate(90deg)' : '';
+}
+
+// Accordéon des sections à l'intérieur du panneau — un seul tiroir ouvert à la fois
+function _togglePubCatDrawer(secId, btn) {
+  const body = document.getElementById(secId);
+  if (!body) return;
+  const wasOpen = body.style.display === 'block';
+
+  const container = document.getElementById('pubCategoryPicker');
+  if (container) {
+    container.querySelectorAll('.cat-sidebar-subcat-drawer-body').forEach(el => el.style.display = 'none');
+    container.querySelectorAll('.cat-sidebar-subcat-drawer-toggle').forEach(el => el.classList.remove('open'));
+  }
+
+  if (!wasOpen) {
+    body.style.display = 'block';
+    if (btn) btn.classList.add('open');
   }
 }
+
+// Sélection d'une catégorie précise → referme le panneau
+function _selectPubCategory(id, label) {
+  const hidden = document.getElementById('pubOwnCategory');
+  const labelEl = document.getElementById('pubOwnCategoryLabel');
+  if (hidden) hidden.value = id;
+  if (labelEl) { labelEl.textContent = label; labelEl.style.color = '#1a1a1a'; }
+  _togglePubCategoryList();
+}
+window._togglePubCategoryList = _togglePubCategoryList;
+window._togglePubCatDrawer    = _togglePubCatDrawer;
+window._selectPubCategory     = _selectPubCategory;
 
 // ================================================================
 // SÉLECTEUR DE SECTION — Publier / Mes publications / Envoyer en promo / Mes
@@ -263,8 +327,10 @@ function _dashAction(action) {
 
 function choosePubSection(section) {
   window._pubSection = section; // 'B2' Boutique | 'A' Grossiste | 'B1' Service
+  // ⚠️ On NE remet PAS _pendingPubAction à null ici : si l'utilisateur revient
+  // sur cette page de choix (bouton retour) sans repasser par _dashAction(),
+  // il doit pouvoir choisir une section à nouveau avec la même action.
   const action = _pendingPubAction;
-  _pendingPubAction = null;
   if (action === 'publish')          openPublishPage();
   else if (action === 'myproducts')  viewMyProducts();
   else if (action === 'sendpromo')   openSendToPromo();
@@ -280,3 +346,115 @@ window.saveNewPin       = saveNewPin;
 window.openPublishPage  = openPublishPage;
 window.initBanner       = initBanner;
 window.openAdmin        = openAdmin;
+
+// ================================================================
+// PROMO PLEIN ÉCRAN — utilise la position 10 du banner (banner_slides)
+// Cette position n'entre jamais dans le carrousel (voir initBanner) ;
+// si elle contient une photo et/ou un texte, on l'affiche en avant-plan,
+// une seule fois par visiteur, jusqu'à ce qu'elle soit modifiée ou
+// restaurée par défaut (= supprimée) côté admin.
+// ================================================================
+async function showAdminPromoIfAny() {
+  try {
+    const { data, error } = await db.from(TABLES.BANNER_SLIDES).select('*').eq('id', 10).maybeSingle();
+    if (error) { console.error('[promo] erreur lecture banner_slides #10:', error); return; }
+    if (!data || (!data.url && !data.title && !data.subtitle)) { console.log('[promo] position 10 vide — rien à afficher'); return; }
+
+    const freshKey = String(data.updated_at || data.url || data.title || '');
+    const seenKey  = localStorage.getItem('moboro_seen_promo10');
+    if (seenKey === freshKey) { console.log('[promo] déjà vue sur cet appareil'); return; }
+
+    const overlay = document.getElementById('adminPromoOverlay');
+    const imgEl   = document.getElementById('adminPromoImage');
+    const textEl  = document.getElementById('adminPromoText');
+    if (!overlay || !imgEl || !textEl) { console.error('[promo] élément(s) HTML manquant(s)'); return; }
+
+    if (data.url) { imgEl.src = data.url; imgEl.style.display = 'block'; }
+    else { imgEl.style.display = 'none'; }
+    textEl.innerText = [data.title, data.subtitle].filter(Boolean).join('\n');
+    overlay.style.display = 'flex';
+    console.log('[promo] affichée (position 10)');
+
+    localStorage.setItem('moboro_seen_promo10', freshKey);
+
+    // Compteur de vues — stocké dans settings, best effort
+    try {
+      const { data: viewsRow } = await db.from(TABLES.SETTINGS).select('value').eq('key', 'promo10_views').maybeSingle();
+      const newCount = (parseInt(viewsRow && viewsRow.value, 10) || 0) + 1;
+      db.from(TABLES.SETTINGS).upsert({ key: 'promo10_views', value: String(newCount) }, { onConflict: 'key' }).catch(() => {});
+    } catch (e) { /* compteur non bloquant */ }
+  } catch (e) {
+    console.error('[promo] erreur inattendue:', e);
+  }
+}
+
+function closeAdminPromo() {
+  const overlay = document.getElementById('adminPromoOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+window.showAdminPromoIfAny = showAdminPromoIfAny;
+window.closeAdminPromo     = closeAdminPromo;
+
+// ================================================================
+// TIROIR CATÉGORIES — ouverture/fermeture par glissement (drag)
+// en plus du simple tap sur la bande visible
+// ================================================================
+function initHomeSidebarSwipe() {
+  const sidebar = document.getElementById('homeCatSidebar');
+  if (!sidebar) return;
+
+  const PEEK = 26; // doit correspondre à style.css
+  let startX = null, startY = null, dragging = false, isOpenAtStart = false, sidebarWidth = 0;
+
+  function closedX() { return -(sidebarWidth - PEEK); }
+
+  sidebar.addEventListener('pointerdown', (e) => {
+    isOpenAtStart = sidebar.classList.contains('open');
+    sidebarWidth  = sidebar.getBoundingClientRect().width;
+    startX = e.clientX;
+    startY = e.clientY;
+    dragging = false;
+  });
+
+  sidebar.addEventListener('pointermove', (e) => {
+    if (startX === null) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    if (!dragging) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { startX = null; return; } // geste vertical → on laisse défiler
+      if (Math.abs(dx) < 8) return; // pas encore assez de mouvement pour trancher
+      dragging = true;
+      sidebar.style.transition = 'none';
+    }
+
+    let tx = isOpenAtStart ? (0 + dx) : (closedX() + dx);
+    tx = Math.min(0, Math.max(closedX(), tx));
+    sidebar.style.transform = `translateX(${tx}px)`;
+    e.preventDefault();
+  });
+
+  function endDrag(e) {
+    if (startX === null) return;
+    if (dragging) {
+      const dx = (e.clientX || 0) - startX;
+      const threshold = (sidebarWidth - PEEK) / 2;
+      const openNow = isOpenAtStart ? (dx > -threshold) : (dx > threshold);
+      sidebar.style.transition = '';
+      sidebar.style.transform  = '';
+      if (openNow) openHomeSidebar(); else closeHomeSidebar();
+    } else if (!isOpenAtStart) {
+      // simple tap sur la bande visible, sans glissement → on ouvre
+      openHomeSidebar();
+    }
+    startX = null;
+    dragging = false;
+  }
+
+  sidebar.addEventListener('pointerup', endDrag);
+  sidebar.addEventListener('pointercancel', endDrag);
+}
+window.initHomeSidebarSwipe = initHomeSidebarSwipe;
+
+

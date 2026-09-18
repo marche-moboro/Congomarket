@@ -43,9 +43,6 @@
 .seller-avatar, .seller-mini-img, .cart-bar, #appLoader .app-loader-spinner {
   border-radius: 50% !important;
 }
-.home-sidebar-fab {
-  border-radius: 0 999px 999px 0 !important;
-}
 
 body {
   background: #f5f7fb;
@@ -996,6 +993,7 @@ header p { font-size: 12px; opacity: .80; }
 <!-- SIDEBAR GLOBALE (tiroir + bouton flottant, visible sur toutes les pages) -->
 <div id="homeCatSidebarOverlay" class="cat-sidebar-overlay" onclick="closeHomeSidebar()"></div>
 <div id="homeCatSidebar" class="cat-sidebar">
+  <span class="cat-sidebar-handle">›</span>
   <button class="cat-sidebar-close" onclick="closeHomeSidebar()">✕</button>
 
   <div class="cat-sidebar-section">
@@ -1029,7 +1027,14 @@ header p { font-size: 12px; opacity: .80; }
     📲 Télécharger l'application
   </a>
 </div>
-<button id="homeSidebarToggleBtn" class="home-sidebar-fab">›</button>
+<!-- PROMO ADMIN PLEIN ÉCRAN -->
+<div id="adminPromoOverlay" onclick="closeAdminPromo()" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:20px;">
+  <div onclick="event.stopPropagation()" style="position:relative;width:100%;max-width:420px;background:#fff;border-radius:18px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;">
+    <button onclick="closeAdminPromo()" style="position:absolute;top:8px;right:8px;z-index:1;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:16px;font-weight:700;cursor:pointer;">✕</button>
+    <img id="adminPromoImage" src="" style="width:100%;max-height:60vh;object-fit:cover;display:none;">
+    <div id="adminPromoText" style="padding:18px;font-size:15px;line-height:1.6;color:#1a1a1a;white-space:pre-wrap;"></div>
+  </div>
+</div>
 
 <!-- MENU "COMPTE" (choix connexion / inscription) -->
 <div id="accountChoiceOverlay" class="cat-sidebar-overlay" onclick="closeAccountChoice()"></div>
@@ -1103,15 +1108,15 @@ header p { font-size: 12px; opacity: .80; }
   <div class="home-promo-split">
     <div class="home-promo-half" id="homePromoGrossiste" onclick="openGrossistePage()">
       <img class="home-promo-img" id="homePromoGrossisteImg" src="" alt="">
+      <span class="home-promo-tag">🏭 Grossiste</span>
       <div class="home-promo-overlay">
-        <span class="home-promo-tag">🏭 Grossiste</span>
         <span class="home-promo-name" id="homePromoGrossisteName"></span>
       </div>
     </div>
     <div class="home-promo-half" id="homePromoService" onclick="openServicePage()">
       <img class="home-promo-img" id="homePromoServiceImg" src="" alt="">
+      <span class="home-promo-tag">⭐ Service</span>
       <div class="home-promo-overlay">
-        <span class="home-promo-tag">⭐ Service</span>
         <span class="home-promo-name" id="homePromoServiceName"></span>
       </div>
     </div>
@@ -1637,9 +1642,12 @@ header p { font-size: 12px; opacity: .80; }
 
       <!-- Catégorie de publication (dépend de la section choisie juste avant) -->
       <div id="pubCategorySection" style="margin:10px 0;">
-        <select id="pubOwnCategory" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
-          <option value="">Choisir une catégorie *</option>
-        </select>
+        <input type="hidden" id="pubOwnCategory" value="">
+        <button type="button" id="pubOwnCategoryDisplay" onclick="_togglePubCategoryList()" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;background:#fafafa;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span id="pubOwnCategoryLabel" style="color:#888;">Choisir une catégorie *</span>
+          <span id="pubOwnCategoryArrow" style="font-weight:900;color:#1677FF;transition:transform .2s;flex-shrink:0;">›</span>
+        </button>
+        <div id="pubCategoryPicker" style="display:none;margin-top:6px;border:1.5px solid #e8e8e8;border-radius:12px;padding:4px 10px;max-height:320px;overflow-y:auto;background:#fff;"></div>
       </div>
 
       <label style="font-size:13px;color:#555;font-weight:600;margin:8px 0 4px;display:block;">📋 Spécifications (optionnel)</label>
@@ -3912,7 +3920,7 @@ function _appendFournisseurs() {
         ${escapeHtml(f.description || '')}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-        <button onclick="openSellerProducts('${f.id}', 'A')"
+        <button onclick="openSellerProducts('${f.id}', 'A', '${escapeHtml(f.category || '')}')"
           style="background:#1677FF;color:white;border:none;padding:9px;border-radius:10px;
                  font-size:12px;font-weight:700;cursor:pointer;">
           📦 Publications
@@ -4094,6 +4102,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   await initBanner();
   checkRegisterParam();
   if (typeof initHomeSidebarAndFeed === 'function') initHomeSidebarAndFeed();
+  initHomeSidebarSwipe();
   // Si checkSession() a redirigé directement vers un tableau de bord,
   // on remplace l'entrée d'historique plutôt que d'en empiler une —
   // pas de "retour vers l'accueil" indésirable via le bouton physique
@@ -4105,6 +4114,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   const loader = document.getElementById('appLoader');
   if (loader) loader.style.display = 'none';
+
+  showAdminPromoIfAny();
 });
 
 // ================================================================

@@ -63,7 +63,7 @@ function renderQuantityTiers(basePrice, qteMin, tier1Price, qteMax, tier2Price) 
     rows.push([`${qteMax}+`, tier2Price != null ? tier2Price : base]);
   }
 
-  return `<div class="qty-tiers" style="margin:6px 0;border:1px solid #e8e8e8;border-radius:10px;overflow:hidden;">
+  return `<div class="qty-tiers" style="margin:6px 0;border:1px solid #e8e8e8;border-radius:10px;overflow:hidden;background:#fff;">
     <div style="background:#f5f7fb;padding:4px 8px;font-size:11px;font-weight:700;color:#555;">📦 Tarifs par quantité</div>
     ${rows.map(([range, price]) => `
       <div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:12px;border-top:1px solid #f0f0f0;">
@@ -112,8 +112,15 @@ async function loadProductReviewsSummary(productId, elementId) {
   const el = document.getElementById(elementId || `reviews-${productId}`);
   if (!el) return;
   try {
-    const { data, error } = await db.from(TABLES.PRODUCT_REVIEWS)
-      .select('rating').eq('product_id', productId);
+    // Filet de sécurité : si la requête reste bloquée (réseau lent/instable),
+    // on n'attend pas indéfiniment — on retombe sur "Aucun avis" après 10s
+    // plutôt que de laisser la carte figée sur "Chargement..." pour toujours.
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 10000));
+    const { data, error } = await Promise.race([
+      db.from(TABLES.PRODUCT_REVIEWS).select('rating').eq('product_id', productId),
+      timeout
+    ]);
     if (error || !data || data.length === 0) {
       el.innerHTML = `<span style="font-size:11px;color:#999;">Aucun avis vérifié pour le moment</span>`;
       return;
@@ -121,7 +128,7 @@ async function loadProductReviewsSummary(productId, elementId) {
     const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
     el.innerHTML = `${renderStarsReadonly(avg)} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${data.length} avis vérifiés)</span> <button onclick="openProductReviewsListModal('${productId}')" style="background:none;border:none;color:#1677FF;font-size:12px;text-decoration:underline;cursor:pointer;padding:0;margin-left:4px;">Voir plus</button>`;
   } catch (e) {
-    console.error('loadProductReviewsSummary error:', e);
+    console.error('loadProductReviewsSummary error (productId=' + productId + '):', e);
     el.innerHTML = `<span style="font-size:11px;color:#999;">Aucun avis vérifié pour le moment</span>`;
   }
 }
@@ -404,7 +411,7 @@ function _renderSimilarProductsPage(elementId) {
     ${state.hideLabel ? '' : '<div style="font-size:12px;font-weight:700;color:#555;margin:10px 0 6px;">🔎 Produits similaires</div>'}
     <div style="display:flex;flex-wrap:wrap;gap:8px;">
       ${visible.map(sp => `
-        <div style="width:100px;cursor:pointer;" onclick="openSellerProducts('${sp.seller_id}', currentCategoryType || 'B')">
+        <div style="width:100px;cursor:pointer;" onclick="openSellerProducts('${sp.seller_id}', currentCategoryType || 'B', '${escapeHtml(sp.seller_category || '')}')">
           <img src="${escapeHtml(sp.image)}" onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
             style="width:100px;height:100px;object-fit:cover;border-radius:10px;">
           <div style="font-size:11px;color:#333;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
@@ -671,7 +678,7 @@ const { data: sellers, error, count } = await query
           </div>
         </div>
         <div class="seller-actions">
-          <button class="view-btn" onclick="openSellerProducts('${seller.id}', '${currentCategoryType}')">📦 Publications</button>
+          <button class="view-btn" onclick="openSellerProducts('${seller.id}', '${currentCategoryType}', '${escapeHtml(catId || '')}')">📦 Publications</button>
           <button class="view-btn promo-btn" onclick="openSellerPromos('${seller.id}', '${escapeHtml(seller.full_name)}')">🔥 Promos</button>
          <a href="https://wa.me/${formatWhatsApp(seller.phone)}" target="_blank" class="contact-btn"
             onclick="trackWhatsappClick('${seller.id}', '${seller.account_type || ''}')">
@@ -710,7 +717,7 @@ function loadMoreSellers() {
 // ================================================================
 // Ouvrir publications d'un vendeur
 // ================================================================
-async function openSellerProducts(sellerId, type) {
+async function openSellerProducts(sellerId, type, categoryId) {
   try {
     const { data: seller, error } = await db
       .from(TABLES.SELLERS)
@@ -750,12 +757,22 @@ async function openSellerProducts(sellerId, type) {
     document.getElementById('productsList').innerHTML =
       '<div class="loading">Chargement...</div>';
 
-    const { data: products, error: prodError } = await db
+    // ✅ Fix séparation des sections : on ne montre que les publications du
+    // vendeur qui appartiennent à la même section que celle cliquée (Grossiste /
+    // Service / Boutique). categoryId (catégorie précise du produit/lien cliqué)
+    // est prioritaire ; à défaut on retombe sur le contexte de navigation ambiant.
+    const _sectionCatIds = _catIdsForCategory(categoryId);
+
+    let prodQuery = db
       .from(TABLES.PRODUCTS)
-.select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
-.eq('seller_id', sellerId)
-.eq('is_active', true)
-.order('created_at', { ascending: false });
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
+      .eq('seller_id', sellerId)
+      .eq('is_active', true);
+
+    if (_sectionCatIds.length) prodQuery = prodQuery.in('seller_category', _sectionCatIds);
+
+    const { data: products, error: prodError } = await prodQuery
+      .order('created_at', { ascending: false });
 
     if (prodError) {
       console.error('openSellerProducts products error:', JSON.stringify(prodError));
@@ -783,13 +800,13 @@ function _productCardHtml(p, showSeller) {
   const isGrossiste = typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(p.seller_category);
   const tierLine = isGrossiste ? renderQuantityTiersCompact(p) : '';
   const sellerLine = (showSeller && p.sellers)
-    ? `<div class="product-seller-overlay" onclick="event.stopPropagation(); openSellerProducts('${p.sellers.id}', currentCategoryType || 'B')">🏪 ${escapeHtml(p.sellers.full_name)}</div>`
+    ? `<div class="product-seller-overlay" onclick="event.stopPropagation(); openSellerProducts('${p.sellers.id}', currentCategoryType || 'B', '${escapeHtml(p.seller_category || '')}')">🏪 ${escapeHtml(p.sellers.full_name)}</div>`
     : '';
   // Dans une grille (accueil/catégorie, showSeller=true) : le clic sur la photo
   // ouvre la page du vendeur. Sur la page d'un vendeur (showSeller=false) : le
   // clic ouvre toujours le zoom/lightbox, puisqu'on y est déjà.
   const imgOnclick = (showSeller && p.sellers)
-    ? `openSellerProducts('${p.sellers.id}', currentCategoryType || 'B')`
+    ? `openSellerProducts('${p.sellers.id}', currentCategoryType || 'B', '${escapeHtml(p.seller_category || '')}')`
     : `openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)`;
 
   return `
@@ -806,7 +823,7 @@ function _productCardHtml(p, showSeller) {
         >
         <span class="product-price-badge">${formatPrice(p.price)} FCFA</span>
         ${tierLine ? `<span class="product-tier-badge">📦 ${tierLine}</span>` : ''}
-        <div class="product-name-overlay">${escapeHtml(p.name)}</div>
+        <div class="product-name-overlay${sellerLine ? '' : ' no-seller-line'}">${escapeHtml(p.name)}</div>
         ${sellerLine}
         <div class="product-reviews-overlay" id="reviews-${p.id}">Chargement...</div>
       </div>
@@ -947,7 +964,7 @@ async function loadSimilarSellers(sellerId, category) {
         <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px;">🏪 Vendeurs similaires</div>
         <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px 8px;">
           ${sellers.map(s => `
-            <div style="text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B')">
+            <div style="text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B', '${escapeHtml(category || '')}')">
               <img src="${escapeHtml(s.photo) || 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'}"
                 onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'"
                 style="width:70px;height:70px;border-radius:50%;object-fit:cover;">
@@ -1234,6 +1251,53 @@ function _populateHomeSidebarSellersFromProducts(products) {
 }
 window._populateHomeSidebarSellersFromProducts = _populateHomeSidebarSellersFromProducts;
 
+// ================================================================
+// Détermine l'arbre de catégories (TREE_A / TREE_B1 / TREE_B2) actif.
+// - _getActiveTree() : déduit l'arbre du contexte de navigation ambiant
+//   (_sidebarContext + currentCategory). Utilisé pour la sidebar, et en
+//   dernier recours si aucune catégorie précise n'est fournie.
+// - _catIdsForCategory(categoryId) : déduit l'arbre directement à partir
+//   d'une catégorie précise (ex. celle du produit cliqué). Plus fiable
+//   que le contexte ambiant, qui peut être obsolète selon le parcours.
+// ================================================================
+function _getActiveTree() {
+  let tree = null, treeType = 'B';
+  if (_sidebarContext === 'category' && typeof currentCategory !== 'undefined' && currentCategory) {
+    if (typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(currentCategory))       { tree = TREE_A;  treeType = 'A'; }
+    else if (typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory)) { tree = TREE_B1; treeType = 'A'; }
+    else if (typeof TREE_B2 !== 'undefined')                                          { tree = TREE_B2; treeType = 'B'; }
+  } else if (_sidebarContext === 'grossiste' && typeof TREE_A !== 'undefined') {
+    tree = TREE_A; treeType = 'A';
+  } else if (_sidebarContext === 'service' && typeof TREE_B1 !== 'undefined') {
+    tree = TREE_B1; treeType = 'A';
+  } else if (typeof TREE_B2 !== 'undefined') {
+    tree = TREE_B2; treeType = 'B'; // 'home' / 'boutique' par défaut
+  }
+  return { tree, treeType };
+}
+
+function _treeForCategoryId(categoryId) {
+  if (typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(categoryId))   return TREE_A;
+  if (typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(categoryId)) return TREE_B1;
+  if (typeof TREE_B2 !== 'undefined')                                     return TREE_B2;
+  return null;
+}
+
+function _getActiveTreeCatIds() {
+  const { tree } = _getActiveTree();
+  return (tree || []).map(c => c.id);
+}
+
+// Catégorie précise connue (ex. p.seller_category du produit cliqué) → priorité.
+// Sinon repli sur le contexte de navigation ambiant.
+function _catIdsForCategory(categoryId) {
+  const tree = categoryId ? _treeForCategoryId(categoryId) : null;
+  if (tree) return tree.map(c => c.id);
+  return _getActiveTreeCatIds();
+}
+window._getActiveTreeCatIds = _getActiveTreeCatIds;
+window._catIdsForCategory   = _catIdsForCategory;
+
 // ---- Sidebar accueil : villes + sous-catégories (dépend du contexte actif) ----
 function _populateHomeSidebarStatic() {
   const villes = ['Brazzaville','Pointe-Noire','Dolisie','Nkayi','Oyo','Bétou','Ouesso','Impfondo','Madingou','Owando','Sibiti','Mossaka','Gamboma','Djambala','Makoua','Kinkala','Ewo','Dongou'];
@@ -1251,18 +1315,7 @@ function _populateHomeSidebarStatic() {
   // Choix de l'arbre de sous-catégories selon le contexte : sur la page catégorie
   // (drill-down), on regarde à quel groupe appartient la catégorie ouverte ;
   // sur l'accueil, chaque section (Boutique/Grossiste/Service) a son propre arbre.
-  let tree = null, treeType = 'B';
-  if (_sidebarContext === 'category' && typeof currentCategory !== 'undefined' && currentCategory) {
-    if (typeof TREE_A_IDS !== 'undefined' && TREE_A_IDS.has(currentCategory))       { tree = TREE_A;  treeType = 'A'; }
-    else if (typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(currentCategory)) { tree = TREE_B1; treeType = 'A'; }
-    else if (typeof TREE_B2 !== 'undefined')                                          { tree = TREE_B2; treeType = 'B'; }
-  } else if (_sidebarContext === 'grossiste' && typeof TREE_A !== 'undefined') {
-    tree = TREE_A; treeType = 'A';
-  } else if (_sidebarContext === 'service' && typeof TREE_B1 !== 'undefined') {
-    tree = TREE_B1; treeType = 'A';
-  } else if (typeof TREE_B2 !== 'undefined') {
-    tree = TREE_B2; treeType = 'B'; // 'home' / 'boutique' par défaut
-  }
+  const { tree, treeType } = _getActiveTree();
 
   const subcatsEl = document.getElementById('homeCatSidebarSubcats');
   if (subcatsEl && tree) {
