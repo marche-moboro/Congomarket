@@ -349,7 +349,7 @@ window.closeProductReviewsListModal = closeProductReviewsListModal;
 // ================================================================
 // PRODUITS SIMILAIRES — tous vendeurs confondus, priorité au nom, pagination 15
 // ================================================================
-const SIMILAR_PER_PAGE = 15;
+const SIMILAR_PER_PAGE = 16;
 const _similarProductsState = {}; // elementId -> { list, page, hideLabel }
 
 async function loadSimilarProducts(productId, category, elementId, productName, hideLabel) {
@@ -539,24 +539,38 @@ let currentCategoryType = ''; // 'A' ou 'B'
 // ================================================================
 // Ouvrir une catégorie
 // ================================================================
-async function openCategory(catId, type) {
+let _categoryPage      = 0;
+let _categoryCatId     = '';
+let _categoryType      = '';
+const CATEGORY_PER_PAGE = 16;
+
+async function openCategory(catId, type, append = false) {
   try {
-  currentCategory     = catId;
-  currentCategoryType = type;
   window.currentViewedSeller = null;
 
-  const title = ALL_CATEGORIES[catId] || 'Produits';
-  document.getElementById('sellerNameTitle').innerText    = title;
-  document.getElementById('sellerNameSubtitle').innerText = '';
+  if (!append) {
+    currentCategory     = catId;
+    currentCategoryType = type;
+    _categoryPage       = 0;
+    _categoryCatId      = catId;
+    _categoryType        = type;
+    _productsAll = [];
 
-  showPage('productsPage');
-document.getElementById('productsList').innerHTML =
-    '<div class="loading">Chargement...</div>';
-  const simBlock = document.getElementById('similarSellersBlock');
-  if (simBlock) simBlock.innerHTML = '';
-  updateCartUI();
+    const title = ALL_CATEGORIES[catId] || 'Produits';
+    document.getElementById('sellerNameTitle').innerText    = title;
+    document.getElementById('sellerNameSubtitle').innerText = '';
+
+    showPage('productsPage');
+    document.getElementById('productsList').innerHTML =
+      '<div class="loading">Chargement...</div>';
+    const simBlock = document.getElementById('similarSellersBlock');
+    if (simBlock) simBlock.innerHTML = '';
+    updateCartUI();
+  }
 
   const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+  const from = _categoryPage * CATEGORY_PER_PAGE;
+  const to   = from + CATEGORY_PER_PAGE - 1;
 
   let query = db
     .from(TABLES.PRODUCTS)
@@ -570,21 +584,32 @@ document.getElementById('productsList').innerHTML =
     query = query.ilike('sellers.ville', `%${villeFilter}%`);
   }
 
-  const { data: products, error } = await query.order('created_at', { ascending: false });
+  const { data: products, error } = await query
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
   if (error) {
     console.error('openCategory error:', JSON.stringify(error));
-    document.getElementById('productsList').innerHTML =
-      '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+    if (!append) {
+      document.getElementById('productsList').innerHTML =
+        '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+    }
     return;
   }
 
-  renderProducts(products || [], type);
+  renderProducts(products || [], type, append);
 
   } catch(e) {
     console.error('openCategory error:', e);
     if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
   }}
+
+function loadMoreCategory() {
+  _categoryPage++;
+  openCategory(_categoryCatId, _categoryType, true);
+}
+window.loadMoreCategory = loadMoreCategory;
+
   
   // ================================================================
 // Arbre de catégories : titres + sous-titres affichés à plat
@@ -607,7 +632,7 @@ let _sellersCatId = '';
 let _productsAll      = [];
 let _productsPage     = 0;
 let _sidebarContext   = 'home'; // 'home' | 'category' — contexte de la sidebar partagée
-const PRODUCTS_PER_PAGE = 8;
+const PRODUCTS_PER_PAGE = 16;
 
 async function loadSellers(catId, append = false) {
   const list = document.getElementById('sellerList');
@@ -619,8 +644,8 @@ async function loadSellers(catId, append = false) {
     list.innerHTML = '<div class="loading">Chargement...</div>';
   }
 
-  const from = _sellersPage * 15;
-  const to = from + 14;
+  const from = _sellersPage * 16;
+  const to = from + 15;
 
   try {
 let query = db
@@ -834,22 +859,27 @@ function _productCardHtml(p, showSeller) {
 // ================================================================
 // Afficher produits
 // ================================================================
-function renderProducts(products, type) {
-  _productsAll  = products;
-  _productsPage = 0;
+function renderProducts(products, type, append = false) {
   const list = document.getElementById('productsList');
 
-  if (!products.length) {
+  if (!append) {
+    _productsAll  = products;
+    _productsPage = 0;
+  } else {
+    _productsAll = _productsAll.concat(products);
+  }
+
+  if (!_productsAll.length) {
     list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
     return;
   }
-  list.innerHTML = '';
+  if (!append) list.innerHTML = '';
 
   // Grille plate + sidebar filtres partagée — même traitement pour Boutique & Vendeur,
   // Grossiste & Importateur et Services (uniformisé, plus de mode "groupé" séparé).
   if (products[0] && products[0].sellers) {
     list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
-    _renderProductsFlat();
+    _renderProductsFlat(products, append);
     _sidebarContext = 'category';
     _populateHomeSidebarStatic();
     _populateHomeSidebarSellersFromProducts(_productsAll);
@@ -862,10 +892,24 @@ function renderProducts(products, type) {
 }
 
 // ---- Mode "Boutique & Vendeur" : grille plate avec nom vendeur sur chaque carte ----
-function _renderProductsFlat() {
+function _renderProductsFlat(newProducts, append) {
   const list = document.getElementById('productsList');
-  list.innerHTML = _productsAll.map(p => _productCardHtml(p, true)).join('');
-  _productsAll.forEach(p => loadProductReviewsSummary(p.id));
+  const oldBtn = document.getElementById('loadMoreCategoryBtn');
+  if (oldBtn) oldBtn.remove();
+
+  const batch = append ? newProducts : _productsAll;
+  list.insertAdjacentHTML('beforeend', batch.map(p => _productCardHtml(p, true)).join(''));
+  batch.forEach(p => loadProductReviewsSummary(p.id));
+
+  if (newProducts.length === CATEGORY_PER_PAGE) {
+    list.insertAdjacentHTML('beforeend', `
+      <div id="loadMoreCategoryBtn" style="grid-column:1 / -1;text-align:center;padding:16px;">
+        <button onclick="loadMoreCategory()" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
+          Voir plus
+        </button>
+      </div>
+    `);
+  }
 }
 
 // ---- Mode boutique unique (pagination classique) ----
@@ -1155,8 +1199,8 @@ async function loadHomeFeed(append = false) {
     list.innerHTML = '<div class="loading">Chargement...</div>';
   }
 
-  const from = _homeFeedPage * 20;
-  const to = from + 19;
+  const from = _homeFeedPage * 16;
+  const to = from + 15;
   const catIds = _computeHomeFeedCategoryIds();
   if (!catIds.length) { list.innerHTML = ''; return; }
 
@@ -1204,7 +1248,7 @@ async function loadHomeFeed(append = false) {
 
     if (_sidebarContext === 'home') _populateHomeSidebarSellersFromProducts(_homeFeedProducts);
 
-    if (data && data.length === 20) {
+    if (data && data.length === 16) {
       list.insertAdjacentHTML('beforeend', `
         <div id="loadMoreHomeFeed" style="grid-column:1 / -1;text-align:center;padding:16px;">
           <button onclick="_homeFeedPage++; loadHomeFeed(true);" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">

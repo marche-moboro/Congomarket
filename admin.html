@@ -2705,7 +2705,7 @@ async function deleteVIPManager(id, name) {
   <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
   <div class="form-card">
     <h2>🗂️ Tout Produits</h2>
-    <input type="text" id="allProductsSearch" placeholder="🔎 Nom du produit ou du vendeur..." oninput="renderAllProducts()">
+    <input type="text" id="allProductsSearch" placeholder="🔎 Nom du produit ou du vendeur..." oninput="_allProductsRenderPage=0; renderAllProducts()">
     <div style="display:flex;gap:6px;margin-top:6px;">
       <button class="apc-sec-btn active" data-sec="vendeur" onclick="switchAllProductsSection('vendeur')" style="flex:1;border:1.5px solid #1677FF;background:#1677FF;color:white;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;">🛍️ Boutique &amp; Vendeur</button>
       <button class="apc-sec-btn" data-sec="grossiste" onclick="switchAllProductsSection('grossiste')" style="flex:1;border:1.5px solid #e0e0e0;background:white;color:#555;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;">🏭 Grossiste</button>
@@ -2828,6 +2828,7 @@ let _allProductsSection = 'vendeur';
 async function loadAllProducts() {
   const container = document.getElementById('allProductsList');
   container.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">Chargement...</p>';
+  _allProductsRenderPage = 0;
   try {
     const { data: products, error } = await db.from(TABLES.PRODUCTS)
       .select('id, name, price, description, image, images, seller_id, seller_name, seller_phone, seller_category, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere')
@@ -2849,6 +2850,7 @@ async function loadAllProducts() {
 
 function switchAllProductsSection(sec) {
   _allProductsSection = sec;
+  _allProductsRenderPage = 0;
   document.querySelectorAll('.apc-sec-btn').forEach(b => {
     const active = b.getAttribute('data-sec') === sec;
     b.classList.toggle('active', active);
@@ -2858,6 +2860,9 @@ function switchAllProductsSection(sec) {
   });
   renderAllProducts();
 }
+
+let _allProductsRenderPage = 0;
+const ALL_PRODUCTS_PER_PAGE = 16;
 
 function renderAllProducts() {
   const q = (document.getElementById('allProductsSearch').value || '').trim().toLowerCase();
@@ -2876,7 +2881,10 @@ function renderAllProducts() {
     return;
   }
 
-  container.innerHTML = list.map(p => `
+  const upTo = (_allProductsRenderPage + 1) * ALL_PRODUCTS_PER_PAGE;
+  const slice = list.slice(0, upTo);
+
+  container.innerHTML = slice.map(p => `
     <div class="log-item" style="display:flex;gap:10px;align-items:center;cursor:pointer;" onclick="openProductDetail('${p.id}')">
       <img src="${escapeHtml(p.image || '')}" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f0f0f0;">
       <div style="flex:1;min-width:0;">
@@ -2885,6 +2893,16 @@ function renderAllProducts() {
       </div>
     </div>
   `).join('');
+
+  if (slice.length < list.length) {
+    container.insertAdjacentHTML('beforeend', `
+      <div style="text-align:center;padding:16px;">
+        <button onclick="_allProductsRenderPage++; renderAllProducts();" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
+          Voir plus
+        </button>
+      </div>
+    `);
+  }
 }
 
 function openProductDetail(id) {

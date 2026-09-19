@@ -292,13 +292,13 @@ let _transferring  = false;
 let _promosAll     = [];
 let _promosPage    = 0;
 let _promosType    = '';
-const PROMOS_PER_PAGE = 8;
+const PROMOS_PER_PAGE = 16;
 let _myProductsAll  = [];
 let _myProductsPage = 0;
-const MY_PRODUCTS_PER_PAGE = 15;
+const MY_PRODUCTS_PER_PAGE = 16;
 let _myPromosAll    = [];
 let _myPromosPage   = 0;
-const MY_PROMOS_PER_PAGE = 15;
+const MY_PROMOS_PER_PAGE = 16;
 
 async function publishProduct() {
   if (!currentSeller) {
