@@ -349,7 +349,7 @@ window.closeProductReviewsListModal = closeProductReviewsListModal;
 // ================================================================
 // PRODUITS SIMILAIRES — tous vendeurs confondus, priorité au nom, pagination 15
 // ================================================================
-const SIMILAR_PER_PAGE = 16;
+const SIMILAR_PER_PAGE = 15;
 const _similarProductsState = {}; // elementId -> { list, page, hideLabel }
 
 async function loadSimilarProducts(productId, category, elementId, productName, hideLabel) {
@@ -415,7 +415,7 @@ function _renderSimilarProductsPage(elementId) {
           <img src="${escapeHtml(sp.image)}" onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=600'"
             style="width:100px;height:100px;object-fit:cover;border-radius:10px;">
           <div style="font-size:11px;color:#333;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
-          <div style="font-size:11px;font-weight:700;color:#1677FF;">${formatPrice(sp.price)} FCFA</div>
+          <div style="font-size:11px;font-weight:700;color:#1677FF;">${priceLabel(sp.price)}</div>
         </div>
       `).join('')}
     </div>
@@ -525,7 +525,7 @@ function contactSellerWhatsApp(product, seller) {
   }
   const message =
     `Bonjour 👋, je suis intéressé(e) par ce produit :\n` +
-    `🛍️ ${product.name} — ${formatPrice(product.price)} FCFA\n` +
+    `🛍️ ${product.name} — ${priceLabel(product.price)}\n` +
     (product.image ? `📷 Photo : ${product.image}\n` : '') +
     `\nEst-il toujours disponible ? Quel est le prix pour plusieurs unités ?`;
 
@@ -539,38 +539,24 @@ let currentCategoryType = ''; // 'A' ou 'B'
 // ================================================================
 // Ouvrir une catégorie
 // ================================================================
-let _categoryPage      = 0;
-let _categoryCatId     = '';
-let _categoryType      = '';
-const CATEGORY_PER_PAGE = 16;
-
-async function openCategory(catId, type, append = false) {
+async function openCategory(catId, type) {
   try {
+  currentCategory     = catId;
+  currentCategoryType = type;
   window.currentViewedSeller = null;
 
-  if (!append) {
-    currentCategory     = catId;
-    currentCategoryType = type;
-    _categoryPage       = 0;
-    _categoryCatId      = catId;
-    _categoryType        = type;
-    _productsAll = [];
+  const title = ALL_CATEGORIES[catId] || 'Produits';
+  document.getElementById('sellerNameTitle').innerText    = title;
+  document.getElementById('sellerNameSubtitle').innerText = '';
 
-    const title = ALL_CATEGORIES[catId] || 'Produits';
-    document.getElementById('sellerNameTitle').innerText    = title;
-    document.getElementById('sellerNameSubtitle').innerText = '';
-
-    showPage('productsPage');
-    document.getElementById('productsList').innerHTML =
-      '<div class="loading">Chargement...</div>';
-    const simBlock = document.getElementById('similarSellersBlock');
-    if (simBlock) simBlock.innerHTML = '';
-    updateCartUI();
-  }
+  showPage('productsPage');
+document.getElementById('productsList').innerHTML =
+    '<div class="loading">Chargement...</div>';
+  const simBlock = document.getElementById('similarSellersBlock');
+  if (simBlock) simBlock.innerHTML = '';
+  updateCartUI();
 
   const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
-  const from = _categoryPage * CATEGORY_PER_PAGE;
-  const to   = from + CATEGORY_PER_PAGE - 1;
 
   let query = db
     .from(TABLES.PRODUCTS)
@@ -584,32 +570,21 @@ async function openCategory(catId, type, append = false) {
     query = query.ilike('sellers.ville', `%${villeFilter}%`);
   }
 
-  const { data: products, error } = await query
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  const { data: products, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     console.error('openCategory error:', JSON.stringify(error));
-    if (!append) {
-      document.getElementById('productsList').innerHTML =
-        '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
-    }
+    document.getElementById('productsList').innerHTML =
+      '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
     return;
   }
 
-  renderProducts(products || [], type, append);
+  renderProducts(products || [], type);
 
   } catch(e) {
     console.error('openCategory error:', e);
     if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
   }}
-
-function loadMoreCategory() {
-  _categoryPage++;
-  openCategory(_categoryCatId, _categoryType, true);
-}
-window.loadMoreCategory = loadMoreCategory;
-
   
   // ================================================================
 // Arbre de catégories : titres + sous-titres affichés à plat
@@ -632,7 +607,7 @@ let _sellersCatId = '';
 let _productsAll      = [];
 let _productsPage     = 0;
 let _sidebarContext   = 'home'; // 'home' | 'category' — contexte de la sidebar partagée
-const PRODUCTS_PER_PAGE = 16;
+const PRODUCTS_PER_PAGE = 8;
 
 async function loadSellers(catId, append = false) {
   const list = document.getElementById('sellerList');
@@ -644,8 +619,8 @@ async function loadSellers(catId, append = false) {
     list.innerHTML = '<div class="loading">Chargement...</div>';
   }
 
-  const from = _sellersPage * 16;
-  const to = from + 15;
+  const from = _sellersPage * 15;
+  const to = from + 14;
 
   try {
 let query = db
@@ -846,7 +821,7 @@ function _productCardHtml(p, showSeller) {
           onclick="${imgOnclick}"
           style="cursor:pointer;"
         >
-        <span class="product-price-badge">${formatPrice(p.price)} FCFA</span>
+        <span class="product-price-badge">${priceLabel(p.price)}</span>
         ${tierLine ? `<span class="product-tier-badge">📦 ${tierLine}</span>` : ''}
         <div class="product-name-overlay${sellerLine ? '' : ' no-seller-line'}">${escapeHtml(p.name)}</div>
         ${sellerLine}
@@ -859,27 +834,22 @@ function _productCardHtml(p, showSeller) {
 // ================================================================
 // Afficher produits
 // ================================================================
-function renderProducts(products, type, append = false) {
+function renderProducts(products, type) {
+  _productsAll  = products;
+  _productsPage = 0;
   const list = document.getElementById('productsList');
 
-  if (!append) {
-    _productsAll  = products;
-    _productsPage = 0;
-  } else {
-    _productsAll = _productsAll.concat(products);
-  }
-
-  if (!_productsAll.length) {
+  if (!products.length) {
     list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
     return;
   }
-  if (!append) list.innerHTML = '';
+  list.innerHTML = '';
 
   // Grille plate + sidebar filtres partagée — même traitement pour Boutique & Vendeur,
   // Grossiste & Importateur et Services (uniformisé, plus de mode "groupé" séparé).
   if (products[0] && products[0].sellers) {
     list.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 15px 80px;';
-    _renderProductsFlat(products, append);
+    _renderProductsFlat();
     _sidebarContext = 'category';
     _populateHomeSidebarStatic();
     _populateHomeSidebarSellersFromProducts(_productsAll);
@@ -892,24 +862,10 @@ function renderProducts(products, type, append = false) {
 }
 
 // ---- Mode "Boutique & Vendeur" : grille plate avec nom vendeur sur chaque carte ----
-function _renderProductsFlat(newProducts, append) {
+function _renderProductsFlat() {
   const list = document.getElementById('productsList');
-  const oldBtn = document.getElementById('loadMoreCategoryBtn');
-  if (oldBtn) oldBtn.remove();
-
-  const batch = append ? newProducts : _productsAll;
-  list.insertAdjacentHTML('beforeend', batch.map(p => _productCardHtml(p, true)).join(''));
-  batch.forEach(p => loadProductReviewsSummary(p.id));
-
-  if (newProducts.length === CATEGORY_PER_PAGE) {
-    list.insertAdjacentHTML('beforeend', `
-      <div id="loadMoreCategoryBtn" style="grid-column:1 / -1;text-align:center;padding:16px;">
-        <button onclick="loadMoreCategory()" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
-          Voir plus
-        </button>
-      </div>
-    `);
-  }
+  list.innerHTML = _productsAll.map(p => _productCardHtml(p, true)).join('');
+  _productsAll.forEach(p => loadProductReviewsSummary(p.id));
 }
 
 // ---- Mode boutique unique (pagination classique) ----
@@ -1186,79 +1142,143 @@ function _computeHomeFeedCategoryIds() {
   return TREE_B2.map(c => c.id);
 }
 
-// ---- Grille produits personnalisée ----
-let _homeFeedPage = 0;
-let _homeFeedProducts = [];
+// ---- Grille accueil : produits groupés par TYPE (catégorie), sections A → Z ----
+// Tous les vendeurs sont mélangés à l'intérieur d'une même section :
+// tous les téléphones ensemble, toutes les robes ensemble, etc.
+// À l'intérieur d'une section : vendeurs positionnés par l'admin d'abord,
+// puis publication la plus récente.
+const HOME_SECTION_PREVIEW = 6;     // produits visibles par section avant "Voir plus"
+const HOME_FETCH_BATCH     = 1000;  // taille d'une requête Supabase
+const HOME_FETCH_MAX       = 3000;  // plafond de produits chargés sur l'accueil
 
-async function loadHomeFeed(append = false) {
+let _homeFeedProducts = [];
+let _homeGroups       = [];
+
+// Libellés génériques : rangés tout à la fin, avec le nom de leur section
+// pour ne pas mélanger "Autre" (mode femme) et "Autre" (accessoires).
+const _HOME_GENERIC_LABELS = new Set(['autre', 'autres', 'sans catégorie']);
+
+function _homeCleanSection(s) {
+  const t = String(s || '').replace(/^[^A-Za-zÀ-ÿ]+/, '').trim().toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function _homeCategoryMeta(catId) {
+  const c = (typeof TREE_B2 !== 'undefined') ? TREE_B2.find(x => x.id === catId) : null;
+  const label = c ? c.label : ((typeof ALL_CATEGORIES !== 'undefined' && ALL_CATEGORIES[catId]) || 'Autre');
+  const generic = _HOME_GENERIC_LABELS.has(label.trim().toLowerCase());
+  const section = c ? _homeCleanSection(c.section) : '';
+  return {
+    // clé de regroupement : deux catégories de même nom (ex. "Maillot de Bain") fusionnent
+    key:     generic ? (label + '|' + section).toLowerCase() : label.trim().toLowerCase(),
+    title:   generic && section && section !== 'Non classé' ? `${label} · ${section}` : label,
+    generic: generic
+  };
+}
+
+function _homeBuildGroups(products) {
+  const map = new Map();
+  products.forEach(p => {
+    const m = _homeCategoryMeta(p.seller_category);
+    if (!map.has(m.key)) map.set(m.key, { title: m.title, generic: m.generic, items: [] });
+    map.get(m.key).items.push(p);
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.generic !== b.generic) return a.generic ? 1 : -1;   // "Autre"/"Sans catégorie" à la fin
+    return a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' });
+  });
+}
+
+function _homeSectionHtml(g, gi) {
+  const shown = g.items.slice(0, HOME_SECTION_PREVIEW);
+  const rest  = g.items.length - shown.length;
+  return `
+    <div class="home-cat-title" style="grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;
+         margin-top:8px;padding:8px 10px;background:#fff;border-left:4px solid #1677FF;">
+      <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${escapeHtml(g.title)}</span>
+      <span style="font-size:12px;color:#888;font-weight:600;">${g.items.length}</span>
+    </div>
+    ${shown.map(p => _productCardHtml(p, true)).join('')}
+    ${rest > 0 ? `
+      <div id="homeMoreWrap_${gi}" style="grid-column:1 / -1;text-align:center;padding:4px 0 8px;">
+        <button onclick="homeShowMoreInGroup(${gi})"
+          style="background:none;color:#1677FF;border:1px solid #1677FF;padding:8px 22px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;">
+          Voir les ${rest} autres
+        </button>
+      </div>` : ''}
+  `;
+}
+
+function homeShowMoreInGroup(gi) {
+  const g    = _homeGroups[gi];
+  const wrap = document.getElementById('homeMoreWrap_' + gi);
+  if (!g || !wrap) return;
+  const rest = g.items.slice(HOME_SECTION_PREVIEW);
+  wrap.insertAdjacentHTML('beforebegin', rest.map(p => _productCardHtml(p, true)).join(''));
+  rest.forEach(p => loadProductReviewsSummary(p.id));
+  wrap.remove();
+}
+window.homeShowMoreInGroup = homeShowMoreInGroup;
+
+// Le paramètre "append" est conservé pour compatibilité mais ignoré :
+// l'accueil est toujours reconstruit en entier (groupes triés A → Z).
+async function loadHomeFeed() {
   const list = document.getElementById('homeProductsGrid');
   if (!list) return;
 
-  if (!append) {
-    _homeFeedPage = 0;
-    list.innerHTML = '<div class="loading">Chargement...</div>';
-  }
+  list.innerHTML = '<div class="loading" style="grid-column:1 / -1;">Chargement...</div>';
 
-  const from = _homeFeedPage * 16;
-  const to = from + 15;
   const catIds = _computeHomeFeedCategoryIds();
   if (!catIds.length) { list.innerHTML = ''; return; }
 
   const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
 
   try {
-    let query = db
-      .from(TABLES.PRODUCTS)
-      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_boutique)')
-      .in('seller_category', catIds)
-      .eq('is_active', true)
-      .eq('sellers.is_blocked', false)
-      .eq('sellers.is_active', true);
+    let all = [];
+    for (let from = 0; from < HOME_FETCH_MAX; from += HOME_FETCH_BATCH) {
+      let query = db
+        .from(TABLES.PRODUCTS)
+        .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_boutique)')
+        .in('seller_category', catIds)
+        .eq('is_active', true)
+        .eq('sellers.is_blocked', false)
+        .eq('sellers.is_active', true);
 
-    if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
+      if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
 
-    // Respect du positionnement/dynamisme du vendeur : ceux avec une position
-    // manuelle (admin) passent d'abord (1, 2, 3...), les autres suivent par
-    // ordre de publication la plus récente.
-    const { data, error } = await query
-      .order('position_boutique', { foreignTable: 'sellers', ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .range(from, to);
+      const { data, error } = await query
+        .order('position_boutique', { foreignTable: 'sellers', ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: true })            // départage stable entre les lots
+        .range(from, from + HOME_FETCH_BATCH - 1);
 
-    if (error) {
-      console.error('loadHomeFeed error:', JSON.stringify(error));
-      if (!append) list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+      if (error) {
+        console.error('loadHomeFeed error:', JSON.stringify(error));
+        list.innerHTML = '<p style="grid-column:1 / -1;text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+        return;
+      }
+      all = all.concat(data || []);
+      if (!data || data.length < HOME_FETCH_BATCH) break;
+    }
+
+    _homeFeedProducts = all;
+
+    if (!all.length) {
+      _homeGroups = [];
+      list.innerHTML = '<p style="grid-column:1 / -1;text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
       return;
     }
 
-    const oldBtn = document.getElementById('loadMoreHomeFeed');
-    if (oldBtn) oldBtn.remove();
-    if (!append) list.innerHTML = '';
+    _homeGroups = _homeBuildGroups(all);
+    list.innerHTML = _homeGroups.map(_homeSectionHtml).join('');
 
-    if (!append && (!data || data.length === 0)) {
-      list.innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
-      _homeFeedProducts = [];
-      return;
-    }
-
-    _homeFeedProducts = append ? _homeFeedProducts.concat(data || []) : (data || []);
-
-    list.insertAdjacentHTML('beforeend', (data || []).map(p => _productCardHtml(p, true)).join(''));
-    (data || []).forEach(p => loadProductReviewsSummary(p.id));
+    // Avis : uniquement pour les cartes réellement affichées
+    _homeGroups.forEach(g => g.items.slice(0, HOME_SECTION_PREVIEW).forEach(p => loadProductReviewsSummary(p.id)));
 
     if (_sidebarContext === 'home') _populateHomeSidebarSellersFromProducts(_homeFeedProducts);
-
-    if (data && data.length === 16) {
-      list.insertAdjacentHTML('beforeend', `
-        <div id="loadMoreHomeFeed" style="grid-column:1 / -1;text-align:center;padding:16px;">
-          <button onclick="_homeFeedPage++; loadHomeFeed(true);" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
-            Voir plus
-          </button>
-        </div>
-      `);
-    }
   } catch (e) {
     console.error('loadHomeFeed exception:', e);
+    list.innerHTML = '<p style="grid-column:1 / -1;text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
   }
 }
 window.loadHomeFeed = loadHomeFeed;

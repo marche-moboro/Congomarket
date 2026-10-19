@@ -292,13 +292,13 @@ let _transferring  = false;
 let _promosAll     = [];
 let _promosPage    = 0;
 let _promosType    = '';
-const PROMOS_PER_PAGE = 16;
+const PROMOS_PER_PAGE = 8;
 let _myProductsAll  = [];
 let _myProductsPage = 0;
-const MY_PRODUCTS_PER_PAGE = 16;
+const MY_PRODUCTS_PER_PAGE = 15;
 let _myPromosAll    = [];
 let _myPromosPage   = 0;
-const MY_PROMOS_PER_PAGE = 16;
+const MY_PROMOS_PER_PAGE = 15;
 
 async function publishProduct() {
   if (!currentSeller) {
@@ -326,7 +326,10 @@ async function publishProduct() {
 
   try {
 const name        = document.getElementById('pubName').value.trim();
-const price       = document.getElementById('pubPrice').value.trim();
+// Prix : soit un montant saisi, soit "Prix négociable" (enregistré avec price = 0)
+const priceMode   = document.getElementById('pubPriceMode')?.value || '';
+const priceRaw    = document.getElementById('pubPrice').value.trim();
+const price       = priceMode === 'negotiable' ? '0' : priceRaw;
 const description = document.getElementById('pubDescription').value.trim();
 const qte_min     = document.getElementById('pubQteMin')?.value.trim() || null;
 const prix_min    = document.getElementById('pubPrixMin')?.value.trim() || null;
@@ -338,30 +341,33 @@ const matiere     = document.getElementById('pubMatiere')?.value.trim() || null;
     // ✅ Utiliser pubPhotosFiles[] (système multi-photos) — minimum 1 photo suffisante
     const photoFiles = window.pubPhotosFiles || [];
 
-   
-if (!name || !price) {
-      showToast('Nom et prix sont obligatoires', 'error');
-      return;
-    }
 
-    // Catégorie de publication — obligatoire, dépend de la section choisie
-    // juste avant (window._pubSection, via choosePubSection())
-    const ownCatEl = document.getElementById('pubOwnCategory');
-    if (!ownCatEl || !ownCatEl.value) {
-      showToast('Choisissez une catégorie', 'error');
+    // Seuls 3 éléments sont obligatoires : photo, nom, prix (dans l'ordre du formulaire)
+    if (photoFiles.length === 0) {
+      showToast('Ajoutez une photo', 'error');
       return;
     }
-    const sellerCategoryToUse = ownCatEl.value;
-    if (isNaN(Number(price)) || Number(price) <= 0) {
+    if (!name) {
+      showToast('Le nom du produit est obligatoire', 'error');
+      return;
+    }
+    if (!priceMode) {
+      showToast('Choisissez « Saisir le prix » ou « Prix négociable »', 'error');
+      return;
+    }
+    if (priceMode === 'amount' && (!priceRaw || isNaN(Number(priceRaw)) || Number(priceRaw) <= 0)) {
       showToast('Prix invalide', 'error');
       return;
     }
 
-    // ✅ Au moins 1 photo sur 3 suffit
-    if (photoFiles.length === 0) {
-      showToast('Ajoutez au moins 1 photo', 'error');
-      return;
-    }
+    // Catégorie — facultative. Si le vendeur n'en choisit pas, le produit est
+    // rangé dans "Sans catégorie" de la section choisie (window._pubSection),
+    // ce qui le garde visible dans "Mes publications".
+    const ownCatEl = document.getElementById('pubOwnCategory');
+    const DEFAULT_CATEGORY_BY_SECTION = { A: 'sans-categorie-a', B1: 'sans-categorie-b1', B2: 'sans-categorie-b2' };
+    const sellerCategoryToUse = (ownCatEl && ownCatEl.value)
+      ? ownCatEl.value
+      : DEFAULT_CATEGORY_BY_SECTION[window._pubSection || 'B2'];
 
     // Uploader toutes les photos sélectionnées (1, 2 ou 3)
     showToast(`Upload ${photoFiles.length} photo(s)...`, 'info');
@@ -420,6 +426,9 @@ if (!name || !price) {
 });
 const ownCatReset = document.getElementById('pubOwnCategory');
 if (ownCatReset) ownCatReset.value = '';
+const ownCatLabelReset = document.getElementById('pubOwnCategoryLabel');
+if (ownCatLabelReset) { ownCatLabelReset.textContent = 'Choisir une catégorie (facultatif)'; ownCatLabelReset.style.color = '#888'; }
+if (typeof resetPricePicker === 'function') resetPricePicker('pub');
     const titlePreview = document.getElementById('pubTitlePreview');
     if (titlePreview) titlePreview.style.display = 'none';
 
@@ -498,7 +507,7 @@ function _appendMyProducts() {
         onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
       <div class="my-product-info">
         <strong>${escapeHtml(p.name)}</strong>
-        <span>${formatPrice(p.price)} FCFA / unité</span>
+        <span>${isPriceNegotiable(p.price) ? 'Prix négociable' : formatPrice(p.price) + ' FCFA / unité'}</span>
         ${renderSpecsHtml(p)}
         ${isGrossiste ? renderQuantityTiers(p.price, p.qte_min, p.prix_min, p.qte_max, p.prix_max) : ''}
         <div style="display:flex;gap:8px;margin-top:6px;">
@@ -571,7 +580,13 @@ async function openEditProduct(productId) {
     document.getElementById('editProductId').value      = p.id;
     document.getElementById('editProductCategory').value = p.seller_category || '';
     document.getElementById('editPubName').value        = p.name        || '';
-    document.getElementById('editPubPrice').value       = p.price       || '';
+    // Prix : montant saisi, ou "Prix négociable" quand price = 0
+    if (isPriceNegotiable(p.price)) {
+      setPriceMode('editPub', 'negotiable', true);
+    } else {
+      setPriceMode('editPub', 'amount', true);
+      document.getElementById('editPubPrice').value = p.price;
+    }
     document.getElementById('editPubDescription').value = p.description || '';
     document.getElementById('editPubTaille').value      = p.taille      || '';
     document.getElementById('editPubMatiere').value     = p.matiere     || '';
@@ -603,11 +618,21 @@ async function saveEditProduct() {
       return;
     }
     const name        = document.getElementById('editPubName').value.trim();
-    const price       = document.getElementById('editPubPrice').value.trim();
+    const priceMode   = document.getElementById('editPubPriceMode')?.value || '';
+    const priceRaw    = document.getElementById('editPubPrice').value.trim();
+    const price       = priceMode === 'negotiable' ? '0' : priceRaw;
     const description = document.getElementById('editPubDescription').value.trim();
 
-    if (!name || !price) {
-      showToast('Nom et prix sont obligatoires', 'error');
+    if (!name) {
+      showToast('Le nom du produit est obligatoire', 'error');
+      return;
+    }
+    if (!priceMode) {
+      showToast('Choisissez « Saisir le prix » ou « Prix négociable »', 'error');
+      return;
+    }
+    if (priceMode === 'amount' && (!priceRaw || isNaN(Number(priceRaw)) || Number(priceRaw) <= 0)) {
+      showToast('Prix invalide', 'error');
       return;
     }
 
@@ -677,7 +702,10 @@ const { data: products } = await db.from(TABLES.PRODUCTS)
     list.innerHTML =
       '<p style="text-align:center;padding:20px;color:#888;">Aucune publication à promouvoir dans cette section.</p>';
   } else {
-list.innerHTML = products.map(p => `
+list.innerHTML = products.map(p => {
+    // Produit "Prix négociable" (price = 0) : le vendeur saisit lui-même le prix d'avant
+    const negotiable = isPriceNegotiable(p.price);
+    return `
       <div class="promo-select-card">
         <img src="${escapeHtml(p.image)}"
           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'">
@@ -685,10 +713,13 @@ list.innerHTML = products.map(p => `
           <strong>${escapeHtml(p.name)}</strong>
           <div class="promo-prices">
             <div class="price-input-group">
-              <label>Prix unitaire original :</label>
-              <input type="number" id="origPrice_${p.id}" value="${p.price}" min="0"
-                readonly
-                style="background:#f5f5f5;color:#888;cursor:not-allowed;border:1px solid #ddd;">
+              <label>${negotiable ? 'Prix d\'avant (à saisir) :' : 'Prix unitaire original :'}</label>
+              ${negotiable
+                ? `<input type="number" id="origPrice_${p.id}" value="" min="1" placeholder="Prix d'avant (FCFA)"
+                    style="border:1px solid #91caff;">`
+                : `<input type="number" id="origPrice_${p.id}" value="${p.price}" min="0"
+                    readonly
+                    style="background:#f5f5f5;color:#888;cursor:not-allowed;border:1px solid #ddd;">`}
             </div>
             <div class="price-input-group">
               <label>Nouveau prix promo :</label>
@@ -696,6 +727,7 @@ list.innerHTML = products.map(p => `
                 oninput="recalcPromoGrid('${p.id}', ${p.qte_min || 'null'}, ${p.qte_max || 'null'})">
             </div>
           </div>
+          <p style="font-size:11px;color:#fa8c16;margin:2px 0 8px;">⚠️ Une promo doit être d'au moins -${PROMO_MIN_DISCOUNT}% par rapport au prix d'avant.</p>
           ${(p.qte_min || p.qte_max) ? `
           <div id="promoGrid_${p.id}" style="margin:6px 0;padding:6px 8px;background:#f5f7fb;border-radius:8px;font-size:12px;">
             ${p.qte_min ? `<div id="promoGridMin_${p.id}" style="color:#52c41a;font-weight:600;">Qté min : ${p.qte_min} → <span class="promoGridMinPrice_${p.id}">${formatPrice(p.prix_min)} FCFA</span></div>` : ''}
@@ -707,6 +739,7 @@ list.innerHTML = products.map(p => `
             data-image="${escapeHtml(p.image)}"
             data-category="${escapeHtml(p.seller_category || '')}"
             data-original-price="${p.price}"
+            data-negotiable="${negotiable ? '1' : '0'}"
             data-qte-min="${p.qte_min || ''}"
             data-prix-min="${p.prix_min || ''}"
             data-qte-max="${p.qte_max || ''}"
@@ -716,7 +749,8 @@ list.innerHTML = products.map(p => `
           </button>
         </div>
       </div>
-    `).join('');
+    `;
+  }).join('');
   }
   showPage('sendToPromoPage');
 
@@ -732,13 +766,28 @@ async function transferToPromo(productId, name, image) {
   const btn = document.querySelector(`.promo-transfer-btn[data-id="${productId}"]`);
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
   try {
-// Prix original lu depuis data-original-price — impossible à modifier via l'input readonly
-const originalPrice   = btn ? btn.dataset.originalPrice : '';
+// Prix original lu depuis data-original-price — impossible à modifier via l'input readonly.
+// Exception : produit "Prix négociable" (price = 0) → le vendeur saisit le prix d'avant.
+const isNegotiable    = !!btn && btn.dataset.negotiable === '1';
+let   originalPrice   = btn ? btn.dataset.originalPrice : '';
+if (isNegotiable) {
+  const origInput = document.getElementById('origPrice_' + productId);
+  originalPrice   = origInput ? origInput.value.trim() : '';
+  if (!originalPrice || isNaN(Number(originalPrice)) || Number(originalPrice) <= 0) {
+    showToast('Saisissez le prix d\'avant', 'error');
+    return;
+  }
+}
 const promoPriceInput = document.getElementById('promoPrice_' + productId);
 const promoPrice      = promoPriceInput ? promoPriceInput.value : '';
 
-  if (!promoPrice || Number(promoPrice) >= Number(originalPrice)) {
-    showToast('Le prix promo doit être inférieur au prix original', 'error');
+  if (!promoPrice || Number(promoPrice) <= 0 || Number(promoPrice) >= Number(originalPrice)) {
+    showToast('Le prix promo doit être inférieur au prix d\'avant', 'error');
+    return;
+  }
+  // Réduction minimale : -15% (comparaison en entiers, sans erreur d'arrondi)
+  if (Number(promoPrice) * 100 > Number(originalPrice) * (100 - PROMO_MIN_DISCOUNT)) {
+    showToast(`La promo doit être d'au moins -${PROMO_MIN_DISCOUNT}% : prix promo maximum ${formatPrice(maxPromoPrice(originalPrice))} FCFA`, 'error');
     return;
   }
 

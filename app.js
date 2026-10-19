@@ -221,7 +221,9 @@ function populatePubOwnCategories() {
 
   // Réinitialise la sélection à chaque ouverture d'une nouvelle section
   hidden.value = '';
-  if (label) { label.textContent = 'Choisir une catégorie *'; label.style.color = '#888'; }
+  if (label) { label.textContent = 'Choisir une catégorie (facultatif)'; label.style.color = '#888'; }
+  // Nouveau formulaire : le choix du prix repart à zéro à chaque ouverture
+  if (typeof resetPricePicker === 'function') resetPricePicker('pub');
   const arrowEl = document.getElementById('pubOwnCategoryArrow');
   if (arrowEl) arrowEl.style.transform = '';
   picker.style.display = 'none';

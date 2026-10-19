@@ -249,6 +249,8 @@ const TREE_A = [
   {id:'materiaux-de-musique-en-gros', label:'Matériaux de Musique en Gros', section:'🌾 AGRICULTURE, PECHE & LOISIRS'},
   {id:'materiaux-du-multimedia-en-gros', label:'Matériaux du Multimédia en Gros', section:'🌾 AGRICULTURE, PECHE & LOISIRS'},
   {id:'autre-agriculture-', label:'Autre', section:'🌾 AGRICULTURE, PECHE & LOISIRS'},
+  // Catégorie par défaut quand le vendeur n'en choisit pas (champ facultatif)
+  {id:'sans-categorie-a', label:'Sans catégorie', section:'📦 NON CLASSÉ'},
 ];
 const TREE_A_IDS = new Set(TREE_A.map(c => c.id));
 
@@ -340,6 +342,8 @@ const TREE_B1 = [
   {id:'gardiennage-securite', label:'Gardiennage & Sécurité', section:'🛒 COMMERCE & AUTRES SERVICES'},
   {id:'service-de-demenagement', label:'Service de Déménagement', section:'🛒 COMMERCE & AUTRES SERVICES'},
   {id:'autre-commerce-aut', label:'Autre', section:'🛒 COMMERCE & AUTRES SERVICES'},
+  // Catégorie par défaut quand le vendeur n'en choisit pas (champ facultatif)
+  {id:'sans-categorie-b1', label:'Sans catégorie', section:'📦 NON CLASSÉ'},
 ];
 const TREE_B1_IDS = new Set(TREE_B1.map(c => c.id));
 
@@ -493,6 +497,8 @@ const TREE_B2 = [
   {id:'contreplaque', label:'Contreplaqué', section:'🧱 MATÉRIAUX DE CONSTRUCTION'},
   {id:'tole', label:'Tole', section:'🧱 MATÉRIAUX DE CONSTRUCTION'},
   {id:'autres-articles-couleur-different-tout-les-autres', label:'Autres articles (couleur différent  tout les Autres)', section:'🧱 MATÉRIAUX DE CONSTRUCTION'},
+  // Catégorie par défaut quand le vendeur n'en choisit pas (champ facultatif)
+  {id:'sans-categorie-b2', label:'Sans catégorie', section:'📦 NON CLASSÉ'},
 ];
 const TREE_B2_IDS = new Set(TREE_B2.map(c => c.id));
 
@@ -569,6 +575,24 @@ async function verifyPin(code, pin, table) {
 function formatPrice(price) {
   if (!price || isNaN(Number(price))) return '0';
   return Number(price).toLocaleString('fr-FR');
+}
+
+// ── Réduction minimale d'une promotion (en %) ───────────────────
+// Toute promo du site doit être d'au moins -15% par rapport au prix d'avant.
+const PROMO_MIN_DISCOUNT = 15;
+// Prix promo maximum autorisé pour un prix d'avant donné (arrondi vers le bas)
+function maxPromoPrice(originalPrice) {
+  return Math.floor(Number(originalPrice) * (100 - PROMO_MIN_DISCOUNT) / 100);
+}
+
+// ── Prix négociable ─────────────────────────────────────────────
+// Convention : un produit dont le prix est 0 (ou vide) est "Prix négociable".
+// priceLabel() renvoie le texte à afficher à la place de "X FCFA".
+function isPriceNegotiable(price) {
+  return !(Number(price) > 0);
+}
+function priceLabel(price) {
+  return isPriceNegotiable(price) ? 'Prix négociable' : formatPrice(price) + ' FCFA';
 }
 
 

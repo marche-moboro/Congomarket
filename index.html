@@ -1243,7 +1243,7 @@ header p { font-size: 12px; opacity: .80; }
     </div>
     <div class="form-card">
       <h2>Informations</h2>
-      <input type="text" id="exportFullName" placeholder="Nom complet / Raison sociale *">
+      <input type="text" id="exportFullName" placeholder="Nom de la boutique *">
       <div style="display:flex;gap:8px;margin-bottom:10px;">
 <select id="exportCountryCode"
  style="width:145px;padding:13px 10px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:13px;outline:none;background:#fafafa;">
@@ -1361,7 +1361,7 @@ header p { font-size: 12px; opacity: .80; }
       <option value="64">🇳🇿 +64 Nouvelle-Zélande</option>
     </optgroup>
   </select>
-  <input type="tel" id="exportPhone" placeholder="Numéro complet avec le 0 *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+  <input type="tel" id="exportPhone" placeholder="Numéro de service *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
 </div>
       <input type="text" id="exportQuartier" placeholder="Quartier / Zone *">
       <input type="text" id="exportAddress" placeholder="Adresse complète *">
@@ -1601,8 +1601,8 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title">Modifier mon profil</div></div>
     </div>
     <div class="form-card">
-      <input type="text" id="editFullName" placeholder="Nom complet *">
-      <input type="tel" id="editPhone" placeholder="Téléphone *">
+      <input type="text" id="editFullName" placeholder="Nom de la boutique *">
+      <input type="tel" id="editPhone" placeholder="Numéro de service *">
       <input type="text" id="editQuartier" placeholder="Quartier *">
       <input type="text" id="editAddress" placeholder="Adresse *">
       <input type="text" id="editVille" placeholder="Ville *">
@@ -1621,11 +1621,43 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title">Publier un produit</div></div>
     </div>
     <div class="form-card">
-      <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Nom du produit</label>
+      <!-- 1. Photo (en premier) -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo *</label>
+
+        <div id="pubPhotosPreview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="pubPhotoButtons">
+          <label for="pubGallery" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0f7ff;border:2px dashed #1677FF;padding:14px;border-radius:14px;cursor:pointer;color:#1677FF;font-weight:600;font-size:13px;">
+            🖼️ Galerie
+          </label>
+          <input type="file" id="pubGallery" accept="image/*" style="display:none;" onchange="addPubPhotos(this, 'gallery')">
+
+          <label for="pubCamera" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0fff4;border:2px dashed #52c41a;padding:14px;border-radius:14px;cursor:pointer;color:#52c41a;font-weight:600;font-size:13px;">
+            📷 Caméra
+          </label>
+          <input type="file" id="pubCamera" accept="image/*" capture="environment" style="display:none;" onchange="addPubPhotos(this, 'camera')">
+        </div>
+      </div>
+
+      <!-- 2. Nom du produit -->
+      <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Nom du produit *</label>
       <input type="text" id="pubName" placeholder="Nom du produit *" oninput="updatePubPreview()">
 
-      <label style="font-size:13px;color:#555;font-weight:600;margin-top:10px;display:block;">💰 Prix unitaire (FCFA) *</label>
-      <input type="number" id="pubPrice" placeholder="Prix unitaire *" min="0" oninput="updatePubPreview()">
+      <!-- 3. Prix : au clic, 2 choix (Saisir le prix / Prix négociable) -->
+      <label style="font-size:13px;color:#555;font-weight:600;margin-top:10px;display:block;">💰 Prix *</label>
+      <div id="pubPricePicker" style="margin-bottom:10px;">
+        <button type="button" id="pubPriceDisplay" onclick="togglePriceChoices('pub')" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;background:#fafafa;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;">
+          <span id="pubPriceDisplayLabel" style="color:#888;">Choisir le prix *</span>
+          <span id="pubPriceArrow" style="font-weight:900;color:#1677FF;transition:transform .2s;flex-shrink:0;">›</span>
+        </button>
+        <div id="pubPriceChoices" style="display:none;margin-top:6px;border:1.5px solid #e8e8e8;border-radius:12px;overflow:hidden;background:#fff;">
+          <button type="button" onclick="setPriceMode('pub','amount')" style="display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #f0f0f0;padding:13px 14px;font-size:14px;font-weight:600;color:#333;cursor:pointer;">✏️ Saisir le prix</button>
+          <button type="button" onclick="setPriceMode('pub','negotiable')" style="display:block;width:100%;text-align:left;background:none;border:none;padding:13px 14px;font-size:14px;font-weight:600;color:#333;cursor:pointer;">🤝 Prix négociable</button>
+        </div>
+        <input type="number" id="pubPrice" placeholder="Prix unitaire (FCFA) *" min="0" style="display:none;margin-top:6px;margin-bottom:0;" oninput="updatePubPreview()">
+        <input type="hidden" id="pubPriceMode" value="">
+      </div>
 
       <!-- Champs quantité — affichés uniquement pour grossistes/fournisseurs -->
       <div id="pubQteSection" style="display:none;">
@@ -1644,7 +1676,7 @@ header p { font-size: 12px; opacity: .80; }
       <div id="pubCategorySection" style="margin:10px 0;">
         <input type="hidden" id="pubOwnCategory" value="">
         <button type="button" id="pubOwnCategoryDisplay" onclick="_togglePubCategoryList()" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;background:#fafafa;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span id="pubOwnCategoryLabel" style="color:#888;">Choisir une catégorie *</span>
+          <span id="pubOwnCategoryLabel" style="color:#888;">Choisir une catégorie (facultatif)</span>
           <span id="pubOwnCategoryArrow" style="font-weight:900;color:#1677FF;transition:transform .2s;flex-shrink:0;">›</span>
         </button>
         <div id="pubCategoryPicker" style="display:none;margin-top:6px;border:1.5px solid #e8e8e8;border-radius:12px;padding:4px 10px;max-height:320px;overflow-y:auto;background:#fff;"></div>
@@ -1658,25 +1690,6 @@ header p { font-size: 12px; opacity: .80; }
 
       <!-- Aperçu -->
       <div id="pubTitlePreview" style="font-size:12px;color:#1677FF;font-weight:600;margin:10px 0;padding:8px 10px;background:#f5f7fb;border-radius:8px;display:none;"></div>
-
-      <!-- Zone photo -->
-      <div style="margin-bottom:12px;">
-        <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo *</label>
-
-        <div id="pubPhotosPreview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="pubPhotoButtons">
-          <label for="pubGallery" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0f7ff;border:2px dashed #1677FF;padding:14px;border-radius:14px;cursor:pointer;color:#1677FF;font-weight:600;font-size:13px;">
-            🖼️ Galerie
-          </label>
-          <input type="file" id="pubGallery" accept="image/*" style="display:none;" onchange="addPubPhotos(this, 'gallery')">
-
-          <label for="pubCamera" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0fff4;border:2px dashed #52c41a;padding:14px;border-radius:14px;cursor:pointer;color:#52c41a;font-weight:600;font-size:13px;">
-            📷 Caméra
-          </label>
-          <input type="file" id="pubCamera" accept="image/*" capture="environment" style="display:none;" onchange="addPubPhotos(this, 'camera')">
-        </div>
-      </div>
 
       <button class="primary-btn" onclick="publishProduct()">📤 Publier</button>
       <button class="secondary-btn" onclick="goBackToDashboard()">Annuler</button>
@@ -1708,8 +1721,19 @@ header p { font-size: 12px; opacity: .80; }
       <input type="hidden" id="editProductCategory">
       <input type="text" id="editPubName" placeholder="Nom du produit *">
 
-      <label style="font-size:13px;color:#555;font-weight:600;margin-top:4px;display:block;">💰 Prix unitaire (FCFA) *</label>
-      <input type="number" id="editPubPrice" placeholder="Prix unitaire *" min="0">
+      <label style="font-size:13px;color:#555;font-weight:600;margin-top:4px;display:block;">💰 Prix *</label>
+      <div id="editPubPricePicker" style="margin-bottom:10px;">
+        <button type="button" id="editPubPriceDisplay" onclick="togglePriceChoices('editPub')" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;background:#fafafa;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;">
+          <span id="editPubPriceDisplayLabel" style="color:#888;">Choisir le prix *</span>
+          <span id="editPubPriceArrow" style="font-weight:900;color:#1677FF;transition:transform .2s;flex-shrink:0;">›</span>
+        </button>
+        <div id="editPubPriceChoices" style="display:none;margin-top:6px;border:1.5px solid #e8e8e8;border-radius:12px;overflow:hidden;background:#fff;">
+          <button type="button" onclick="setPriceMode('editPub','amount')" style="display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #f0f0f0;padding:13px 14px;font-size:14px;font-weight:600;color:#333;cursor:pointer;">✏️ Saisir le prix</button>
+          <button type="button" onclick="setPriceMode('editPub','negotiable')" style="display:block;width:100%;text-align:left;background:none;border:none;padding:13px 14px;font-size:14px;font-weight:600;color:#333;cursor:pointer;">🤝 Prix négociable</button>
+        </div>
+        <input type="number" id="editPubPrice" placeholder="Prix unitaire (FCFA) *" min="0" style="display:none;margin-top:6px;margin-bottom:0;">
+        <input type="hidden" id="editPubPriceMode" value="">
+      </div>
 
       <!-- Champs quantité — affichés uniquement pour grossistes/fournisseurs -->
       <div id="editQteSection" style="display:none;">
@@ -1948,7 +1972,7 @@ header p { font-size: 12px; opacity: .80; }
       <div><div class="section-title" id="vipRegisterFormTitle">Créer compte VIP</div></div>
     </div>
     <div class="form-card">
-      <input type="text" id="vipRegFullName" placeholder="Nom complet *">
+      <input type="text" id="vipRegFullName" placeholder="Nom de la boutique *">
       <div style="display:flex;gap:8px;margin-bottom:10px;">
   <select id="vipRegCountryCode"
    style="width:145px;padding:13px 10px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:13px;outline:none;background:#fafafa;">
@@ -2066,7 +2090,7 @@ header p { font-size: 12px; opacity: .80; }
       <option value="64">🇳🇿 +64 Nouvelle-Zélande</option>
     </optgroup>
   </select>
-  <input type="tel" id="vipRegPhone" placeholder="Numéro complet avec le 0 *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+  <input type="tel" id="vipRegPhone" placeholder="Numéro de service *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
 </div>
       <input type="text" id="vipRegQuartier" placeholder="Quartier *">
       <input type="text" id="vipRegAddress" placeholder="Adresse *">
@@ -2228,7 +2252,7 @@ header p { font-size: 12px; opacity: .80; }
     </div>
     <div class="form-card">
       <h2>Informations</h2>
-      <input type="text" id="indepFullName" placeholder="Nom complet *">
+      <input type="text" id="indepFullName" placeholder="Nom de la boutique *">
       <div style="display:flex;gap:8px;margin-bottom:10px;">
   <select id="indepCountryCode"
    style="width:145px;padding:13px 10px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:13px;outline:none;background:#fafafa;">
@@ -2346,7 +2370,7 @@ header p { font-size: 12px; opacity: .80; }
       <option value="64">🇳🇿 +64 Nouvelle-Zélande</option>
     </optgroup>
   </select>
-  <input type="tel" id="indepPhone" placeholder="Numéro complet avec le 0 *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
+  <input type="tel" id="indepPhone" placeholder="Numéro de service *" style="flex:1;padding:13px 14px;border-radius:12px;border:1.5px solid #e8e8e8;font-size:14px;outline:none;background:#fafafa;">
 </div>
       <input type="text" id="indepQuartier" placeholder="Quartier *">
       <input type="text" id="indepAddress" placeholder="Adresse *">
@@ -3434,17 +3458,74 @@ function refreshPhotoPreviews() {
 // Aperçu — Nom + Prix, affiché entre Description et Photo
 function updatePubPreview() {
   const nom     = document.getElementById('pubName')?.value.trim()  || '';
+  const mode    = document.getElementById('pubPriceMode')?.value    || '';
   const prix    = document.getElementById('pubPrice')?.value.trim() || '';
   const preview = document.getElementById('pubTitlePreview');
   if (!preview) return;
-  if (nom || prix) {
+  let prixTxt = '';
+  if (mode === 'negotiable')  prixTxt = ' — Prix négociable';
+  else if (prix)              prixTxt = ' — ' + formatPrice(Number(prix)) + ' FCFA';
+  if (nom || prixTxt) {
     preview.style.display = 'block';
-    preview.innerText = '👁️ Aperçu : ' + (nom || 'Sans nom') + (prix ? ' — ' + formatPrice(Number(prix)) + ' FCFA' : '');
+    preview.innerText = '👁️ Aperçu : ' + (nom || 'Sans nom') + prixTxt;
   } else {
     preview.style.display = 'none';
   }
 }
 window.updatePubPreview = updatePubPreview;
+
+// ==================== CHOIX DU PRIX (Saisir le prix / Prix négociable) ====================
+// p = 'pub' (formulaire de publication) ou 'editPub' (formulaire de modification)
+// Champs : {p}PriceDisplay (bouton), {p}PriceChoices (les 2 choix),
+//          {p}Price (saisie du montant), {p}PriceMode (valeur : '' | 'amount' | 'negotiable')
+function togglePriceChoices(p) {
+  const box   = document.getElementById(p + 'PriceChoices');
+  const arrow = document.getElementById(p + 'PriceArrow');
+  if (!box) return;
+  const willOpen = box.style.display === 'none';
+  box.style.display = willOpen ? 'block' : 'none';
+  if (arrow) arrow.style.transform = willOpen ? 'rotate(90deg)' : '';
+}
+
+function setPriceMode(p, mode, silent) {
+  const modeEl = document.getElementById(p + 'PriceMode');
+  const input  = document.getElementById(p + 'Price');
+  const label  = document.getElementById(p + 'PriceDisplayLabel');
+  const box    = document.getElementById(p + 'PriceChoices');
+  const arrow  = document.getElementById(p + 'PriceArrow');
+  if (!modeEl || !input || !label) return;
+
+  modeEl.value = mode || '';
+  if (box)   box.style.display = 'none';
+  if (arrow) arrow.style.transform = '';
+
+  if (mode === 'amount') {
+    label.textContent = '✏️ Saisir le prix';
+    label.style.color = '#1a1a1a';
+    label.style.fontWeight = '600';
+    input.style.display = 'block';
+    if (!silent) input.focus();
+  } else if (mode === 'negotiable') {
+    label.textContent = '🤝 Prix négociable';
+    label.style.color = '#1677FF';
+    label.style.fontWeight = '700';
+    input.style.display = 'none';
+    input.value = '';
+  } else {
+    label.textContent = 'Choisir le prix *';
+    label.style.color = '#888';
+    label.style.fontWeight = '400';
+    input.style.display = 'none';
+    input.value = '';
+  }
+  if (p === 'pub') updatePubPreview();
+}
+
+function resetPricePicker(p) { setPriceMode(p, '', true); }
+
+window.togglePriceChoices = togglePriceChoices;
+window.setPriceMode       = setPriceMode;
+window.resetPricePicker   = resetPricePicker;
 
 // Preview photo profil
 function previewProfilePhoto(input) {
@@ -5440,7 +5521,7 @@ function openLightbox(src, productId, category, name) {
           <div style="flex:1;min-width:0;">
             <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">
               <div style="font-size:15px;font-weight:700;color:#fff;">${escapeHtml(p.name)}</div>
-              <div style="font-size:19px;font-weight:700;color:#ff4d4f;white-space:nowrap;">${formatPrice(p.price)} FCFA</div>
+              <div style="font-size:${isPriceNegotiable(p.price) ? '15' : '19'}px;font-weight:700;color:#ff4d4f;white-space:nowrap;">${priceLabel(p.price)}</div>
             </div>
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;">
               ${p.taille  ? `<span style="background:#f5f7fb;border:1px solid #e8e8e8;color:#555;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;">📏 ${escapeHtml(p.taille)}</span>` : ''}
@@ -5459,7 +5540,7 @@ function openLightbox(src, productId, category, name) {
               style="background:#25D366;border:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             </button>
-            ${!isMultiServices ? `<button onclick="event.stopPropagation(); addToCartQuick(window._lbCurrentProduct, window._lbCurrentSeller)"
+            ${(!isMultiServices && !isPriceNegotiable(p.price)) ? `<button onclick="event.stopPropagation(); addToCartQuick(window._lbCurrentProduct, window._lbCurrentSeller)"
               style="background:#1677FF;color:white;border:none;width:40px;height:40px;border-radius:50%;font-size:16px;cursor:pointer;position:relative;">
               🛒
               <span id="lbCartBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#FFD700;color:black;width:18px;height:18px;border-radius:50%;font-size:10px;align-items:center;justify-content:center;font-weight:700;"></span>
@@ -5476,7 +5557,7 @@ function openLightbox(src, productId, category, name) {
       `;
       infoBox.style.display = 'block';
       loadProductReviewsSummary(p.id, `lightboxReviews-${p.id}`);
-      if (!isMultiServices && typeof updateCartUI === 'function') updateCartUI();
+      if (!isMultiServices && !isPriceNegotiable(p.price) && typeof updateCartUI === 'function') updateCartUI();
     } else {
       infoBox.style.display = 'none';
     }

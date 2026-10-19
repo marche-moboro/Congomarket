@@ -306,7 +306,7 @@ function _appendSearchProducts() {
       <div class="product-content">
         <h3>${escapeHtml(p.name)}</h3>
         <p class="seller-location">Par: ${escapeHtml((p.sellers && p.sellers.full_name) || p.seller_name || '')}</p>
-        <p class="product-price">${formatPrice(p.price)} FCFA</p>
+        <p class="product-price">${priceLabel(p.price)}</p>
         <div id="reviews-search-${p.id}" style="margin:6px 0;">Chargement des avis...</div>
         <button onclick="openReviewModal('${p.id}','${p.seller_id}')"
           style="background:none;border:1px solid #e8e8e8;color:#1677FF;font-size:11px;font-weight:600;
