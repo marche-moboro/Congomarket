@@ -3,7 +3,7 @@
 // Cache optimisé — fichiers statiques + données réseau
 // ================================================================
 
-const CACHE_SATIC  = 'moboro-static-v28';
+const CACHE_STATIC = 'moboro-static-v28';
 const CACHE_DYNAMIC = 'moboro-dynamic-v28';
 const CACHE_API     = 'moboro-api-v28';
 
@@ -129,7 +129,7 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_STATIC).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached || caches.match('/Congomarket/index.html'));
+      }).catch(() => cached || caches.match('/Congomarket/index.html') || Response.error());
 
       return cached || fetchAndUpdate;
     })
