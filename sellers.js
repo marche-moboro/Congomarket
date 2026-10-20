@@ -375,7 +375,7 @@ async function loadSimilarProducts(productId, category, elementId, productName, 
     if (category) {
       const { data: catMatches } = await db.from(TABLES.PRODUCTS)
         .select('id, name, price, image, seller_id')
-        .eq('seller_category', category)
+        .in('seller_category', categoryDbIds(category))
         .eq('is_active', true)
         .neq('id', productId)
         .limit(30);
@@ -561,7 +561,7 @@ document.getElementById('productsList').innerHTML =
   let query = db
     .from(TABLES.PRODUCTS)
     .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
-    .eq('seller_category', catId)
+    .in('seller_category', categoryDbIds(catId))
     .eq('is_active', true)
     .eq('sellers.is_blocked', false)
     .eq('sellers.is_active', true);
@@ -1139,12 +1139,12 @@ function _computeHomeFeedCategoryIds() {
   // de toutes les catégories Boutique & Vendeur, du plus récent au plus
   // ancien, jusqu'à suppression ou nouvelle publication qui les repousse.
   if (typeof TREE_B2 === 'undefined') return [];
-  return TREE_B2.map(c => c.id);
+  return treeDbIds(TREE_B2);
 }
 
-// ---- Grille accueil : produits groupés par TYPE (catégorie), sections A → Z ----
+// ---- Grille accueil : produits groupés par CATÉGORIE, sections A → Z ----
 // Tous les vendeurs sont mélangés à l'intérieur d'une même section :
-// tous les téléphones ensemble, toutes les robes ensemble, etc.
+// tous les produits « Mode Femme » ensemble, tous les « Tech & Électronique » ensemble, etc.
 // À l'intérieur d'une section : vendeurs positionnés par l'admin d'abord,
 // puis publication la plus récente.
 const HOME_SECTION_PREVIEW = 6;     // produits visibles par section avant "Voir plus"
@@ -1154,24 +1154,15 @@ const HOME_FETCH_MAX       = 3000;  // plafond de produits chargés sur l'accuei
 let _homeFeedProducts = [];
 let _homeGroups       = [];
 
-// Libellés génériques : rangés tout à la fin, avec le nom de leur section
-// pour ne pas mélanger "Autre" (mode femme) et "Autre" (accessoires).
-const _HOME_GENERIC_LABELS = new Set(['autre', 'autres', 'sans catégorie']);
-
-function _homeCleanSection(s) {
-  const t = String(s || '').replace(/^[^A-Za-zÀ-ÿ]+/, '').trim().toLowerCase();
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-
+// "Sans catégorie" : rangé tout à la fin de l'accueil.
+// Chaque produit est rattaché à sa catégorie (nouvel id OU ancien id de sous-catégorie).
 function _homeCategoryMeta(catId) {
-  const c = (typeof TREE_B2 !== 'undefined') ? TREE_B2.find(x => x.id === catId) : null;
-  const label = c ? c.label : ((typeof ALL_CATEGORIES !== 'undefined' && ALL_CATEGORIES[catId]) || 'Autre');
-  const generic = _HOME_GENERIC_LABELS.has(label.trim().toLowerCase());
-  const section = c ? _homeCleanSection(c.section) : '';
+  const c = (typeof findCategoryEntry === 'function' && typeof TREE_B2 !== 'undefined') ? findCategoryEntry(catId, TREE_B2) : null;
+  const label = c ? c.label : 'Sans catégorie';
+  const generic = !c || c.id.indexOf('sans-categorie') === 0;
   return {
-    // clé de regroupement : deux catégories de même nom (ex. "Maillot de Bain") fusionnent
-    key:     generic ? (label + '|' + section).toLowerCase() : label.trim().toLowerCase(),
-    title:   generic && section && section !== 'Non classé' ? `${label} · ${section}` : label,
+    key:     generic ? 'sans-categorie' : label.trim().toLowerCase(),
+    title:   generic ? 'Sans catégorie' : label,
     generic: generic
   };
 }
@@ -1349,20 +1340,20 @@ function _treeForCategoryId(categoryId) {
 
 function _getActiveTreeCatIds() {
   const { tree } = _getActiveTree();
-  return (tree || []).map(c => c.id);
+  return treeDbIds(tree);
 }
 
 // Catégorie précise connue (ex. p.seller_category du produit cliqué) → priorité.
 // Sinon repli sur le contexte de navigation ambiant.
 function _catIdsForCategory(categoryId) {
   const tree = categoryId ? _treeForCategoryId(categoryId) : null;
-  if (tree) return tree.map(c => c.id);
+  if (tree) return treeDbIds(tree);
   return _getActiveTreeCatIds();
 }
 window._getActiveTreeCatIds = _getActiveTreeCatIds;
 window._catIdsForCategory   = _catIdsForCategory;
 
-// ---- Sidebar accueil : villes + sous-catégories (dépend du contexte actif) ----
+// ---- Sidebar accueil : villes + catégories (dépend du contexte actif) ----
 function _populateHomeSidebarStatic() {
   const villes = ['Brazzaville','Pointe-Noire','Dolisie','Nkayi','Oyo','Bétou','Ouesso','Impfondo','Madingou','Owando','Sibiti','Mossaka','Gamboma','Djambala','Makoua','Kinkala','Ewo','Dongou'];
   const currentVille = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
@@ -1376,51 +1367,22 @@ function _populateHomeSidebarStatic() {
       ).join('');
   }
 
-  // Choix de l'arbre de sous-catégories selon le contexte : sur la page catégorie
+  // Choix de l'arbre de catégories selon le contexte : sur la page catégorie
   // (drill-down), on regarde à quel groupe appartient la catégorie ouverte ;
   // sur l'accueil, chaque section (Boutique/Grossiste/Service) a son propre arbre.
   const { tree, treeType } = _getActiveTree();
 
   const subcatsEl = document.getElementById('homeCatSidebarSubcats');
   if (subcatsEl && tree) {
-    // Regroupement en tiroirs repliables (accordéon) par section : un titre
-    // cliquable, suivi de ses sous-catégories cachées tant qu'on ne l'a pas ouvert.
-    const sections = [];
-    let current = null;
-    tree.forEach(c => {
-      const secTitle = c.section || '';
-      if (!current || current.title !== secTitle) {
-        current = { title: secTitle, items: [] };
-        sections.push(current);
-      }
-      current.items.push(c);
-    });
-
-    // Ouvre automatiquement la section qui contient la sous-catégorie active
-    const activeSection = _sidebarContext === 'category' && currentCategory
-      ? sections.find(s => s.items.some(c => c.id === currentCategory))
-      : null;
-
-    subcatsEl.innerHTML = sections.map((s, i) => {
-      const secId = `subcatDrawer${i}`;
-      const isOpen = activeSection === s;
-      return `
-        <button type="button" class="cat-sidebar-subcat-drawer-toggle${isOpen ? ' open' : ''}" onclick="_toggleSubcatDrawer('${secId}', this)">
-          <span>${escapeHtml(s.title)}</span>
-          <span class="cat-sidebar-subcat-drawer-arrow">›</span>
-        </button>
-        <div id="${secId}" class="cat-sidebar-subcat-drawer-body" style="display:${isOpen ? 'block' : 'none'};">
-          ${s.items.map(c => {
-            const isActive = _sidebarContext === 'category' && currentCategory === c.id;
-            return `<button class="cat-sidebar-subcat-btn${isActive ? ' active' : ''}" onclick="openCategory('${c.id}','${treeType}')">${escapeHtml(c.label)}</button>`;
-          }).join('')}
-        </div>
-      `;
+    // Liste simple des catégories, de A à Z ("Sans catégorie" en dernier)
+    subcatsEl.innerHTML = sortedCategories(tree).map(c => {
+      const isActive = _sidebarContext === 'category' && currentCategory === c.id;
+      return `<button class="cat-sidebar-subcat-btn${isActive ? ' active' : ''}" onclick="openCategory('${c.id}','${treeType}')">${c.icon ? escapeHtml(c.icon) + ' ' : ''}${escapeHtml(c.label)}</button>`;
     }).join('');
   }
 }
 
-// ---- Tiroir de sous-catégories : un seul ouvert à la fois (accordéon) ----
+// ---- (ancien tiroir repliable de sous-catégories — conservé, plus utilisé) ----
 function _toggleSubcatDrawer(secId, btn) {
   const body = document.getElementById(secId);
   if (!body) return;
@@ -1509,7 +1471,7 @@ async function getSectionRankedSellers(section, limit) {
   try {
     const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
     const posField = section === 'A' ? 'position_grossiste' : (section === 'B1' ? 'position_service' : 'position_boutique');
-    const catIds = (tree || []).map(c => c.id);
+    const catIds = treeDbIds(tree);
     if (!catIds.length) return [];
 
     // 1) Compter les publications actives par vendeur, dans cette section
@@ -1559,7 +1521,7 @@ async function _fetchHomePromoSellers(section) {
     if (!ranked.length) return [];
 
     const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
-    const catIds = (tree || []).map(c => c.id);
+    const catIds = treeDbIds(tree);
     const sellerIds = ranked.map(s => s.id);
     const nameById = {};
     ranked.forEach(s => { nameById[s.id] = s.full_name; });
@@ -1778,7 +1740,7 @@ const TUTORIAL_SLIDES_ACHETEUR = [
   {
     emoji: '📂',
     title: 'Filtre avec la sidebar',
-    text: "Le bouton bleu > sur le côté gauche de l'écran ouvre un tiroir pour filtrer par ville, sous-catégorie ou vendeur.",
+    text: "Le bouton bleu > sur le côté gauche de l'écran ouvre un tiroir pour filtrer par ville, catégorie ou vendeur.",
     mockup: `
       <div class="tm-sidebar-item tm-active">📍 Toutes les villes</div>
       <div class="tm-sidebar-item">Brazzaville</div>
@@ -2059,7 +2021,7 @@ window.closeAccountChoice = closeAccountChoice;
 // ================================================================
 // PAGES DÉDIÉES — Grossiste & Importateur / Services
 // Même traitement que la page catégorie (openCategory) : titre + retour +
-// sidebar de filtres (villes, sous-catégories du groupe, vendeurs) + grille,
+// sidebar de filtres (villes, catégories du groupe, vendeurs) + grille,
 // mais sur TOUTES les catégories du groupe d'un coup (pas une seule sous-catégorie).
 // ================================================================
 async function _openGroupPage(tree, title, ctx) {
@@ -2078,7 +2040,7 @@ async function _openGroupPage(tree, title, ctx) {
     if (simBlock) simBlock.innerHTML = '';
     updateCartUI();
 
-    const catIds = (tree || []).map(c => c.id);
+    const catIds = treeDbIds(tree);
     if (!catIds.length) { renderProducts([], 'A'); return; }
 
     const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';

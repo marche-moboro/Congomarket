@@ -463,7 +463,7 @@ async function viewMyProducts() {
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
-  const catIds = (tree || []).map(c => c.id);
+  const catIds = treeDbIds(tree);
 
   const { data: products, error } = await db.from(TABLES.PRODUCTS)
     .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category')
@@ -687,7 +687,7 @@ async function openSendToPromo() {
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
-  const catIds = (tree || []).map(c => c.id);
+  const catIds = treeDbIds(tree);
 
 const { data: products } = await db.from(TABLES.PRODUCTS)
 .select('id, name, price, image, is_active, qte_min, prix_min, qte_max, prix_max, seller_category')
@@ -864,7 +864,7 @@ async function viewMyPromos() {
 
   const section = window._pubSection || 'B2';
   const tree = section === 'A' ? TREE_A : (section === 'B1' ? TREE_B1 : TREE_B2);
-  const catIds = (tree || []).map(c => c.id);
+  const catIds = treeDbIds(tree);
 
   const { data: promos, error } = await db.from(TABLES.PROMOS)
       .select('*').eq('seller_id', currentSeller.id).eq('is_active', true)
