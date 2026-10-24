@@ -1006,7 +1006,7 @@ header p { font-size: 12px; opacity: .80; }
   </div>
 
   <div class="cat-sidebar-section">
-    <div class="cat-sidebar-title">📂 Catégories</div>
+    <div class="cat-sidebar-title">📂 Sous-catégories</div>
     <div class="cat-sidebar-scroll-wrap">
       <div id="homeCatSidebarSubcats" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
       <div class="cat-sidebar-scrollbar-track"></div>
@@ -4216,7 +4216,7 @@ async function loadAllPromos() {
     document.getElementById('promosTitle').innerText = '🔥 Promotions Boutiques & Vendeurs';
     showPage('promosPage');
 
-    const catIds = typeof TREE_B2 !== 'undefined' ? treeDbIds(TREE_B2) : [];
+    const catIds = typeof TREE_B2 !== 'undefined' ? TREE_B2.map(c => c.id) : [];
     const { data: promos, error } = await db.from(TABLES.PROMOS)
     .select('id, name, seller_name, original_price, promo_price, image, promo_type, seller_id, seller_phone, qte_min, prix_min, qte_max, prix_max, seller_category')
    .eq('is_active', true)

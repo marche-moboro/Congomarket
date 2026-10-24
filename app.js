@@ -236,11 +236,33 @@ function populatePubOwnCategories() {
 
   if (!tree) { picker.innerHTML = ''; return; }
 
-  // Liste simple des catégories, de A à Z ("Sans catégorie" en dernier)
-  picker.innerHTML = `<div class="cat-sidebar-subcat-drawer-body">` +
-    sortedCategories(tree).map(c =>
-      `<button type="button" class="cat-sidebar-subcat-btn" onclick="_selectPubCategory('${c.id}', '${escapeHtml(c.label).replace(/'/g, "\\'")}')">${c.icon ? escapeHtml(c.icon) + ' ' : ''}${escapeHtml(c.label)}</button>`
-    ).join('') + `</div>`;
+  // Regroupe en tiroirs repliables (accordéon) par section, comme le tiroir
+  // catégories côté client (même style, même comportement).
+  const sections = [];
+  let current = null;
+  tree.forEach(c => {
+    const secTitle = c.section || '';
+    if (!current || current.title !== secTitle) {
+      current = { title: secTitle, items: [] };
+      sections.push(current);
+    }
+    current.items.push(c);
+  });
+
+  picker.innerHTML = sections.map((s, i) => {
+    const secId = `pubCatDrawer${i}`;
+    return `
+      <button type="button" class="cat-sidebar-subcat-drawer-toggle" onclick="_togglePubCatDrawer('${secId}', this)">
+        <span>${escapeHtml(s.title)}</span>
+        <span class="cat-sidebar-subcat-drawer-arrow">›</span>
+      </button>
+      <div id="${secId}" class="cat-sidebar-subcat-drawer-body" style="display:none;">
+        ${s.items.map(c =>
+          `<button type="button" class="cat-sidebar-subcat-btn" onclick="_selectPubCategory('${c.id}', '${escapeHtml(c.label).replace(/'/g, "\\'")}')">${escapeHtml(c.label)}</button>`
+        ).join('')}
+      </div>
+    `;
+  }).join('');
 }
 
 // Ouvre/ferme le panneau de choix de catégorie du formulaire de publication
@@ -253,7 +275,7 @@ function _togglePubCategoryList() {
   if (arrowEl) arrowEl.style.transform = willOpen ? 'rotate(90deg)' : '';
 }
 
-// (ancien accordéon par section — conservé, plus utilisé)
+// Accordéon des sections à l'intérieur du panneau — un seul tiroir ouvert à la fois
 function _togglePubCatDrawer(secId, btn) {
   const body = document.getElementById(secId);
   if (!body) return;
