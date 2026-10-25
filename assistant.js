@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  const AI_TIMEOUT_MS = 9000;
+  const AI_TIMEOUT_MS = 14000;
   const PENDING_KEY = 'moboro_ai_pending';
 
   // ---------------------------------------------------------------
