@@ -1147,12 +1147,14 @@ function _computeHomeFeedCategoryIds() {
 // tous les téléphones ensemble, toutes les robes ensemble, etc.
 // À l'intérieur d'une section : vendeurs positionnés par l'admin d'abord,
 // puis publication la plus récente.
-const HOME_SECTION_PREVIEW = 6;     // produits visibles par section avant "Voir plus"
+const HOME_BATCH_SIZE      = 16;    // produits affichés par chargement (2 colonnes x 8 lignes)
+const HOME_PRIORITY_PER_BATCH = 4;  // produits mis en avant par l'admin dans chaque chargement
+const HOME_MAX_PER_CAT     = 2;     // max de produits d'une même catégorie par chargement
 const HOME_FETCH_BATCH     = 1000;  // taille d'une requête Supabase
 const HOME_FETCH_MAX       = 3000;  // plafond de produits chargés sur l'accueil
 
 let _homeFeedProducts = [];
-let _homeGroups       = [];
+let _homeState        = null;   // { priority:[], queues:[], ptr:0, rng, shown:0 }
 
 // Libellés génériques : rangés tout à la fin, avec le nom de leur section
 // pour ne pas mélanger "Autre" (mode femme) et "Autre" (accessoires).
@@ -1176,49 +1178,102 @@ function _homeCategoryMeta(catId) {
   };
 }
 
-function _homeBuildGroups(products) {
-  const map = new Map();
+// ---- Mélange reproductible : même ordre pendant toute la session, nouvel ordre à la réouverture ----
+function _homeSeed() {
+  try {
+    let v = sessionStorage.getItem('moboro_home_seed');
+    if (!v) { v = String(Math.floor(Math.random() * 2147483647) + 1); sessionStorage.setItem('moboro_home_seed', v); }
+    return parseInt(v, 10) || 1;
+  } catch (e) { return Math.floor(Math.random() * 2147483647) + 1; }
+}
+function _homeRng(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function _homeShuffle(arr, rng) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+function _homeInitState(products) {
+  const rng = _homeRng(_homeSeed());
+  const priority = [];
+  const byCat = new Map();
   products.forEach(p => {
-    const m = _homeCategoryMeta(p.seller_category);
-    if (!map.has(m.key)) map.set(m.key, { title: m.title, generic: m.generic, items: [] });
-    map.get(m.key).items.push(p);
+    const pos = p.sellers && p.sellers.position_boutique;
+    if (pos !== null && pos !== undefined && pos !== '') { priority.push(p); return; }
+    const k = _homeCategoryMeta(p.seller_category).key;
+    if (!byCat.has(k)) byCat.set(k, []);
+    byCat.get(k).push(p);
   });
-  return Array.from(map.values()).sort((a, b) => {
-    if (a.generic !== b.generic) return a.generic ? 1 : -1;   // "Autre"/"Sans catégorie" à la fin
-    return a.title.localeCompare(b.title, 'fr', { sensitivity: 'base' });
-  });
+  const queues = _homeShuffle(Array.from(byCat.values()).map(q => _homeShuffle(q, rng)), rng);
+  return { priority: _homeShuffle(priority, rng), queues: queues, ptr: 0, rng: rng, shown: 0 };
 }
 
-function _homeSectionHtml(g, gi) {
-  const shown = g.items.slice(0, HOME_SECTION_PREVIEW);
-  const rest  = g.items.length - shown.length;
-  return `
-    <div class="home-cat-title" style="grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;
-         margin-top:8px;padding:8px 10px;background:#fff;border-left:4px solid #1677FF;">
-      <span style="font-size:15px;font-weight:700;color:#1a1a1a;">${escapeHtml(g.title)}</span>
-      <span style="font-size:12px;color:#888;font-weight:600;">${g.items.length}</span>
-    </div>
-    ${shown.map(p => _productCardHtml(p, true)).join('')}
-    ${rest > 0 ? `
-      <div id="homeMoreWrap_${gi}" style="grid-column:1 / -1;text-align:center;padding:4px 0 8px;">
-        <button onclick="homeShowMoreInGroup(${gi})"
-          style="background:none;color:#1677FF;border:1px solid #1677FF;padding:8px 22px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;">
-          Voir les ${rest} autres
-        </button>
-      </div>` : ''}
-  `;
+// Prochain lot : quelques produits mis en avant + autres catégories à chaque fois, puis mélange
+function _homeNextBatch(st) {
+  const batch = [];
+  const nPrio = Math.min(HOME_PRIORITY_PER_BATCH, st.priority.length);
+  for (let i = 0; i < nPrio; i++) batch.push(st.priority.shift());
+
+  const want = HOME_BATCH_SIZE;
+  const taken = new Map();
+  let guard = 0;
+  while (batch.length < want && guard++ < 1000) {
+    const live = st.queues.filter(q => q.length);
+    if (!live.length) break;
+    let progressed = false;
+    const n = st.queues.length;
+    for (let step = 0; step < n && batch.length < want; step++) {
+      const qi = (st.ptr + step) % n;
+      const q = st.queues[qi];
+      if (!q.length) continue;
+      const c = taken.get(qi) || 0;
+      if (c >= HOME_MAX_PER_CAT) continue;
+      batch.push(q.shift());
+      taken.set(qi, c + 1);
+      st.ptr = (qi + 1) % n;
+      progressed = true;
+    }
+    if (!progressed) taken.clear();   // plus assez de catégories : on relâche la limite par catégorie
+  }
+  // Si les catégories sont épuisées, compléter avec des produits mis en avant restants
+  while (batch.length < want && st.priority.length) batch.push(st.priority.shift());
+  return _homeShuffle(batch, st.rng);
 }
 
-function homeShowMoreInGroup(gi) {
-  const g    = _homeGroups[gi];
-  const wrap = document.getElementById('homeMoreWrap_' + gi);
-  if (!g || !wrap) return;
-  const rest = g.items.slice(HOME_SECTION_PREVIEW);
-  wrap.insertAdjacentHTML('beforebegin', rest.map(p => _productCardHtml(p, true)).join(''));
-  rest.forEach(p => loadProductReviewsSummary(p.id));
-  wrap.remove();
+function _homeHasMore(st) {
+  return st.priority.length > 0 || st.queues.some(q => q.length);
 }
-window.homeShowMoreInGroup = homeShowMoreInGroup;
+
+function _homeMoreButtonHtml() {
+  return `<div id="homeMoreWrap" style="grid-column:1 / -1;text-align:center;padding:10px 0 8px;">
+    <button onclick="homeLoadMore()"
+      style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">
+      Voir plus
+    </button>
+  </div>`;
+}
+
+function homeLoadMore() {
+  const st   = _homeState;
+  const wrap = document.getElementById('homeMoreWrap');
+  if (!st || !wrap) return;
+  const batch = _homeNextBatch(st);
+  wrap.insertAdjacentHTML('beforebegin', batch.map(p => _productCardHtml(p, true)).join(''));
+  batch.forEach(p => loadProductReviewsSummary(p.id));
+  if (!_homeHasMore(st)) wrap.remove();
+}
+window.homeLoadMore = homeLoadMore;
 
 // Le paramètre "append" est conservé pour compatibilité mais ignoré :
 // l'accueil est toujours reconstruit en entier (groupes triés A → Z).
@@ -1264,16 +1319,15 @@ async function loadHomeFeed() {
     _homeFeedProducts = all;
 
     if (!all.length) {
-      _homeGroups = [];
+      _homeState = null;
       list.innerHTML = '<p style="grid-column:1 / -1;text-align:center;padding:20px;color:#888;">Aucune publication pour le moment.</p>';
       return;
     }
 
-    _homeGroups = _homeBuildGroups(all);
-    list.innerHTML = _homeGroups.map(_homeSectionHtml).join('');
-
-    // Avis : uniquement pour les cartes réellement affichées
-    _homeGroups.forEach(g => g.items.slice(0, HOME_SECTION_PREVIEW).forEach(p => loadProductReviewsSummary(p.id)));
+    _homeState = _homeInitState(all);
+    const first = _homeNextBatch(_homeState);
+    list.innerHTML = first.map(p => _productCardHtml(p, true)).join('') + (_homeHasMore(_homeState) ? _homeMoreButtonHtml() : '');
+    first.forEach(p => loadProductReviewsSummary(p.id));
 
     if (_sidebarContext === 'home') _populateHomeSidebarSellersFromProducts(_homeFeedProducts);
   } catch (e) {

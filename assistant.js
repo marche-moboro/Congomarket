@@ -350,6 +350,17 @@
     }, 1100);
   }
 
+  function categoriesRowHtml(cats) {
+    if (!cats || !cats.length) return '';
+    return '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;">' + cats.map(c => {
+      const label = (typeof ALL_CATEGORIES !== 'undefined' && ALL_CATEGORIES[c.id]) || c.id;
+      return '<button type="button" data-ai-cat="' + esc(c.id) + '" onclick="assistantOpenCategory(\'' + esc(c.id) + '\')" ' +
+        'style="flex:0 0 auto;width:96px;border:none;background:none;cursor:pointer;text-align:center;padding:0;">' +
+        '<img src="' + esc(c.photo) + '" onerror="this.style.visibility=\'hidden\'" style="width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid #cfe3ff;">' +
+        '<div style="font-size:11px;font-weight:600;color:#333;margin-top:4px;line-height:1.2;">' + esc(label) + '</div></button>';
+    }).join('') + '</div>';
+  }
+
   // Si les résultats directs sont vides ET que l'assistant n'a rien trouvé : message honnête
   function noResultMessage() {
     const host = document.getElementById('searchResults');
@@ -367,15 +378,7 @@
     if (!products.length && !cats.length) { box.innerHTML = ''; noResultMessage(); return; }
 
     let html = '<h3 style="padding:14px 0 8px;font-size:16px;color:#1677FF;">💡 L\'assistant vous propose</h3>';
-    if (cats.length) {
-      html += '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;">' + cats.map(c => {
-        const label = (typeof ALL_CATEGORIES !== 'undefined' && ALL_CATEGORIES[c.id]) || c.id;
-        return '<button type="button" data-ai-cat="' + esc(c.id) + '" onclick="assistantOpenCategory(\'' + esc(c.id) + '\')" ' +
-          'style="flex:0 0 auto;width:96px;border:none;background:none;cursor:pointer;text-align:center;padding:0;">' +
-          '<img src="' + esc(c.photo) + '" onerror="this.style.visibility=\'hidden\'" style="width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid #cfe3ff;">' +
-          '<div style="font-size:11px;font-weight:600;color:#333;margin-top:4px;line-height:1.2;">' + esc(label) + '</div></button>';
-      }).join('') + '</div>';
-    }
+    html += categoriesRowHtml(cats);
     box.innerHTML = html;
     if (products.length) {
       const wrap = document.createElement('div');
@@ -390,6 +393,7 @@
 
   function assistantOpenCategory(catId) {
     assistantLog({ k: 'chip', q: _curQ, cat: catId });
+    assistantClosePanel();
     if (typeof openCategory === 'function') openCategory(catId, treeTypeFor(catId));
   }
 
@@ -397,7 +401,7 @@
   document.addEventListener('click', function (e) {
     const t = e.target;
     if (!t || !t.closest || !_curQ) return;
-    const card = t.closest('#searchResults [data-ai-pid], #aiSearchBox [data-ai-pid]');
+    const card = t.closest('#searchResults [data-ai-pid], #aiSearchBox [data-ai-pid], #aiPanelResults [data-ai-pid]');
     if (!card) return;
     const pid = card.getAttribute('data-ai-pid');
     const cat = card.getAttribute('data-ai-cat') || '';
@@ -410,6 +414,121 @@
   window.addEventListener('online', flushPendingLearning);
   setTimeout(flushPendingLearning, 4000);
 
+
+  // ---------------------------------------------------------------
+  // BOUTON FLOTTANT « ✨ Assistant » (côté client) + panneau de recherche
+  // ---------------------------------------------------------------
+  const EXAMPLES = ['robe', 'téléphone', 'chaussures', 'sac à main', 'pagne', 'bijoux'];
+  let _panelBusy = 0;
+
+  function buildAssistantUi() {
+    if (document.getElementById('aiFab') || /admin\.html/.test(location.pathname)) return;
+    const css = document.createElement('style');
+    css.textContent =
+      '#aiFab{position:fixed;right:14px;bottom:88px;z-index:1500;width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;' +
+      'background:linear-gradient(135deg,#1677FF,#7c3aed);color:#fff;box-shadow:0 6px 18px rgba(22,119,255,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit;padding:0;}' +
+      '#aiFab span{font-size:22px;line-height:1}#aiFab small{font-size:9px;font-weight:700;margin-top:1px}' +
+      '#aiPanel{position:fixed;inset:0;z-index:2000;display:none;background:rgba(0,0,0,.45);}' +
+      '#aiPanel.open{display:block}' +
+      '#aiSheet{position:absolute;left:0;right:0;bottom:0;max-height:92%;height:92%;background:#f5f7fb;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;}' +
+      '#aiSheetHead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#fff;border-bottom:1px solid #eee;font-weight:700;font-size:16px;color:#1677FF;}' +
+      '#aiSheetHead button{border:none;background:#f0f0f0;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;}' +
+      '#aiSearchRow{display:flex;gap:8px;padding:12px 14px;background:#fff;}' +
+      '#aiPanelInput{flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1.5px solid #cfe3ff;font-size:15px;outline:none;}' +
+      '#aiPanelGo{border:none;background:#1677FF;color:#fff;font-weight:700;border-radius:12px;padding:0 16px;font-size:14px;cursor:pointer;}' +
+      '#aiPanelBody{flex:1;overflow-y:auto;padding:12px 14px 30px;-webkit-overflow-scrolling:touch;}' +
+      '.aiEx{display:inline-block;margin:4px 6px 4px 0;padding:8px 14px;border-radius:99px;border:1.5px solid #cfe3ff;background:#fff;color:#1677FF;font-size:13px;font-weight:600;cursor:pointer;}';
+    document.head.appendChild(css);
+
+    const fab = document.createElement('button');
+    fab.id = 'aiFab'; fab.type = 'button'; fab.setAttribute('aria-label', 'Ouvrir l\'assistant');
+    fab.innerHTML = '<span>✨</span><small>Assistant</small>';
+    fab.onclick = openAssistantPanel;
+    document.body.appendChild(fab);
+
+    const panel = document.createElement('div');
+    panel.id = 'aiPanel';
+    panel.innerHTML =
+      '<div id="aiSheet" role="dialog" aria-label="Assistant Moboro">' +
+        '<div id="aiSheetHead"><span>✨ Assistant Moboro</span><button type="button" aria-label="Fermer" onclick="assistantClosePanel()">✕</button></div>' +
+        '<div id="aiSearchRow"><input id="aiPanelInput" type="search" placeholder="Que cherchez-vous ? (ex : robe rouge)" autocomplete="off">' +
+        '<button id="aiPanelGo" type="button">Chercher</button></div>' +
+        '<div id="aiPanelBody"><div id="aiPanelResults"></div></div>' +
+      '</div>';
+    panel.addEventListener('click', function (e) { if (e.target === panel) assistantClosePanel(); });
+    document.body.appendChild(panel);
+    document.getElementById('aiPanelGo').onclick = function () { runPanelSearch(document.getElementById('aiPanelInput').value); };
+    document.getElementById('aiPanelInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); runPanelSearch(this.value); this.blur(); }
+    });
+    showPanelHome();
+  }
+
+  function showPanelHome() {
+    const res = document.getElementById('aiPanelResults');
+    if (!res) return;
+    res.innerHTML =
+      '<div style="display:inline-block;max-width:85%;background:#fff;border:1.5px solid #cfe3ff;border-radius:16px 16px 16px 4px;padding:10px 14px;margin:6px 0 12px;font-size:14.5px;line-height:1.45;color:#222;box-shadow:0 1px 4px rgba(22,119,255,.08);">' +
+        '<b style="color:#1677FF;">✨ IA d\'assistance</b><br>Dites-moi ce que vous cherchez</div>' +
+      '<div style="font-size:12px;color:#888;margin-bottom:4px;">Essayez par exemple :</div>' +
+      EXAMPLES.map(x => '<button type="button" class="aiEx" data-q="' + esc(x) + '">' + esc(x) + '</button>').join('');
+    res.querySelectorAll('.aiEx').forEach(b => { b.onclick = function () { const q = this.getAttribute('data-q'); document.getElementById('aiPanelInput').value = q; runPanelSearch(q); }; });
+  }
+
+  function openAssistantPanel() {
+    buildAssistantUi();
+    const panel = document.getElementById('aiPanel');
+    if (!panel) return;
+    panel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    const fab = document.getElementById('aiFab'); if (fab) fab.style.display = 'none';
+    setTimeout(function () { const i = document.getElementById('aiPanelInput'); if (i && !i.value) i.focus(); }, 150);
+  }
+
+  function assistantClosePanel() {
+    const panel = document.getElementById('aiPanel');
+    if (panel) panel.classList.remove('open');
+    document.body.style.overflow = '';
+    const fab = document.getElementById('aiFab'); if (fab) fab.style.display = 'flex';
+  }
+
+  async function runPanelSearch(raw) {
+    const q = String(raw || '').trim();
+    const res = document.getElementById('aiPanelResults');
+    if (!res) return;
+    if (q.length < 2) { showPanelHome(); return; }
+    const mine = ++_panelBusy;
+    _curQ = q;
+    res.innerHTML = '<p style="text-align:center;color:#888;padding:30px 0;">✨ Recherche en cours…</p>';
+    assistantLog({ k: 'search', q });
+    const data = await callAssistant('search', { q, device_id: deviceId() }, { timeout: 12000 });
+    if (mine !== _panelBusy) return;
+    if (!data || !data.ok) {
+      res.innerHTML = '<p style="text-align:center;color:#888;padding:30px 0;">' +
+        (data && data.error === 'limite' ? 'Vous avez beaucoup utilisé l\'assistant aujourd\'hui. Réessayez demain, ou utilisez la barre de recherche.'
+          : 'L\'assistant est momentanément indisponible. Utilisez la barre de recherche en haut de la page.') + '</p>';
+      return;
+    }
+    const products = data.products || [];
+    const cats = (data.categories || []).slice(0, 3);
+    if (!products.length) {
+      res.innerHTML = '<p style="text-align:center;color:#555;padding:30px 10px;">Je n\'ai rien trouvé pour « ' + esc(q) + ' ».<br>Essayez un autre mot, ou un mot plus simple.</p>';
+      return;
+    }
+    let html = '<h3 style="padding:4px 0 8px;font-size:15px;color:#1677FF;">' + products.length + ' produit' + (products.length > 1 ? 's' : '') + ' pour « ' + esc(q) + ' »</h3>';
+    html += categoriesRowHtml(cats);
+    res.innerHTML = html;
+    const wrap = document.createElement('div');
+    res.appendChild(wrap);
+    const card = (typeof window._searchProductCardHtml === 'function') ? window._searchProductCardHtml : null;
+    if (card) wrap.innerHTML = products.map(card).join('');
+    wrap.querySelectorAll('[id^="reviews-search-"]').forEach(e => e.remove());
+    const body = document.getElementById('aiPanelBody'); if (body) body.scrollTop = 0;
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildAssistantUi);
+  else buildAssistantUi();
+
   // ---------------------------------------------------------------
   // Exposition globale
   // ---------------------------------------------------------------
@@ -418,5 +537,6 @@
     assistantPickCategory, assistantPickName, assistantPickTaille,
     assistantLearnFromPublication, assistantReset,
     assistantTrackSearch, assistantOpenCategory, assistantClearSearchBox,
+    assistantClosePanel, openAssistantPanel,
   });
 })();
