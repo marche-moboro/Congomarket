@@ -50,6 +50,7 @@ if (!query && ville) {
 // L'ancienne version dans index.html (ligne 2908, sans villeFilter) doit être supprimée.
 async function performSearch(query, villeFilter = '') {
   showPage('searchResultsPage');
+  if (typeof assistantTrackSearch === 'function') assistantTrackSearch(query);   // l'assistant apprend et propose (avec photos)
   const displayQuery = query || villeFilter;
   document.getElementById('searchResultsTitle').innerText = `Résultats pour "${displayQuery}"`;
   document.getElementById('searchResults').innerHTML =
@@ -235,7 +236,7 @@ function renderSearchResults(results, title) {
   const container = document.getElementById('searchResults');
 
   if (!results.sellers.length && !results.products.length) {
-    container.innerHTML = '<p style="text-align:center;padding:30px;color:#888;">Aucun résultat trouvé.<br>Essayez un autre mot-clé.</p>';
+    container.innerHTML = '<p style="text-align:center;padding:30px;color:#888;">Aucun résultat exact.<br>L\'assistant cherche des produits proches…</p>';
     return;
   }
   container.innerHTML = '';
@@ -283,6 +284,49 @@ function _appendSearchSellers() {
   }
 }
 
+// ================================================================
+// Carte produit des résultats de recherche (aussi utilisée par l'assistant)
+// Fonctionne avec un produit "avec jointure sellers" (recherche directe)
+// ou un produit "à plat" (propositions de l'assistant : ville, quartier, seller_phone).
+// ================================================================
+function _searchProductCardHtml(p) {
+  const sel      = p.sellers || {};
+  const sName    = sel.full_name || p.seller_name || '';
+  const phone    = sel.phone || p.seller_phone || '';
+  const quartier = sel.quartier || p.quartier || '';
+  const ville    = sel.ville || p.ville || '';
+  const where    = [quartier, ville].filter(Boolean).join(', ');
+  const specs    = [p.taille ? 'Taille : ' + p.taille : '', p.matiere ? 'Matière : ' + p.matiere : ''].filter(Boolean).join(' · ');
+  return `
+    <div class="product-card" style="margin-bottom:12px;" data-ai-pid="${escapeHtml(String(p.id))}" data-ai-cat="${escapeHtml(p.seller_category || '')}">
+      <img src="${escapeHtml(p.image)}"
+           data-product-id="${p.id}"
+           data-category="${escapeHtml(p.seller_category || '')}"
+           data-name="${escapeHtml(p.name)}"
+           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'"
+           onclick="openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)"
+           style="cursor:zoom-in;">
+      <div class="product-content">
+        <h3>${escapeHtml(p.name)}</h3>
+        <p class="seller-location">Par: ${escapeHtml(sName)}</p>
+        ${where ? `<p class="seller-location">📍 ${escapeHtml(where)}</p>` : ''}
+        <p class="product-price">${priceLabel(p.price)}</p>
+        ${specs ? `<p class="seller-location">${escapeHtml(specs)}</p>` : ''}
+        ${p.description ? `<p class="seller-desc" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(p.description)}</p>` : ''}
+        <div id="reviews-search-${p.id}" style="margin:6px 0;">Chargement des avis...</div>
+        <button onclick="openReviewModal('${p.id}','${p.seller_id}')"
+          style="background:none;border:1px solid #e8e8e8;color:#1677FF;font-size:11px;font-weight:600;
+                 padding:4px 10px;border-radius:20px;margin-bottom:6px;cursor:pointer;">
+          ✍️ Laisser un avis vérifié
+       </button>
+        <a href="https://wa.me/${formatWhatsApp(phone)}"
+           target="_blank" class="contact-btn-product">Contacter le vendeur</a>
+      </div>
+    </div>
+  `;
+}
+window._searchProductCardHtml = _searchProductCardHtml;
+
 function _appendSearchProducts() {
   if (!_searchResults || !_searchResults.products.length) return;
   const container = document.getElementById('searchResults');
@@ -294,30 +338,7 @@ function _appendSearchProducts() {
   if (_searchProductsPage === 0) {
     container.insertAdjacentHTML('beforeend', `<h3 style="padding:10px 0;font-size:16px;color:#1677FF;">Produits (${_searchResults.products.length})</h3>`);
   }
-  container.insertAdjacentHTML('beforeend', slice.map(p => `
-    <div class="product-card" style="margin-bottom:12px;">
-      <img src="${escapeHtml(p.image)}"
-           data-product-id="${p.id}"
-           data-category="${escapeHtml(p.seller_category || '')}"
-           data-name="${escapeHtml(p.name)}"
-           onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400'"
-           onclick="openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)"
-           style="cursor:zoom-in;">
-      <div class="product-content">
-        <h3>${escapeHtml(p.name)}</h3>
-        <p class="seller-location">Par: ${escapeHtml((p.sellers && p.sellers.full_name) || p.seller_name || '')}</p>
-        <p class="product-price">${priceLabel(p.price)}</p>
-        <div id="reviews-search-${p.id}" style="margin:6px 0;">Chargement des avis...</div>
-        <button onclick="openReviewModal('${p.id}','${p.seller_id}')"
-          style="background:none;border:1px solid #e8e8e8;color:#1677FF;font-size:11px;font-weight:600;
-                 padding:4px 10px;border-radius:20px;margin-bottom:6px;cursor:pointer;">
-          ✍️ Laisser un avis vérifié
-       </button>
-        <a href="https://wa.me/${formatWhatsApp((p.sellers && p.sellers.phone) || p.seller_phone)}"
-           target="_blank" class="contact-btn-product">Contacter le vendeur</a>
-      </div>
-    </div>
-  `).join(''));
+  container.insertAdjacentHTML('beforeend', slice.map(_searchProductCardHtml).join(''));
 
   slice.forEach(p => {
     loadProductReviewsSummary(p.id, `reviews-search-${p.id}`);

@@ -3,9 +3,9 @@
 // Cache optimisé — fichiers statiques + données réseau
 // ================================================================
 
-const CACHE_STATIC = 'moboro-static-v30';
-const CACHE_DYNAMIC = 'moboro-dynamic-v30';
-const CACHE_API     = 'moboro-api-v30';
+const CACHE_STATIC = 'moboro-static-v31';
+const CACHE_DYNAMIC = 'moboro-dynamic-v31';
+const CACHE_API     = 'moboro-api-v31';
 
 // Fichiers statiques — cachés à l'installation
 const ASSETS_TO_CACHE = [
@@ -18,6 +18,7 @@ const ASSETS_TO_CACHE = [
   '/Congomarket/sellers.js',
   '/Congomarket/search.js',
   '/Congomarket/cart.js',
+  '/Congomarket/assistant.js',
   '/Congomarket/products_upload.js',
   '/Congomarket/upload_photo_imagekit.js',
   '/Congomarket/icon-192.png',

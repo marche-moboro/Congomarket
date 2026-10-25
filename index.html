@@ -1626,6 +1626,7 @@ header p { font-size: 12px; opacity: .80; }
         <label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:8px;">📸 Photo *</label>
 
         <div id="pubPhotosPreview" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+        <div id="aiStatus" style="display:none;"></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="pubPhotoButtons">
           <label for="pubGallery" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#f0f7ff;border:2px dashed #1677FF;padding:14px;border-radius:14px;cursor:pointer;color:#1677FF;font-weight:600;font-size:13px;">
@@ -1642,7 +1643,8 @@ header p { font-size: 12px; opacity: .80; }
 
       <!-- 2. Nom du produit -->
       <label style="font-size:13px;color:#555;font-weight:600;margin-bottom:4px;display:block;">✏️ Nom du produit *</label>
-      <input type="text" id="pubName" placeholder="Nom du produit *" oninput="updatePubPreview()">
+      <input type="text" id="pubName" placeholder="Nom du produit *" oninput="updatePubPreview(); if (window.assistantOnNameTyping) assistantOnNameTyping();">
+      <div id="aiChips" style="display:none;margin:6px 0;"></div>
 
       <!-- 3. Prix : au clic, 2 choix (Saisir le prix / Prix négociable) -->
       <label style="font-size:13px;color:#555;font-weight:600;margin-top:10px;display:block;">💰 Prix *</label>
@@ -3108,6 +3110,7 @@ header p { font-size: 12px; opacity: .80; }
 <script src="products_upload.js"></script>
 <script src="search.js"></script>
 <script src="cart.js"></script>
+<script src="assistant.js"></script>
 <script>
 // ✅ Config Supabase → supabase.js
 
@@ -3413,6 +3416,7 @@ function addPubPhotos(input, source) {
 
   const file = input.files[0];
   window.pubPhotosFiles = [file];
+  if (window.assistantOnPhotoSelected) assistantOnPhotoSelected(file);   // l'IA analyse la photo et remplit le formulaire
 
   const reader = new FileReader();
   reader.onload = e => {
@@ -3433,6 +3437,7 @@ function addPubPhotos(input, source) {
 // Supprimer la photo
 function removePubPhoto(index) {
   window.pubPhotosFiles = [];
+  if (window.assistantOnPhotoRemoved) assistantOnPhotoRemoved();
   document.getElementById('pubPhotosPreview').innerHTML = '';
 }
 

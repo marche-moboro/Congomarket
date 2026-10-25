@@ -409,6 +409,17 @@ const matiere     = document.getElementById('pubMatiere')?.value.trim() || null;
       return;
     }
 
+    // L'assistant apprend de cette publication (non bloquant, n'empêche jamais de publier)
+    if (typeof assistantLearnFromPublication === 'function') {
+      assistantLearnFromPublication({
+        name,
+        category_id: (ownCatEl && ownCatEl.value) || '',
+        taille: taille || '',
+        description: description || '',
+        imageUrl: imageUrls[0]
+      });
+    }
+
    // Score cumulatif — augmente à chaque publication, jamais réduit
     const _currentScore = currentSeller.dynamisme_score || 0;
     await callSellerAction('update_own_seller', {
