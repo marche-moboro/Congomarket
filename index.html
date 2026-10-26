@@ -3423,7 +3423,7 @@ function addPubPhotos(input, source) {
     const preview = document.getElementById('pubPhotosPreview');
     preview.innerHTML = `
       <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;">
-        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain;background:#f5f7fb;">
         <button onclick="removePubPhoto(0)"
           style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>
       </div>
@@ -3451,7 +3451,7 @@ function refreshPhotoPreviews() {
   reader.onload = e => {
     preview.innerHTML = `
       <div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;">
-        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
+        <img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain;background:#f5f7fb;">
         <button onclick="removePubPhoto(0)"
           style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;">✕</button>
       </div>

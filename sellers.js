@@ -779,7 +779,7 @@ async function openSellerProducts(sellerId, type, categoryId) {
     }
 
     renderProducts(products || [], type);
-    loadSimilarSellers(seller.id, seller.category);
+    loadSimilarSellers(seller.id, seller.category, products || []);
 
     // Enregistrer 1 vue page_open par visite vendeur (Bug 9 fix)
     recordProductView(null, sellerId, 'page_open');
@@ -942,7 +942,80 @@ list.innerHTML = groups.map(g => `
 // ================================================================
 // Vendeurs similaires — affichés en bas d'une page vendeur
 // ================================================================
-async function loadSimilarSellers(sellerId, category) {
+const _SIM_STOP = new Set(['de','du','des','la','le','les','en','et','au','aux','un','une','pour','avec','sans','sur','the']);
+
+// Vendeurs similaires = vendeurs qui publient les mêmes produits que le vendeur ouvert
+// (mêmes catégories de produits + noms de produits qui se ressemblent).
+// Si le vendeur n'a pas encore de produit, on retombe sur la catégorie du vendeur.
+async function loadSimilarSellers(sellerId, category, products) {
+  const block = document.getElementById('similarSellersBlock');
+  if (!block) return;
+  try {
+    const prods = Array.isArray(products) ? products : [];
+    const catCount = new Map();
+    const words = new Set();
+    prods.forEach(p => {
+      const c = p.seller_category;
+      if (c && !/^sans-categorie/.test(c)) catCount.set(c, (catCount.get(c) || 0) + 1);
+      String(p.name || '').toLowerCase().split(/\s+/).forEach(w => {
+        w = w.replace(/[^\p{L}\p{N}]/gu, '');
+        if (w.length >= 4 && !_SIM_STOP.has(w)) words.add(w);
+      });
+    });
+    const cats = Array.from(catCount.keys());
+    if (!cats.length) return _loadSimilarSellersByCategory(sellerId, category);
+    const topCat = cats.sort((x, y) => catCount.get(y) - catCount.get(x))[0];
+
+    const { data, error } = await db
+      .from(TABLES.PRODUCTS)
+      .select('seller_id, name, seller_category, sellers!inner(id, full_name, photo, stars, badge, dynamisme_score, is_blocked, is_active)')
+      .in('seller_category', cats)
+      .eq('is_active', true)
+      .eq('sellers.is_blocked', false)
+      .eq('sellers.is_active', true)
+      .neq('seller_id', sellerId)
+      .limit(1500);
+    if (error || !data || !data.length) return _loadSimilarSellersByCategory(sellerId, category);
+
+    const bySeller = new Map();
+    data.forEach(r => {
+      const sid = r.seller_id;
+      if (!bySeller.has(sid)) bySeller.set(sid, { s: r.sellers, cats: new Set(), n: 0, kw: 0 });
+      const e = bySeller.get(sid);
+      e.n++; e.cats.add(r.seller_category);
+      const nm = String(r.name || '').toLowerCase();
+      for (const w of words) { if (nm.indexOf(w) >= 0) { e.kw++; break; } }
+    });
+    const ranked = Array.from(bySeller.values()).map(e => ({
+      s: e.s, score: e.cats.size * 5 + Math.min(e.n, 20) + e.kw * 2
+    })).sort((x, y) => (y.score - x.score) || ((y.s.dynamisme_score || 0) - (x.s.dynamisme_score || 0))).slice(0, 12);
+
+    if (!ranked.length) return _loadSimilarSellersByCategory(sellerId, category);
+    block.innerHTML = `
+      <div style="padding:4px 15px 30px;">
+        <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:2px;">🏪 Vendeurs similaires</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px;">Ils publient les mêmes produits</div>
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px 8px;">
+          ${ranked.map(({ s }) => `
+            <div style="text-align:center;cursor:pointer;" onclick="openSellerProducts('${s.id}', currentCategoryType || 'B', '${escapeHtml(topCat || '')}')">
+              <img src="${escapeHtml(s.photo) || 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'}"
+                onerror="this.src='https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200'"
+                style="width:70px;height:70px;border-radius:50%;object-fit:cover;">
+              <div style="font-size:11px;font-weight:600;color:#222;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.full_name)}</div>
+              <div style="font-size:10px;color:#888;">⭐ ${s.stars || 0}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    console.error('loadSimilarSellers error:', e);
+    block.innerHTML = '';
+  }
+}
+
+// Ancienne méthode (repli) : vendeurs de la même catégorie de vendeur
+async function _loadSimilarSellersByCategory(sellerId, category) {
   const block = document.getElementById('similarSellersBlock');
   if (!block) return;
   if (!category) { block.innerHTML = ''; return; }
@@ -956,9 +1029,7 @@ async function loadSimilarSellers(sellerId, category) {
       .neq('id', sellerId)
       .order('dynamisme_score', { ascending: false })
       .limit(10);
-
     if (error || !sellers || sellers.length === 0) { block.innerHTML = ''; return; }
-
     block.innerHTML = `
       <div style="padding:4px 15px 30px;">
         <div style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px;">🏪 Vendeurs similaires</div>
@@ -975,10 +1046,7 @@ async function loadSimilarSellers(sellerId, category) {
         </div>
       </div>
     `;
-  } catch(e) {
-    console.error('loadSimilarSellers error:', e);
-    block.innerHTML = '';
-  }
+  } catch (e) { block.innerHTML = ''; }
 }
 window.loadSimilarSellers = loadSimilarSellers;
 
@@ -1178,14 +1246,11 @@ function _homeCategoryMeta(catId) {
   };
 }
 
-// ---- Mélange reproductible : même ordre pendant toute la session, nouvel ordre à la réouverture ----
-function _homeSeed() {
-  try {
-    let v = sessionStorage.getItem('moboro_home_seed');
-    if (!v) { v = String(Math.floor(Math.random() * 2147483647) + 1); sessionStorage.setItem('moboro_home_seed', v); }
-    return parseInt(v, 10) || 1;
-  } catch (e) { return Math.floor(Math.random() * 2147483647) + 1; }
-}
+// ---- Mélange reproductible : même ordre tant que la page reste ouverte ----
+// Nouvel ordre à chaque chargement de la page (rechargement inclus) ;
+// l'ordre reste le même tant que la page n'est pas rechargée (retour depuis un produit, etc.)
+const _HOME_SEED = Math.floor(Math.random() * 2147483647) + 1;
+function _homeSeed() { return _HOME_SEED; }
 function _homeRng(seed) {
   let a = seed >>> 0;
   return function () {
