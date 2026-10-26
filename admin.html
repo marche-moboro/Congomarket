@@ -105,6 +105,7 @@
     <div class="nav-tab" onclick="switchTab('paiements', event); loadSubscriptionToggle(); loadPaiementsDashboard()">💳 Paiements</div>
     <div class="nav-tab" onclick="switchTab('inscriptions', event); loadInscriptionToggles()">🔒 Inscriptions</div>
     <div class="nav-tab" onclick="switchTab('notifications', event)">🔔 Notifications</div>
+    <div class="nav-tab" onclick="switchTab('assistant', event); loadAssistantAdmin()">🤖 Assistant</div>
   </div>
 
   <div class="admin-content">
@@ -2627,6 +2628,22 @@ async function deleteVIPManager(id, name) {
   </div>
 </div>
 
+<!-- TAB ASSISTANT -->
+<div class="tab-panel" id="tab-assistant">
+  <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
+  <div id="aaAlert"></div>
+  <div class="form-card">
+    <h2>🤖 Assistant — suivi</h2>
+    <button class="btn-primary" onclick="loadAssistantAdmin()">🔄 Actualiser</button>
+    <span id="aaWhen" style="font-size:12px;color:#888;margin-left:8px;"></span>
+  </div>
+  <div class="form-card"><h2>1. Quotas Gemini aujourd'hui</h2><div id="aaQuota">…</div></div>
+  <div class="form-card"><h2>2. IA vendeurs (14 jours)</h2><div id="aaDays">…</div></div>
+  <div class="form-card"><h2>3. Apprentissage</h2><div id="aaLearn">…</div></div>
+  <div class="form-card"><h2>4. Recherches des visiteurs (14 jours)</h2><div id="aaVisit">…</div></div>
+  <div class="form-card"><h2>5. Maintenance</h2><div id="aaMaint">…</div></div>
+</div>
+
 <!-- TAB INSCRIPTIONS -->
 <div class="tab-panel" id="tab-inscriptions">
   <button class="back-btn" onclick="switchTab('stats')">← Retour</button>
@@ -2803,6 +2820,90 @@ async function toggleInscription(key, btnId, statusId) {
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
   }
 }
+
+// ================================================================
+// ASSISTANT — suivi (Edge Function assistant-admin)
+// ================================================================
+async function callAssistantAdmin(action) {
+  const res = await fetch(SUPABASE_URL + '/functions/v1/assistant-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ session_token: _adminSessionToken, action })
+  });
+  return await res.json();
+}
+function _aaBar(used, limit) {
+  const pct = limit ? Math.min(100, Math.round(used * 100 / limit)) : 0;
+  const col = pct >= 80 ? '#ff4d4f' : (pct >= 50 ? '#fa8c16' : '#52c41a');
+  return '<div style="background:#eee;border-radius:99px;height:10px;overflow:hidden;margin:4px 0 2px;"><div style="width:' + pct + '%;height:10px;background:' + col + ';"></div></div>';
+}
+function _aaList(rows, empty) {
+  if (!rows || !rows.length) return '<p style="font-size:13px;color:#888;">' + empty + '</p>';
+  return rows.map(r => '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px;"><span style="word-break:break-word;">' + escapeHtml(String(r[0])) + '</span><b>' + escapeHtml(String(r[1])) + '</b></div>').join('');
+}
+async function loadAssistantAdmin() {
+  const ids = ['aaQuota','aaDays','aaLearn','aaVisit','aaMaint'];
+  ids.forEach(i => { const e = document.getElementById(i); if (e) e.innerHTML = '…'; });
+  let d;
+  try { d = await callAssistantAdmin('stats'); } catch (e) { d = null; }
+  if (!d || !d.ok) {
+    const msg = (d && d.error) ? d.error : 'fonction injoignable';
+    document.getElementById('aaQuota').innerHTML = '<p style="color:#ff4d4f;font-size:13px;">Erreur : ' + escapeHtml(msg) + '</p>';
+    return;
+  }
+  const alerts = [];
+  document.getElementById('aaQuota').innerHTML =
+    d.models.map(m => {
+      if (m.limit && m.used * 100 / m.limit >= 80) alerts.push('Quota ' + m.name + ' à ' + Math.round(m.used * 100 / m.limit) + ' % (' + m.used + '/' + m.limit + ')');
+      return '<div style="font-size:13px;"><b>' + escapeHtml(m.name) + '</b> — ' + m.used + ' / ' + m.limit + _aaBar(m.used, m.limit) + '</div>';
+    }).join('') +
+    '<div style="font-size:12px;color:#888;margin:8px 0 4px;">Vendeurs les plus actifs aujourd\'hui (limite 10/jour) · ' + d.devices + ' visiteur(s) ont cherché</div>' +
+    _aaList(d.sellers.map(x => [x.code, x.used + ' / 10']), 'Aucun vendeur n\'a utilisé l\'IA aujourd\'hui.');
+
+  const last = d.days[d.days.length - 1] || { ok: 0, fail: 0 };
+  if (last.ok + last.fail >= 5 && last.fail * 100 / (last.ok + last.fail) >= 30) alerts.push('L\'IA échoue souvent aujourd\'hui (' + last.fail + ' échecs / ' + (last.ok + last.fail) + ')');
+  const mx = Math.max(1, ...d.days.map(x => x.ok + x.fail));
+  document.getElementById('aaDays').innerHTML = d.days.map(x => {
+    const w = Math.round((x.ok + x.fail) * 100 / mx);
+    return '<div style="font-size:12px;display:flex;align-items:center;gap:8px;margin:3px 0;"><span style="width:44px;color:#888;">' + x.day.slice(5) + '</span><div style="flex:1;background:#f5f5f5;border-radius:6px;height:14px;overflow:hidden;"><div style="width:' + w + '%;height:14px;background:linear-gradient(90deg,#52c41a ' + (x.ok + x.fail ? Math.round(x.ok * 100 / (x.ok + x.fail)) : 100) + '%,#ff4d4f 0);"></div></div><span style="width:70px;text-align:right;">' + x.ok + ' ok · ' + x.fail + ' ✗</span></div>';
+  }).join('');
+
+  const L = d.learning;
+  const rate = L.with_ai ? Math.round(L.corrected * 100 / L.with_ai) : 0;
+  document.getElementById('aaLearn').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">' +
+      '<div class="stat-card"><div style="font-size:22px;font-weight:800;">' + L.memory + '</div><div style="font-size:12px;color:#888;">habitudes vendeurs</div></div>' +
+      '<div class="stat-card"><div style="font-size:22px;font-weight:800;">' + L.votes + '</div><div style="font-size:12px;color:#888;">liens appris</div></div>' +
+      '<div class="stat-card"><div style="font-size:22px;font-weight:800;">' + L.publications + '</div><div style="font-size:12px;color:#888;">publications (30 j)</div></div>' +
+      '<div class="stat-card"><div style="font-size:22px;font-weight:800;">' + rate + ' %</div><div style="font-size:12px;color:#888;">corrigées après l\'IA</div></div>' +
+    '</div><div style="font-size:12px;color:#888;margin-bottom:4px;">Catégories les plus corrigées (IA → choix du vendeur)</div>' +
+    _aaList(L.fixes, 'Aucune correction pour le moment.');
+
+  const V = d.visitors;
+  document.getElementById('aaVisit').innerHTML =
+    '<div style="font-size:13px;margin-bottom:8px;">' + V.searches + ' recherches · ' + V.clicks + ' clics produit · ' + V.whatsapp + ' WhatsApp/panier</div>' +
+    '<div style="font-size:12px;color:#888;margin-bottom:4px;">Recherches les plus fréquentes</div>' + _aaList(V.top, 'Aucune recherche.') +
+    '<div style="font-size:12px;color:#888;margin:10px 0 4px;">Recherches sans résultat (produits à demander aux vendeurs)</div>' +
+    _aaList((V.no_results || []).map(x => [x.example || '?', x.count + '×']), 'Aucune pour le moment.');
+
+  const M = d.maintenance;
+  document.getElementById('aaMaint').innerHTML =
+    '<div style="font-size:13px;line-height:1.7;">Événements gardés : <b>' + M.events + '</b><br>Plus ancien : <b>' + (M.oldest ? M.oldest.slice(0, 10) : '—') + '</b> (purge auto après 90 jours)<br>Lignes de quota : <b>' + M.usage_rows + '</b></div>' +
+    '<button class="btn-primary" style="margin-top:10px;background:#fa8c16;" onclick="assistantPurgeNow()">🧹 Nettoyer maintenant</button>';
+
+  document.getElementById('aaAlert').innerHTML = alerts.map(a => '<div style="background:#fff1f0;border:1.5px solid #ffa39e;color:#cf1322;padding:12px;border-radius:12px;margin-bottom:10px;font-size:13px;font-weight:600;">⚠️ ' + escapeHtml(a) + '</div>').join('');
+  document.getElementById('aaWhen').innerText = 'Mis à jour ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+async function assistantPurgeNow() {
+  if (!confirm('Supprimer les événements de plus de 90 jours et les anciens quotas ? Les apprentissages (habitudes, liens) sont conservés.')) return;
+  try {
+    const d = await callAssistantAdmin('purge');
+    if (d && d.ok) { showToast('🧹 Nettoyage terminé', 'success'); logAdminAction('Nettoyage assistant', 'assistant', null, 'Purge manuelle'); loadAssistantAdmin(); }
+    else showToast('Erreur : ' + ((d && d.error) || ''), 'error');
+  } catch (e) { showToast('Erreur réseau', 'error'); }
+}
+window.loadAssistantAdmin = loadAssistantAdmin;
+window.assistantPurgeNow = assistantPurgeNow;
 </script>
 
 <script>
