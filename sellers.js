@@ -805,9 +805,9 @@ function _productCardHtml(p, showSeller) {
   // Dans une grille (accueil/catégorie, showSeller=true) : le clic sur la photo
   // ouvre la page du vendeur. Sur la page d'un vendeur (showSeller=false) : le
   // clic ouvre toujours le zoom/lightbox, puisqu'on y est déjà.
-  const imgOnclick = (showSeller && p.sellers)
-    ? `openSellerProducts('${p.sellers.id}', currentCategoryType || 'B', '${escapeHtml(p.seller_category || '')}')`
-    : `openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)`;
+  // Un clic sur la photo ouvre la page du produit (photo entière + produits similaires).
+  // Le nom de la boutique (bandeau 🏪) mène toujours à la page du vendeur.
+  const imgOnclick = `openLightbox(this.src, this.dataset.productId, this.dataset.category, this.dataset.name)`;
 
   return `
     <div class="product-card">

@@ -3691,15 +3691,7 @@ function goBack() {
 
 // Bouton retour physique du téléphone
 window.addEventListener('popstate', function(e) {
-  const lb = document.getElementById('lightbox');
-  if (lb && lb.style.display !== 'none') {
-    lb.style.display = 'none';
-    document.body.style.overflow = '';
-    document.getElementById('lightboxSimilarPanel').style.display = 'none';
-    _lightboxProduct = null;
-    _lightboxHistoryPushed = false;
-    return;
-  }
+  if (_lbHandlePop()) return;
   if (e.state && e.state.pageId) {
     showPage(e.state.pageId, true);
   } else {
@@ -5486,32 +5478,101 @@ async function saveLivreurGrille() {
   }
   
   let _lightboxProduct = null;
+  let _lbStack = [];            // chaîne des produits ouverts (le dernier est affiché)
+  let _lbPushed = 0;            // entrées d'historique ajoutées par la page produit
+  let _lbToken = 0;
+  let _lbSimilar = { list: [], shown: 0 };
+  const LB_SIMILAR_STEP = 12;
+  const LB_PRODUCT_SELECT = 'id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)';
 
-function openLightbox(src, productId, category, name) {
-  const lb  = document.getElementById('lightbox');
-  const img = document.getElementById('lightboxImg');
-  img.src = src;
-  resetLightboxZoom();
-  lb.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  history.pushState({ lightboxOpen: true }, '');
-  _lightboxHistoryPushed = true;
+  function _lbEl(id) { return document.getElementById(id); }
+  function _lbSame(a, b) { return String(a) === String(b); }
 
-  const btn     = document.getElementById('lightboxSimilarBtn');
-  const panel   = document.getElementById('lightboxSimilarPanel');
-  const infoBox = document.getElementById('lightboxInfo');
-  panel.style.display = 'none';
-  panel.innerHTML = '';
+  function _lbLocalProduct(id) {
+    const pools = [];
+    try { if (typeof _productsAll !== 'undefined') pools.push(_productsAll); } catch (e) {}
+    try { if (typeof _homeFeedProducts !== 'undefined') pools.push(_homeFeedProducts); } catch (e) {}
+    for (const pool of pools) {
+      const f = (pool || []).find(pr => _lbSame(pr.id, id));
+      if (f) return f;
+    }
+    return null;
+  }
 
-  if (productId) {
-    _lightboxProduct = { productId, category, name };
-    btn.style.display = 'inline-block';
+  async function _lbGetProduct(id) {
+    const local = _lbLocalProduct(id);
+    if (local) return local;
+    try {
+      const { data } = await db.from(TABLES.PRODUCTS).select(LB_PRODUCT_SELECT).eq('id', id).maybeSingle();
+      return data || null;
+    } catch (e) { return null; }
+  }
 
-    const p = (typeof _productsAll !== 'undefined' ? _productsAll : []).find(pr => pr.id === productId);
-    if (p) {
-      const seller     = p.sellers || window.currentViewedSeller || null;
-      const contactId   = seller ? seller.id : (p.seller_id || '');
-      const isMultiServices = typeof TREE_B1_IDS !== 'undefined' && typeof currentCategory !== 'undefined' && TREE_B1_IDS.has(currentCategory);
+  function _lbOpenOverlay() {
+    const lb = _lbEl('lightbox');
+    if (lb.style.display === 'none' || !lb.style.display) {
+      lb.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  // Photo seule (bannières, promos) : même fenêtre, sans infos ni produits similaires
+  function _lbPlain(src) {
+    _lbToken++;
+    _lbStack = [];
+    _lightboxProduct = null;
+    _lbEl('lightboxImg').src = src;
+    resetLightboxZoom();
+    _lbEl('lightboxInfo').style.display = 'none';
+    _lbEl('lightboxSimilarPanel').style.display = 'none';
+    _lbEl('lightboxSimilarPanel').innerHTML = '';
+    _lbOpenOverlay();
+    _lbEl('lightbox').scrollTop = 0;
+    history.pushState({ lightboxOpen: true }, '');
+    _lbPushed++;
+  }
+
+  function openLightbox(src, productId, category, name) {
+    if (!productId) { _lbPlain(src); return; }
+    _lbShowProduct(productId, { src: src, category: category, name: name }, 'push');
+  }
+
+  // mode : 'push' = nouveau produit dans la chaîne ; 'restore' = retour au produit précédent
+  async function _lbShowProduct(id, hint, mode) {
+    hint = hint || {};
+    const token = ++_lbToken;
+    const lb = _lbEl('lightbox');
+    const img = _lbEl('lightboxImg');
+    const infoBox = _lbEl('lightboxInfo');
+    const panel = _lbEl('lightboxSimilarPanel');
+    const btn = _lbEl('lightboxSimilarBtn');
+
+    if (mode === 'push') {
+      _lbStack.push(id);
+      history.pushState({ lightboxOpen: true }, '');
+      _lbPushed++;
+    }
+    const first = _lbLocalProduct(id);
+    img.src = hint.src || (first && first.image) || '';
+    resetLightboxZoom();
+    _lbOpenOverlay();
+    lb.scrollTop = 0;
+    _lightboxProduct = { productId: id, category: hint.category || (first && first.seller_category) || '', name: hint.name || (first && first.name) || '' };
+    infoBox.style.display = 'block';
+    infoBox.innerHTML = '<p style="text-align:center;color:#aaa;font-size:12px;padding:10px 0;">Chargement…</p>';
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+
+    const p = first || await _lbGetProduct(id);
+    if (token !== _lbToken) return;
+    if (!p) { infoBox.innerHTML = '<p style="text-align:center;color:#aaa;font-size:13px;padding:10px 0;">Produit introuvable.</p>'; return; }
+    if (!hint.src && p.image) img.src = p.image;
+    _lightboxProduct = { productId: p.id, category: p.seller_category || '', name: p.name || '' };
+
+    const seller = p.sellers || window.currentViewedSeller || null;
+    const contactId = seller ? seller.id : (p.seller_id || '');
+    const isMultiServices = (typeof TREE_B1_IDS !== 'undefined' && TREE_B1_IDS.has(p.seller_category))
+      || (typeof TREE_B1_IDS !== 'undefined' && typeof currentCategory !== 'undefined' && TREE_B1_IDS.has(currentCategory));
 
     window._lbCurrentProduct = { id: p.id, name: p.name, price: p.price, image: p.image };
       window._lbCurrentSeller  = seller
@@ -5563,37 +5624,121 @@ function openLightbox(src, productId, category, name) {
       infoBox.style.display = 'block';
       loadProductReviewsSummary(p.id, `lightboxReviews-${p.id}`);
       if (!isMultiServices && !isPriceNegotiable(p.price) && typeof updateCartUI === 'function') updateCartUI();
-    } else {
-      infoBox.style.display = 'none';
+
+    // Nom de la boutique cliquable : ouvre la page du vendeur
+    const head = infoBox.firstElementChild;
+    if (p.sellers && head && head.textContent.indexOf(p.sellers.full_name || '') >= 0) {
+      head.style.cursor = 'pointer';
+      head.style.textDecoration = 'underline';
+      head.textContent = head.textContent + ' ›';
+      head.onclick = function (e) {
+        e.stopPropagation();
+        const sid = p.sellers.id, cat = p.seller_category || '';
+        closeLightbox(function () { if (typeof openSellerProducts === 'function') openSellerProducts(sid, (typeof currentCategoryType !== 'undefined' && currentCategoryType) || 'B', cat); });
+      };
     }
-  } else {
-    _lightboxProduct = null;
     btn.style.display = 'none';
-    infoBox.style.display = 'none';
+    _lbLoadSimilar(p, token, isMultiServices);
   }
-}
 
-let _lightboxHistoryPushed = false;
+  const _LB_STOP = new Set(['de','du','des','la','le','les','en','et','au','aux','un','une','pour','avec','sans','sur','the']);
 
-function closeLightbox() {
-  document.getElementById('lightbox').style.display = 'none';
-  document.body.style.overflow = '';
-  document.getElementById('lightboxSimilarPanel').style.display = 'none';
-  _lightboxProduct = null;
-  if (_lightboxHistoryPushed) {
-    _lightboxHistoryPushed = false;
-    history.back();
+  async function _lbLoadSimilar(p, token, isMulti) {
+    const panel = _lbEl('lightboxSimilarPanel');
+    panel.style.display = 'block';
+    panel.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Chargement des produits similaires…</p>';
+    try {
+      const base = () => db.from(TABLES.PRODUCTS)
+        .select('id, name, price, image, seller_id, seller_category, sellers!inner(is_blocked, is_active)')
+        .eq('is_active', true).eq('sellers.is_blocked', false).eq('sellers.is_active', true);
+      const words = String(p.name || '').toLowerCase().split(/\s+/)
+        .map(w => w.replace(/[^\p{L}\p{N}]/gu, '')).filter(w => w.length >= 3 && !_LB_STOP.has(w)).slice(0, 2);
+      let byName = [], byCat = [];
+      if (words.length) {
+        const r = await base().or(words.map(w => 'name.ilike.%' + w + '%').join(',')).neq('id', p.id).limit(40);
+        byName = r.data || [];
+      }
+      if (p.seller_category) {
+        const r = await base().eq('seller_category', p.seller_category).neq('id', p.id).limit(60);
+        byCat = (r.data || []).slice();
+        for (let i = byCat.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); const t = byCat[i]; byCat[i] = byCat[k]; byCat[k] = t; }
+      }
+      if (token !== _lbToken) return;
+      const seen = new Set(_lbStack.map(String)); seen.add(String(p.id));
+      const list = [];
+      for (const r of byName.concat(byCat)) { const k = String(r.id); if (!seen.has(k)) { seen.add(k); list.push(r); } }
+      _lbSimilar = { list: list, shown: Math.min(LB_SIMILAR_STEP, list.length), isMulti: !!isMulti };
+      _lbRenderSimilar();
+    } catch (e) {
+      console.error('similar error:', e);
+      if (token === _lbToken) panel.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Produits similaires indisponibles.</p>';
+    }
   }
-}
 
-async function toggleLightboxSimilar() {
-  const panel = document.getElementById('lightboxSimilarPanel');
-  if (panel.style.display === 'block') { panel.style.display = 'none'; return; }
-  if (!_lightboxProduct) return;
-  panel.style.display = 'block';
-  panel.innerHTML = '<p style="text-align:center;color:#888;font-size:12px;">Chargement...</p>';
-  await loadSimilarProducts(_lightboxProduct.productId, _lightboxProduct.category, 'lightboxSimilarPanel', _lightboxProduct.name, true);
-}
+  function _lbRenderSimilar() {
+    const panel = _lbEl('lightboxSimilarPanel');
+    const st = _lbSimilar;
+    const title = st.isMulti ? '🔎 Services similaires' : '🔎 Produits similaires';
+    if (!st.list.length) { panel.innerHTML = '<div style="font-size:13px;font-weight:700;color:#444;margin-bottom:4px;">' + title + '</div><p style="text-align:center;color:#888;font-size:12px;">Aucun produit similaire trouvé.</p>'; return; }
+    const fallback = 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=400';
+    panel.innerHTML =
+      '<div style="font-size:13px;font-weight:700;color:#444;margin-bottom:8px;">' + title + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+      st.list.slice(0, st.shown).map(sp =>
+        '<div data-id="' + escapeHtml(String(sp.id)) + '" onclick="_lbOpenSimilar(this)" style="cursor:pointer;background:#f7f8fa;border-radius:10px;overflow:hidden;">' +
+          '<img src="' + escapeHtml(sp.image || '') + '" onerror="this.src=\'' + fallback + '\'" style="width:100%;height:130px;object-fit:contain;background:#f0f1f4;display:block;">' +
+          '<div style="padding:5px 7px 7px;"><div style="font-size:11.5px;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(sp.name || '') + '</div>' +
+          '<div style="font-size:11.5px;font-weight:700;color:#1677FF;">' + priceLabel(sp.price) + '</div></div></div>'
+      ).join('') + '</div>' +
+      (st.shown < st.list.length
+        ? '<div style="text-align:center;margin-top:10px;"><button onclick="_lbMoreSimilar()" style="background:#1677FF;color:#fff;border:none;padding:9px 24px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;">Voir plus</button></div>'
+        : '');
+  }
+
+  function _lbMoreSimilar() { _lbSimilar.shown = Math.min(_lbSimilar.list.length, _lbSimilar.shown + LB_SIMILAR_STEP); _lbRenderSimilar(); }
+
+  function _lbOpenSimilar(el) {
+    const id = el.getAttribute('data-id');
+    const im = el.querySelector('img');
+    _lbShowProduct(id, { src: im ? im.src : '' }, 'push');
+  }
+
+  // Bouton retour du téléphone : revient au produit précédent, puis à l'accueil
+  function _lbHandlePop() {
+    const lb = _lbEl('lightbox');
+    if (!lb || lb.style.display === 'none') return false;
+    _lbPushed = Math.max(0, _lbPushed - 1);
+    if (_lbStack.length > 1) {
+      _lbStack.pop();
+      _lbShowProduct(_lbStack[_lbStack.length - 1], {}, 'restore');
+      return true;
+    }
+    _lbStack = [];
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+    _lbToken++;
+    _lightboxProduct = null;
+    return true;
+  }
+
+  // ✕ : ferme tout et revient à l'accueil (ou à la page d'où l'on vient)
+  function closeLightbox(after) {
+    const lb = _lbEl('lightbox');
+    lb.style.display = 'none';
+    document.body.style.overflow = '';
+    _lbToken++;
+    _lbStack = [];
+    _lightboxProduct = null;
+    const n = _lbPushed;
+    _lbPushed = 0;
+    if (typeof after === 'function') {
+      if (n > 0) { window.addEventListener('popstate', function once() { window.removeEventListener('popstate', once); after(); }); history.go(-n); }
+      else after();
+      return;
+    }
+    if (n > 0) history.go(-n);
+  }
+  function toggleLightboxSimilar() {}
   
   let _lbScale = 1, _lbPanX = 0, _lbPanY = 0;
 
@@ -5604,6 +5749,8 @@ function resetLightboxZoom() {
 }
 function applyLightboxTransform() {
   const img = document.getElementById('lightboxImg');
+  const wrap = document.getElementById('lightboxImgWrap');
+  if (wrap) wrap.style.touchAction = _lbScale > 1 ? 'none' : 'pan-y';
   img.style.transform = `translate(${_lbPanX}px,${_lbPanY}px) scale(${_lbScale})`;
 }
 
@@ -5669,27 +5816,22 @@ document.addEventListener('DOMContentLoaded', initLightboxZoom);
   </div>
 </div>
 
-<!-- LIGHTBOX -->
-<div id="lightbox" onclick="closeLightbox()"
-  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.97);z-index:9999;align-items:center;justify-content:center;flex-direction:column;">
+<!-- LIGHTBOX = page produit -->
+<div id="lightbox"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0b0b0f;z-index:9999;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column;align-items:center;">
   <button onclick="event.stopPropagation(); closeLightbox();"
-    style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);color:white;border:none;
-           width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;z-index:2;">✕</button>
-  <div style="width:100%;max-height:66vh;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;">
-    <img id="lightboxImg" src="" onclick="event.stopPropagation();"
-      style="max-width:95%;max-height:66vh;object-fit:contain;border-radius:8px;cursor:zoom-in;transition:transform .15s ease;">
+    style="position:fixed;top:12px;right:12px;background:rgba(40,40,48,0.92);color:white;border:1px solid rgba(255,255,255,0.35);
+           width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;z-index:3;">✕</button>
+  <div id="lightboxImgWrap" style="width:100%;flex:none;height:60vh;margin-top:56px;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:pan-y;">
+    <img id="lightboxImg" src=""
+      style="width:96%;height:100%;object-fit:contain;border-radius:8px;cursor:zoom-in;transition:transform .15s ease;">
   </div>
-  <div id="lightboxInfo" onclick="event.stopPropagation();"
-    style="display:none;width:90%;max-width:420px;text-align:center;margin-top:6px;"></div>
-  <button id="lightboxSimilarBtn" onclick="event.stopPropagation(); toggleLightboxSimilar();"
-    style="display:none;margin-top:6px;background:#1677FF;color:white;border:none;padding:10px 22px;
-           border-radius:30px;font-size:13px;font-weight:600;cursor:pointer;">
-    🔎 Voir les produits similaires
-  </button>
-  <div id="lightboxSimilarPanel" onclick="event.stopPropagation();"
-    style="display:none;width:90%;max-width:95%;max-height:28vh;overflow-y:auto;overflow-x:hidden;
-           background:white;border-radius:14px;padding:10px;margin-top:6px;"></div>
+  <div id="lightboxInfo"
+    style="display:none;width:92%;max-width:480px;text-align:center;margin-top:8px;"></div>
+  <button id="lightboxSimilarBtn" style="display:none;"></button>
+  <div id="lightboxSimilarPanel"
+    style="display:none;width:92%;max-width:480px;background:white;border-radius:14px;padding:12px;margin:12px 0 90px;"></div>
 </div>
 
 </body>
