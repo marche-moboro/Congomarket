@@ -300,14 +300,16 @@ header p { font-size: 12px; opacity: .85; }
   background: transparent;
 }
 .product-img-wrap { position: relative; }
-.product-card img { width: 100%; height: 150px; object-fit: cover; display:block; }
-/* Priorité forcée sur la règle générique (280px/contain) qui écrasait
-   par erreur la grille : sans ça les photos étaient trop hautes avec
-   des bandes vides, ce qui donnait un faux espace vertical entre les lignes. */
+.product-card img { width: 100%; height: auto; min-height: 150px; max-height: 260px; object-fit: contain; background: #f5f7fb; display:block; }
+/* Photo TOUJOURS entière : hauteur naturelle (ratio respecté), plafonnée à 260px,
+   jamais recadrée (contain) ; fond neutre si la photo est plus étroite que la carte. */
 #productsList .product-card img,
 #homeProductsGrid .product-card img {
-  height: 150px !important;
-  object-fit: cover !important;
+  height: auto !important;
+  min-height: 150px !important;
+  max-height: 260px !important;
+  object-fit: contain !important;
+  background: #f5f7fb !important;
 }
 .product-price-badge {
   position: absolute; top: 8px; right: 8px;
