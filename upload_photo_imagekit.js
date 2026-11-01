@@ -9,48 +9,82 @@ const IMAGEKIT_PUBLIC_KEY = 'public_pJNeKaHWN8mcFS49bpw1Rn3mysI=';
 const IMAGEKIT_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload';
 
 // ================================================================
-// Compression image (Canvas) — max 100ko
+// Outils : délai maximum sur une opération (évite le blocage infini)
+// ================================================================
+function _withTimeout(promise, ms, msg) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(msg || 'Délai dépassé')), ms);
+    promise.then(v => { clearTimeout(t); resolve(v); },
+                 e => { clearTimeout(t); reject(e); });
+  });
+}
+async function _fetchTimeout(url, options, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try { return await fetch(url, Object.assign({}, options, { signal: ctrl.signal })); }
+  finally { clearTimeout(t); }
+}
+
+// ================================================================
+// Décodage d'une photo (avec échec clair au lieu d'un blocage)
+// ================================================================
+function _decodeImage(file) {
+  return _withTimeout(new Promise(async (resolve, reject) => {
+    try {
+      if (window.createImageBitmap) {
+        try { return resolve(await createImageBitmap(file)); } catch (e) { /* on essaie l'autre méthode */ }
+      }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Photo illisible')); };
+      img.src = url;
+    } catch (e) { reject(e); }
+  }), 20000, 'Photo trop lente à lire');
+}
+
+function _canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(b => b ? resolve(b) : reject(new Error('Compression impossible')), 'image/jpeg', quality);
+  });
+}
+
+// ================================================================
+// Compression image (Canvas) — max 100ko, proportions conservées
 // ================================================================
 async function compressImage(file, maxKB = 100) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
+  const src = await _decodeImage(file);
+  let w = src.width, h = src.height;
+  if (!w || !h) throw new Error('Photo illisible');
 
-        // Redimensionner si largeur > 800px
-        if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
+  // Redimensionner si largeur > 800px
+  if (w > 800) { h = Math.round(h * 800 / w); w = 800; }
 
-        canvas.width  = w;
-        canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  const maxBytes = maxKB * 1024;
+  let blob = null;
+  for (let essai = 0; essai < 4; essai++) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';               // fond blanc pour les PNG transparents
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(src, 0, 0, w, h);
 
-        // Compression itérative jusqu'à maxKB
-        let quality = 0.8;
-        let result;
-        do {
-          result  = canvas.toDataURL('image/jpeg', quality);
-          quality -= 0.05;
-        } while (result.length > maxKB * 1024 * 1.37 && quality > 0.1);
+    let quality = 0.8;
+    do {
+      blob = await _canvasToBlob(canvas, quality);
+      quality -= 0.1;
+    } while (blob.size > maxBytes && quality > 0.3);
 
-        // Convertir dataURL en File
-        const arr   = result.split(',');
-        const bstr  = atob(arr[1]);
-        const u8arr = new Uint8Array(bstr.length);
-        for (let i = 0; i < bstr.length; i++) {
-          u8arr[i] = bstr.charCodeAt(i);
-        }
+    if (blob.size <= maxBytes) break;
+    // Encore trop lourd : on réduit les dimensions de 20 % et on recommence
+    w = Math.round(w * 0.8); h = Math.round(h * 0.8);
+  }
+  if (src.close) src.close();
 
-        const compressed = new File([u8arr], file.name, { type: 'image/jpeg' });
-        console.log(`Compression: ${(file.size/1024).toFixed(0)}ko → ${(compressed.size/1024).toFixed(0)}ko`);
-        resolve(compressed);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  const compressed = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' });
+  console.log(`Compression: ${(file.size/1024).toFixed(0)}ko → ${(compressed.size/1024).toFixed(0)}ko`);
+  return compressed;
 }
 
 // ================================================================
@@ -59,78 +93,71 @@ async function compressImage(file, maxKB = 100) {
 async function uploadPhoto(file, folder = 'sellers') {
   if (!file) return null;
 
-  // Vérifications type
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  if (!allowedTypes.includes(file.type)) {
-    showToast('Format non supporté. JPG, PNG ou WEBP uniquement.', 'error');
+  // Taille avant compression (les photos de téléphone récents dépassent souvent 10 Mo)
+  if (file.size > 30 * 1024 * 1024) {
+    showToast('Photo trop lourde (max 30 Mo)', 'error');
     return null;
   }
 
-  // Vérification taille avant compression
-  if (file.size > 10 * 1024 * 1024) {
-    showToast('Image trop lourde (max 10 MB)', 'error');
-    return null;
-  }
-
+  // NB : certains téléphones donnent un type vide ou « image/heic ».
+  // On ne refuse donc plus sur le type : si la photo ne peut pas être lue, on le dit clairement.
+  let compressed;
   try {
-    
-    // Compression selon le type de dossier
-    const maxKB      = folder === 'sellers' ? 80 : 100;
-    const compressed = await compressImage(file, maxKB);
-
-
-    // Préparer FormData pour ImageKit
-  const fileName = folder + '_' + Date.now() + '_' +
-                 Math.random().toString(36).slice(2) + '.jpg';
-
-const formData = new FormData();
-formData.append('file',      compressed);
-formData.append('fileName',  fileName);
-formData.append('folder',    '/moboro/' + folder);
-
-const authRes = await fetch('https://frvzrorqndozglxczatv.supabase.co/functions/v1/imagekit-auth', {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + SUPABASE_KEY
-  }
-});
-const auth = await authRes.json();
-
-console.log('ImageKit auth OK — expire:', auth.expire);
-
-const res = await fetch(IMAGEKIT_UPLOAD_URL, {
-  method: 'POST',
-  body: (() => {
-    formData.append('publicKey',  IMAGEKIT_PUBLIC_KEY);
-    formData.append('signature',  auth.signature);
-formData.append('expire',     String(auth.expire));
-    formData.append('token',      auth.token);
-    return formData;
-  })()
-});
-    const data = await res.json();
-
-if (!data.url) {
-  console.error('ImageKit upload error:', data);
-const msg =
-  data.message ||
-  (data.error && data.error.message) ||
-  res.status;
-
-showToast('Erreur upload image: ' + msg, 'error');
-  return null;
-}
-
-    // URL optimisée avec transformations ImageKit
-    const optimizedUrl = getOptimizedUrl(data.url, folder);
-    return optimizedUrl;
-
+    const maxKB = folder === 'sellers' ? 80 : 100;
+    compressed = await compressImage(file, maxKB);
   } catch (e) {
-    console.error('uploadPhoto exception:', e);
-    showToast('Erreur réseau lors de l\'upload', 'error');
+    console.error('compressImage:', e);
+    showToast('Photo illisible. Choisissez une photo JPG ou PNG, ou reprenez-la avec l\'appareil photo.', 'error');
     return null;
   }
+
+  const fileName = folder + '_' + Date.now() + '_' +
+                   Math.random().toString(36).slice(2) + '.jpg';
+
+  // 2 essais en cas de coupure réseau
+  let derniereErreur = '';
+  for (let essai = 1; essai <= 2; essai++) {
+    try {
+      const authRes = await _fetchTimeout('https://frvzrorqndozglxczatv.supabase.co/functions/v1/imagekit-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        }
+      }, 15000);
+      const auth = await authRes.json();
+      if (!authRes.ok || !auth.signature) {
+        console.error('imagekit-auth:', authRes.status, auth);
+        derniereErreur = 'autorisation refusée (' + authRes.status + ')';
+        continue;
+      }
+
+      const formData = new FormData();
+      formData.append('file',      compressed);
+      formData.append('fileName',  fileName);
+      formData.append('folder',    '/moboro/' + folder);
+      formData.append('publicKey', IMAGEKIT_PUBLIC_KEY);
+      formData.append('signature', auth.signature);
+      formData.append('expire',    String(auth.expire));
+      formData.append('token',     auth.token);
+
+      const res  = await _fetchTimeout(IMAGEKIT_UPLOAD_URL, { method: 'POST', body: formData }, 45000);
+      const data = await res.json();
+
+      if (!data.url) {
+        console.error('ImageKit upload error:', data);
+        derniereErreur = data.message || (data.error && data.error.message) || res.status;
+        continue;
+      }
+      return getOptimizedUrl(data.url, folder);
+
+    } catch (e) {
+      console.error('uploadPhoto exception (essai ' + essai + '):', e);
+      derniereErreur = e.name === 'AbortError' ? 'connexion trop lente' : 'réseau';
+    }
+  }
+  showToast('Envoi de la photo impossible (' + derniereErreur + '). Vérifiez votre connexion et réessayez.', 'error');
+  return null;
 }
 
 // ================================================================

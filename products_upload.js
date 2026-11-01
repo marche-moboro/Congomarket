@@ -372,14 +372,16 @@ const matiere     = document.getElementById('pubMatiere')?.value.trim() || null;
     // Uploader toutes les photos sélectionnées (1, 2 ou 3)
     showToast(`Upload ${photoFiles.length} photo(s)...`, 'info');
     const imageUrls = [];
-    for (const file of photoFiles) {
-      const url = await uploadPhoto(file, 'products');
-      if (url) imageUrls.push(url);
-    }
-
-    if (imageUrls.length === 0) {
-      showToast('Échec upload photo', 'error');
-      return;
+    for (let i = 0; i < photoFiles.length; i++) {
+      showToast(`Envoi photo ${i + 1}/${photoFiles.length}...`, 'info');
+      const url = await uploadPhoto(photoFiles[i], 'products');
+      if (!url) {
+        // On n'enregistre pas un produit avec des photos manquantes :
+        // le vendeur peut réessayer, ses champs restent remplis.
+        showToast(`La photo ${i + 1} n'a pas pu être envoyée. Réessayez.`, 'error');
+        return;
+      }
+      imageUrls.push(url);
     }
 
     // Stocker : image principale = première photo, images = tableau complet
@@ -409,24 +411,29 @@ const matiere     = document.getElementById('pubMatiere')?.value.trim() || null;
       return;
     }
 
-    // L'assistant apprend de cette publication (non bloquant, n'empêche jamais de publier)
-    if (typeof assistantLearnFromPublication === 'function') {
-      assistantLearnFromPublication({
-        name,
-        category_id: (ownCatEl && ownCatEl.value) || '',
-        taille: taille || '',
-        description: description || '',
-        imageUrl: imageUrls[0]
+    // Le produit est enregistré : tout ce qui suit ne doit JAMAIS faire croire à un échec
+    // (sinon le vendeur republie et crée un doublon).
+    try {
+      // L'assistant apprend de cette publication (non bloquant)
+      if (typeof assistantLearnFromPublication === 'function') {
+        assistantLearnFromPublication({
+          name,
+          category_id: (ownCatEl && ownCatEl.value) || '',
+          taille: taille || '',
+          description: description || '',
+          imageUrl: imageUrls[0]
+        });
+      }
+      // Score cumulatif — augmente à chaque publication, jamais réduit
+      const _currentScore = currentSeller.dynamisme_score || 0;
+      await callSellerAction('update_own_seller', {
+        last_published:  new Date().toISOString(),
+        dynamisme_score: _currentScore + 1
       });
+      currentSeller.dynamisme_score = _currentScore + 1;
+    } catch (e2) {
+      console.warn('Après-publication (non bloquant):', e2);
     }
-
-   // Score cumulatif — augmente à chaque publication, jamais réduit
-    const _currentScore = currentSeller.dynamisme_score || 0;
-    await callSellerAction('update_own_seller', {
-      last_published:  new Date().toISOString(),
-      dynamisme_score: _currentScore + 1
-    });
-    currentSeller.dynamisme_score = _currentScore + 1;
 
     showToast(`Produit publié avec ${imageUrls.length} photo(s) ✓`, 'success');
 
