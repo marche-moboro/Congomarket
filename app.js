@@ -403,59 +403,8 @@ window.closeAdminPromo     = closeAdminPromo;
 // en plus du simple tap sur la bande visible
 // ================================================================
 function initHomeSidebarSwipe() {
-  const sidebar = document.getElementById('homeCatSidebar');
-  if (!sidebar) return;
-
-  const PEEK = 26; // doit correspondre à style.css
-  let startX = null, startY = null, dragging = false, isOpenAtStart = false, sidebarWidth = 0;
-
-  function closedX() { return -(sidebarWidth - PEEK); }
-
-  sidebar.addEventListener('pointerdown', (e) => {
-    isOpenAtStart = sidebar.classList.contains('open');
-    sidebarWidth  = sidebar.getBoundingClientRect().width;
-    startX = e.clientX;
-    startY = e.clientY;
-    dragging = false;
-  });
-
-  sidebar.addEventListener('pointermove', (e) => {
-    if (startX === null) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    if (!dragging) {
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { startX = null; return; } // geste vertical → on laisse défiler
-      if (Math.abs(dx) < 8) return; // pas encore assez de mouvement pour trancher
-      dragging = true;
-      sidebar.style.transition = 'none';
-    }
-
-    let tx = isOpenAtStart ? (0 + dx) : (closedX() + dx);
-    tx = Math.min(0, Math.max(closedX(), tx));
-    sidebar.style.transform = `translateX(${tx}px)`;
-    e.preventDefault();
-  });
-
-  function endDrag(e) {
-    if (startX === null) return;
-    if (dragging) {
-      const dx = (e.clientX || 0) - startX;
-      const threshold = (sidebarWidth - PEEK) / 2;
-      const openNow = isOpenAtStart ? (dx > -threshold) : (dx > threshold);
-      sidebar.style.transition = '';
-      sidebar.style.transform  = '';
-      if (openNow) openHomeSidebar(); else closeHomeSidebar();
-    } else if (!isOpenAtStart) {
-      // simple tap sur la bande visible, sans glissement → on ouvre
-      openHomeSidebar();
-    }
-    startX = null;
-    dragging = false;
-  }
-
-  sidebar.addEventListener('pointerup', endDrag);
-  sidebar.addEventListener('pointercancel', endDrag);
+  // Le tiroir latéral n'existe plus : le panneau s'ouvre avec le bouton ☰ (en-tête).
+  // Fonction conservée (appelée par index.html) mais volontairement vide.
 }
 window.initHomeSidebarSwipe = initHomeSidebarSwipe;
 

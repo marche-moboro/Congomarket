@@ -3,9 +3,9 @@
 // Cache optimisé — fichiers statiques + données réseau
 // ================================================================
 
-const CACHE_STATIC = 'moboro-static-v37';
-const CACHE_DYNAMIC = 'moboro-dynamic-v37';
-const CACHE_API     = 'moboro-api-v37';
+const CACHE_STATIC = 'moboro-static-v38';
+const CACHE_DYNAMIC = 'moboro-dynamic-v38';
+const CACHE_API     = 'moboro-api-v38';
 
 // Fichiers statiques — cachés à l'installation
 const ASSETS_TO_CACHE = [
@@ -19,6 +19,7 @@ const ASSETS_TO_CACHE = [
   '/Congomarket/search.js',
   '/Congomarket/cart.js',
   '/Congomarket/assistant.js',
+  '/Congomarket/notifications.js',
   '/Congomarket/products_upload.js',
   '/Congomarket/upload_photo_imagekit.js',
   '/Congomarket/icon-192.png',
@@ -117,6 +118,25 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // ── 4b. Ouverture depuis une notification (…/Congomarket/?produit=ID) :
+  //        on sert index.html (cache + mise à jour en arrière-plan),
+  //        sans créer une entrée de cache par produit.
+  if (event.request.mode === 'navigate' && new URL(url).search) {
+    event.respondWith(
+      caches.match('/Congomarket/index.html').then(cached => {
+        const net = fetch('/Congomarket/index.html').then(r => {
+          if (r && r.status === 200) {
+            const c = r.clone();
+            caches.open(CACHE_STATIC).then(ca => ca.put('/Congomarket/index.html', c));
+          }
+          return r;
+        }).catch(() => cached || Response.error());
+        return cached || net;
+      })
+    );
+    return;
+  }
+
   // ── 5. Fichiers statiques (HTML/JS/CSS/manifest) — Cache d'abord pour un
   //       chargement instantané, MAIS mise à jour silencieuse en arrière-plan
   //       à chaque requête (stale-while-revalidate). Le meilleur des deux :
@@ -146,7 +166,19 @@ self.addEventListener('message', event => {
   }
 });
 
-// ── Notifications Push (Option B) ──────────────────────────────
+// ── Notifications Push ─────────────────────────────────────────
+// Sert à la fois aux commandes (vendeurs) et aux alertes visiteurs
+// (nouveautés toutes les 2 h, nouveau vendeur, nouveau Taxi).
+const PUSH_SUPABASE_URL = 'https://frvzrorqndozglxczatv.supabase.co';
+const PUSH_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZydnpyb3JxbmRvemdseGN6YXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTc0NTEsImV4cCI6MjA5NTQ3MzQ1MX0.g3ETfxBw_i0keZYDrnGYudnbs4m23AJ_dFoxXV0ZJEE';
+const PUSH_VAPID_KEY    = 'BETaKCUXbi_24cmp2qv-8v5xHrhW-gMCYlWCxNljiqO_Cp5TjZmxgLPYcymD4m21aypPaqlrq5eJn8FFuFrlp7k';
+
+function pushB64ToU8(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) {}
@@ -158,19 +190,44 @@ self.addEventListener('push', event => {
     badge: '/Congomarket/icon-192.png',
     data: { url: data.url || '/Congomarket/' }
   };
+  if (data.image) options.image = data.image;          // grande photo du produit
+  if (data.tag) { options.tag = data.tag; options.renotify = true; }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/Congomarket/';
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url.includes('/Congomarket/') && 'focus' in client) return client.focus();
+  let url = (event.notification.data && event.notification.data.url) || '/Congomarket/';
+  if (url === '/') url = '/Congomarket/';
+  const target = new URL(url, self.location.origin).href;
+  event.waitUntil((async () => {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of list) {
+      if (client.url.includes('/Congomarket/') && 'focus' in client) {
+        await client.focus();
+        client.postMessage({ type: 'notif-open', url: target });   // la page ouvre le produit / le formulaire
+        return;
       }
-      if (clients.openWindow) return clients.openWindow(url);
-    })
-  );
+    }
+    if (clients.openWindow) await clients.openWindow(target);
+  })());
+});
+
+// Si le navigateur renouvelle l'abonnement, on se réabonne et on le réenregistre
+// (l'abonnement visiteur reste ainsi actif sans action de l'utilisateur).
+self.addEventListener('pushsubscriptionchange', event => {
+  event.waitUntil((async () => {
+    try {
+      const sub = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: pushB64ToU8(PUSH_VAPID_KEY)
+      });
+      await fetch(PUSH_SUPABASE_URL + '/functions/v1/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + PUSH_SUPABASE_KEY },
+        body: JSON.stringify({ action: 'subscribe', subscription: sub.toJSON() })
+      });
+    } catch (e) { /* on réessaiera à la prochaine visite */ }
+  })());
 });

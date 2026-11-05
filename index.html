@@ -947,6 +947,7 @@ header p { font-size: 12px; opacity: .80; }
       <div>
       <h1>Marché Moboro</h1>
     </div>
+    <button id="menuBtn" class="menu-btn" onclick="toggleHomeSidebar()" aria-label="Menu et notifications">☰<span class="menu-btn-badge"></span></button>
     </div>
   </div>
 </header>
@@ -964,6 +965,8 @@ header p { font-size: 12px; opacity: .80; }
 <!-- ========== SEARCH ========== -->
 <div class="search-box">
   <div class="header-second-row">
+    <!-- ☰ : visible ici quand le titre est replié (pages autres que l'accueil) -->
+    <button class="menu-btn menu-btn-row" onclick="toggleHomeSidebar()" aria-label="Menu et notifications">☰<span class="menu-btn-badge"></span></button>
     <div class="search-input-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Produit, vendeur, quartier, ville..."
@@ -993,8 +996,12 @@ header p { font-size: 12px; opacity: .80; }
 <!-- SIDEBAR GLOBALE (tiroir + bouton flottant, visible sur toutes les pages) -->
 <div id="homeCatSidebarOverlay" class="cat-sidebar-overlay" onclick="closeHomeSidebar()"></div>
 <div id="homeCatSidebar" class="cat-sidebar">
-  <span class="cat-sidebar-handle">›</span>
   <button class="cat-sidebar-close" onclick="closeHomeSidebar()">✕</button>
+
+  <div class="cat-sidebar-section" id="notifSection">
+    <div class="cat-sidebar-title">🔔 Notifications</div>
+    <div id="notifSectionBody"></div>
+  </div>
 
   <div class="cat-sidebar-section">
     <div class="cat-sidebar-title">📍 Ville</div>
@@ -3107,6 +3114,7 @@ header p { font-size: 12px; opacity: .80; }
 <script src="app.js"></script>
 <script src="auth_upload.js"></script>
 <script src="sellers.js"></script>
+<script src="notifications.js"></script>
 <script src="products_upload.js"></script>
 <script src="search.js"></script>
 <script src="cart.js"></script>

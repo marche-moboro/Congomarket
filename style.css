@@ -2,7 +2,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 * { border-radius: 0 !important; box-shadow: none !important; }
 /* Exceptions : éléments qui doivent rester ronds */
-.profile-icon, .banner-nav, .dot, .cart-circle, .cart-count,
+.profile-icon, .banner-nav, .dot, .cart-circle, .cart-count, .menu-btn-badge,
 .seller-avatar, .seller-mini-img, .cart-bar {
   border-radius: 50% !important;
 }
@@ -12,7 +12,6 @@ body {
   color: #1a1a1a;
   overflow-x: hidden;
   padding-bottom: 20px;
-  padding-left: 26px; /* libère la place pour la bande toujours visible du tiroir catégories */
 }
 
 .page { display: none; }
@@ -385,39 +384,33 @@ header p { font-size: 12px; opacity: .85; }
 }
 .cat-sidebar-overlay.open { display: block; }
 .cat-sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0;
-  width: 52%; max-width: 200px;
+  /* Panneau qui descend du haut de l'écran, côté droit (ouvert par le bouton ☰) */
+  position: fixed; top: 0; right: 0; left: auto; bottom: auto;
+  width: min(90vw, 380px); max-height: 88vh; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fff; z-index: 1400;
-  display: flex; flex-direction: column;
-  padding: 10px 8px 8px;
-  transform: translateX(calc(-100% + 26px));
-  transition: transform .25s ease;
-  box-shadow: 4px 0 20px rgba(0,0,0,.15);
+  display: block;
+  padding: 12px 12px 10px;
+  transform: translateY(-105%);
+  visibility: hidden;
+  transition: transform .28s ease, visibility 0s linear .28s;
+  box-shadow: -4px 6px 24px rgba(0,0,0,.2);
   touch-action: pan-y;
 }
-.cat-sidebar.open { transform: translateX(0); z-index: 1900; }
-.cat-sidebar-handle {
-  position: absolute; top: 50%; right: 0;
-  transform: translateY(-50%);
-  width: 26px; height: 46px;
-  display: flex; align-items: center; justify-content: center;
-  color: #1677FF; font-size: 15px; font-weight: 900;
-  pointer-events: none; /* le clic est géré par .cat-sidebar elle-même */
-  transition: transform .25s ease;
-}
-.cat-sidebar.open .cat-sidebar-handle { transform: translateY(-50%) rotate(180deg); }
+.cat-sidebar.open { transform: translateY(0); visibility: visible; z-index: 1900; transition: transform .28s ease, visibility 0s; }
+.cat-sidebar-handle { display: none; }
 .cat-sidebar-close {
-  align-self: flex-end; background: #f0f0f0; border: none;
-  width: 28px; height: 28px; border-radius: 50%;
-  font-size: 14px; cursor: pointer; margin-bottom: 8px;
+  display: block; margin-left: auto; background: #f0f0f0; border: none;
+  width: 32px; height: 32px; border-radius: 50%;
+  font-size: 15px; cursor: pointer; margin-bottom: 8px;
 }
 .cat-sidebar-section {
   margin-bottom: 14px; padding-bottom: 12px;
   border-bottom: 1px solid #f0f0f0;
 }
-.cat-sidebar-section-grow { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.cat-sidebar-section-grow .cat-sidebar-scroll-wrap-grow { flex: 1; min-height: 0; }
-.cat-sidebar-section-grow .cat-sidebar-scroll-wrap-grow .cat-sidebar-scroll { max-height: none; height: 100%; }
+.cat-sidebar-section-grow { display: block; }
+.cat-sidebar-section-grow .cat-sidebar-scroll-wrap-grow { min-height: 0; }
+.cat-sidebar-section-grow .cat-sidebar-scroll-wrap-grow .cat-sidebar-scroll { max-height: 220px; height: auto; }
 .cat-sidebar-title {
   font-size: 12px; font-weight: 700; color: #555;
   margin-bottom: 8px; text-transform: uppercase; letter-spacing: .3px;
@@ -1013,3 +1006,47 @@ header p { font-size: 12px; opacity: .85; }
   background: #ff4d4f;
   color: white;
 }
+
+/* ==================== BOUTON ☰ (en-tête) + NOTIFICATIONS ==================== */
+.menu-btn {
+  position: relative; flex-shrink: 0; margin-left: 4px;
+  width: 44px; height: 44px; border: none; cursor: pointer;
+  background: rgba(255,255,255,.22); color: #fff;
+  font-size: 26px; line-height: 1; font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+}
+.menu-btn:active { background: rgba(255,255,255,.38); }
+.menu-btn-badge {
+  position: absolute; top: -5px; right: -5px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  background: #ff4d4f; color: #fff; font-size: 11px; font-weight: 700;
+  display: none; align-items: center; justify-content: center;
+  border: 2px solid #1677FF;
+}
+.notif-status { font-size: 12px; line-height: 1.45; color: #444; background: #f5f7fb; padding: 8px 10px; margin-bottom: 8px; }
+.notif-status span { font-size: 11px; color: #777; }
+.notif-status.ok { background: #f0faf0; color: #2a7a2a; }
+.notif-status.warn { background: #fff7e6; color: #8a5a00; }
+.notif-btn { margin-top: 6px; background: #1677FF; color: #fff; border: none; padding: 8px 14px; font-weight: 700; font-size: 12px; cursor: pointer; }
+.notif-sub { font-size: 11px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: .3px; margin: 10px 0 6px; }
+.notif-empty { font-size: 12px; color: #999; padding: 4px 2px; }
+.notif-news-item { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.notif-news-item img { width: 46px; height: 46px; object-fit: contain; background: #f5f7fb; flex-shrink: 0; }
+.notif-news-item b { display: block; font-size: 12px; color: #222; line-height: 1.25; }
+.notif-news-item span { display: block; font-size: 11px; color: #ff4d4f; }
+.notif-perso { margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 8px; }
+.notif-perso > summary { font-size: 12.5px; font-weight: 700; color: #1677FF; cursor: pointer; padding: 4px 0; }
+.notif-check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #333; padding: 5px 2px; }
+.notif-check input { width: 17px; height: 17px; flex-shrink: 0; }
+.notif-all { font-weight: 700; }
+.notif-cat-group > summary { font-size: 12px; font-weight: 700; color: #555; padding: 6px 2px; cursor: pointer; border-bottom: 1px solid #f3f3f3; }
+.notif-cat-group > summary i { color: #1677FF; font-style: normal; }
+.notif-cat-group[open] { background: #fafbfd; }
+.notif-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.notif-chip { background: #eaf3ff; color: #1677FF; font-size: 11.5px; font-weight: 600; padding: 4px 8px; display: inline-flex; align-items: center; gap: 6px; }
+.notif-chip button { background: none; border: none; color: #1677FF; font-size: 12px; cursor: pointer; padding: 0; }
+.notif-input { width: 100%; padding: 8px 10px; border: 1px solid #ddd; font-size: 12.5px; outline: none; }
+.notif-result { display: block; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid #f0f0f0; padding: 7px 4px; font-size: 12.5px; color: #333; cursor: pointer; }
+
+.menu-btn-row { display: none; margin: 0 8px 0 0; }
+.search-box.at-top .menu-btn-row { display: flex; }

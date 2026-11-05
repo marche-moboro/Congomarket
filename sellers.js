@@ -1570,8 +1570,10 @@ window._toggleSubcatDrawer = _toggleSubcatDrawer;
 function openHomeSidebar() {
   const sb = document.getElementById('homeCatSidebar');
   const ov = document.getElementById('homeCatSidebarOverlay');
+  const wasOpen = sb && sb.classList.contains('open');
   if (sb) sb.classList.add('open');
   if (ov) ov.classList.add('open');
+  if (!wasOpen && typeof notifOnPanelOpen === 'function') notifOnPanelOpen();
   if (typeof _refreshAllSidebarScrollThumbs === 'function') {
     setTimeout(_refreshAllSidebarScrollThumbs, 50); // après la transition d'ouverture
   }
@@ -1579,8 +1581,10 @@ function openHomeSidebar() {
 function closeHomeSidebar() {
   const sb = document.getElementById('homeCatSidebar');
   const ov = document.getElementById('homeCatSidebarOverlay');
+  const wasOpen = sb && sb.classList.contains('open');
   if (sb) sb.classList.remove('open');
   if (ov) ov.classList.remove('open');
+  if (wasOpen && typeof notifOnPanelClose === 'function') notifOnPanelClose();
 }
 function toggleHomeSidebar() {
   const sb = document.getElementById('homeCatSidebar');
@@ -1758,7 +1762,6 @@ function initHomeSidebarAndFeed() {
   _populateHomeSidebarStatic();
   loadHomeFeed();
   loadHomePromoPanels();
-  openHomeSidebar();
   _maybeShowFirstVisitTutorial();
 }
 window.initHomeSidebarAndFeed = initHomeSidebarAndFeed;
