@@ -1050,3 +1050,31 @@ header p { font-size: 12px; opacity: .85; }
 
 .menu-btn-row { display: none; margin: 0 8px 0 0; }
 .search-box.at-top .menu-btn-row { display: flex; }
+
+
+/* ==================== ACCUEIL : GRILLE DES CATÉGORIES ==================== */
+.home-cat-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 14px 8px; padding: 14px 12px 6px;
+}
+.home-cat-item {
+  background: none; border: none; cursor: pointer; padding: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-family: inherit; color: #333;
+}
+.home-cat-ico {
+  width: 100%; max-width: 78px; aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  background: #eaf0fb; font-size: 36px; line-height: 1;
+  border-radius: 16px !important;
+}
+.home-cat-item:active .home-cat-ico { background: #d6e4fb; }
+.home-cat-label { font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.2; word-break: break-word; }
+
+/* Les 3 barres du bouton ☰ : dessinées en CSS, noires, comme demandé */
+.menu-bars {
+  display: block; width: 24px; height: 18px;
+  background: linear-gradient(#000 0 0) 0 0 / 100% 3px no-repeat,
+              linear-gradient(#000 0 0) 0 50% / 100% 3px no-repeat,
+              linear-gradient(#000 0 0) 0 100% / 100% 3px no-repeat;
+}

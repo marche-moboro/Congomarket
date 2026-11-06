@@ -947,7 +947,7 @@ header p { font-size: 12px; opacity: .80; }
       <div>
       <h1>Marché Moboro</h1>
     </div>
-    <button id="menuBtn" class="menu-btn" onclick="toggleHomeSidebar()" aria-label="Menu et notifications">☰<span class="menu-btn-badge"></span></button>
+    <button id="menuBtn" class="menu-btn" onclick="toggleHomeSidebar()" aria-label="Menu et notifications"><span class="menu-bars"></span><span class="menu-btn-badge"></span></button>
     </div>
   </div>
 </header>
@@ -966,7 +966,7 @@ header p { font-size: 12px; opacity: .80; }
 <div class="search-box">
   <div class="header-second-row">
     <!-- ☰ : visible ici quand le titre est replié (pages autres que l'accueil) -->
-    <button class="menu-btn menu-btn-row" onclick="toggleHomeSidebar()" aria-label="Menu et notifications">☰<span class="menu-btn-badge"></span></button>
+    <button class="menu-btn menu-btn-row" onclick="toggleHomeSidebar()" aria-label="Menu et notifications"><span class="menu-bars"></span><span class="menu-btn-badge"></span></button>
     <div class="search-input-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Produit, vendeur, quartier, ville..."
@@ -1112,22 +1112,8 @@ header p { font-size: 12px; opacity: .80; }
 <div class="page" id="homePage">
 
 <!-- BANDEAU PROMO ACCUEIL — Grossiste / Service (défilement auto, top 10 en position) -->
-  <div class="home-promo-split">
-    <div class="home-promo-half" id="homePromoGrossiste" onclick="openGrossistePage()">
-      <img class="home-promo-img" id="homePromoGrossisteImg" src="" alt="">
-      <span class="home-promo-tag">🏭 Grossiste</span>
-      <div class="home-promo-overlay">
-        <span class="home-promo-name" id="homePromoGrossisteName"></span>
-      </div>
-    </div>
-    <div class="home-promo-half" id="homePromoService" onclick="openServicePage()">
-      <img class="home-promo-img" id="homePromoServiceImg" src="" alt="">
-      <span class="home-promo-tag">⭐ Service</span>
-      <div class="home-promo-overlay">
-        <span class="home-promo-name" id="homePromoServiceName"></span>
-      </div>
-    </div>
-  </div>
+  <!-- Catégories principales (remplace l'ancien bandeau Grossiste / Service) -->
+  <div id="homeCatGrid" class="home-cat-grid"></div>
 
 <!-- CATÉGORIE B — grille produits personnalisée -->
  <div class="home-section-header">
@@ -5444,10 +5430,11 @@ async function saveLivreurGrille() {
   };
 
   try {
-    const { ok, error } = await callLivreurAction('update_own_livreur', updates);
-    if (error) {
-      console.error('saveLivreurGrille error:', error);
-      showToast('Erreur : ' + (error.message || 'impossible de sauvegarder'), 'error');
+    const res = await callLivreurAction('update_own_livreur', updates);
+    if (!res || res.ok === false || res.error) {
+      console.error('saveLivreurGrille error:', res);
+      const em = res && res.error ? (res.error.message || res.error) : 'impossible de sauvegarder';
+      showToast('Erreur : ' + em, 'error');
       return;
     }
     window._currentLivreur = { ...l, ...updates };

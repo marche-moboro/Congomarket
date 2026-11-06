@@ -1741,6 +1741,7 @@ function _startHomePromoRotation(state, imgId, nameId) {
 }
 
 async function loadHomePromoPanels() {
+  if (!document.getElementById('homePromoGrossiste')) return;   // bandeau remplacé par la grille de catégories
   const [grossisteItems, serviceItems] = await Promise.all([
     _fetchHomePromoSellers('A'),
     _fetchHomePromoSellers('B1')
@@ -1758,6 +1759,7 @@ window.loadHomePromoPanels = loadHomePromoPanels;
 
 // ---- Initialisation complète de l'accueil ----
 function initHomeSidebarAndFeed() {
+  try { renderHomeCategories(); } catch (e) { console.error('renderHomeCategories', e); }
   _sidebarContext = 'home';
   _populateHomeSidebarStatic();
   loadHomeFeed();
@@ -2377,3 +2379,72 @@ window._refreshAllSidebarScrollThumbs = _refreshAllSidebarScrollThumbs;
     setup();
   }
 })();
+
+// ================================================================
+// ACCUEIL — grille des 12 catégories principales (Boutique & Vendeur)
+// Un touchez ouvre tous les produits de la catégorie (toutes ses sous-catégories).
+// ================================================================
+function _mainCategories() {
+  if (typeof TREE_B2 === 'undefined') return [];
+  const out = [], idx = {};
+  TREE_B2.forEach(c => {
+    const sec = c.section || '';
+    if (/NON CLASS/i.test(sec)) return;                    // « Non classé » reste hors de la grille
+    if (!(sec in idx)) { idx[sec] = out.length; out.push({ section: sec, ids: [] }); }
+    out[idx[sec]].ids.push(c.id);
+  });
+  return out.map(g => {
+    const m = g.section.match(/^([^A-Za-zÀ-ÿ0-9]+)\s*(.*)$/u);
+    const emoji = m ? (Array.from(m[1].trim())[0] || '🛍️') : '🛍️';
+    let label = (m ? m[2] : g.section).toLowerCase().replace(/(^|[\s&,(-])([a-zà-ÿ])/g, (x, p, l) => p + l.toUpperCase());
+    return { emoji, label: label.replace(/\bEt\b/g, '&').replace(/ (De|Du|Des)\b/g, m => m.toLowerCase()), ids: g.ids };
+  });
+}
+window._homeMainCats = [];
+function renderHomeCategories() {
+  const box = document.getElementById('homeCatGrid');
+  if (!box) return;
+  window._homeMainCats = _mainCategories();
+  box.innerHTML = window._homeMainCats.map((c, i) =>
+    '<button type="button" class="home-cat-item" onclick="openMainCategory(' + i + ')">' +
+      '<span class="home-cat-ico">' + c.emoji + '</span>' +
+      '<span class="home-cat-label">' + escapeHtml(c.label) + '</span></button>'
+  ).join('');
+}
+window.renderHomeCategories = renderHomeCategories;
+
+async function openMainCategory(i) {
+  const cat = (window._homeMainCats || [])[i];
+  if (!cat) return;
+  try {
+    currentCategory     = cat.ids[0];
+    currentCategoryType = 'B';
+    window.currentViewedSeller = null;
+    document.getElementById('sellerNameTitle').innerText    = cat.label;
+    document.getElementById('sellerNameSubtitle').innerText = '';
+    showPage('productsPage');
+    document.getElementById('productsList').innerHTML = '<div class="loading">Chargement...</div>';
+    const simBlock = document.getElementById('similarSellersBlock');
+    if (simBlock) simBlock.innerHTML = '';
+    updateCartUI();
+
+    const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
+    let query = db.from(TABLES.PRODUCTS)
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .in('seller_category', cat.ids)
+      .eq('is_active', true)
+      .eq('sellers.is_blocked', false)
+      .eq('sellers.is_active', true);
+    if (villeFilter) query = query.ilike('sellers.ville', `%${villeFilter}%`);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) {
+      document.getElementById('productsList').innerHTML = '<p style="text-align:center;padding:20px;color:#888;">Erreur de chargement.</p>';
+      return;
+    }
+    renderProducts(data || [], 'B');
+  } catch (e) {
+    console.error('openMainCategory error:', e);
+    if (typeof showToast === 'function') showToast('Erreur: ' + (e.message || ''), 'error');
+  }
+}
+window.openMainCategory = openMainCategory;

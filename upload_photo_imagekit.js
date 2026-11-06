@@ -168,8 +168,8 @@ function getOptimizedUrl(url, folder) {
 
   const transforms = {
     sellers:  'tr:w-400,h-400,c-maintain_ratio,q-80,f-auto',
-    products: 'tr:w-800,h-800,c-maintain_ratio,q-80,f-auto',
-    promos:   'tr:w-800,h-600,c-maintain_ratio,q-80,f-auto'
+    products: 'tr:w-800,h-800,c-at_max,q-80,f-auto',
+    promos:   'tr:w-800,h-600,c-at_max,q-80,f-auto'
   };
 
   const transform = transforms[folder] || transforms.products;
@@ -265,3 +265,31 @@ if (Array.isArray(sellers)) {
   }
 }
 window.uploadPhoto = uploadPhoto
+
+// ================================================================
+// Anciennes photos : leur URL contient « c-maintain_ratio » qui RECADRE
+// la photo en carré côté ImageKit (partie coupée définitivement perdue).
+// On remplace par « c-at_max » (photo entière, ratio respecté) dès qu'une
+// image est ajoutée à la page. (Le SQL de correction en base fait la même
+// chose une fois pour toutes ; ceci est le filet de sécurité.)
+// ================================================================
+(function () {
+  var BAD = /(tr:w-800,h-(?:800|600),)c-maintain_ratio/;
+  function fix(img) {
+    var s = img.getAttribute && img.getAttribute('src');
+    if (s && BAD.test(s)) img.setAttribute('src', s.replace(BAD, '$1c-at_max'));
+  }
+  function scan(node) {
+    if (!node || node.nodeType !== 1) return;
+    if (node.tagName === 'IMG') fix(node);
+    else if (node.querySelectorAll) node.querySelectorAll('img').forEach(fix);
+  }
+  try {
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        if (m.type === 'attributes') fix(m.target);
+        else m.addedNodes.forEach(scan);
+      });
+    }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+  } catch (e) {}
+})();

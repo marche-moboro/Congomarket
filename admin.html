@@ -133,6 +133,16 @@
   </div>
 
   <div class="form-card" style="margin-bottom:12px;">
+    <h2 style="font-size:15px;margin-bottom:10px;">🔔 Notifications</h2>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-number" id="sNotifTotal">…</div><div class="stat-label">Appareils abonnés</div></div>
+      <div class="stat-card"><div class="stat-number" id="sNotifActive">…</div><div class="stat-label">Actifs (30 derniers jours)</div></div>
+      <div class="stat-card"><div class="stat-number" id="sNotifMembers">…</div><div class="stat-label">Vendeurs / Taxis</div></div>
+      <div class="stat-card"><div class="stat-number" id="sNotifVisitors">…</div><div class="stat-label">Simples visiteurs</div></div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-bottom:12px;">
     <h2 style="font-size:15px;margin-bottom:10px;">👁️ Visites</h2>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-number" id="sTodayVisits">0</div><div class="stat-label">Aujourd'hui</div></div>
@@ -1176,7 +1186,25 @@ async function resetPin(sellerId, name) {
 }
 
 // ===== STATS =====
+async function loadNotifCount() {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.innerText = v; };
+  try {
+    const r = await fetch(SUPABASE_URL + '/functions/v1/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify({ action: 'count' })
+    });
+    const d = await r.json();
+    if (!d || !d.ok) throw new Error('count');
+    set('sNotifTotal', d.total); set('sNotifActive', d.active30);
+    set('sNotifMembers', d.members); set('sNotifVisitors', d.visitors);
+  } catch (e) {
+    ['sNotifTotal','sNotifActive','sNotifMembers','sNotifVisitors'].forEach(i => set(i, '—'));
+  }
+}
+
 async function loadStats() {
+  loadNotifCount();
   try {
     const today = new Date().toISOString().split('T')[0];
 
