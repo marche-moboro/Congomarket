@@ -34,10 +34,21 @@ function _decodeImage(file) {
       if (window.createImageBitmap) {
         try { return resolve(await createImageBitmap(file)); } catch (e) { /* on essaie l'autre méthode */ }
       }
+      const viaDataUrl = () => {          // 2e méthode : lecture complète puis décodage
+        const fr = new FileReader();
+        fr.onload = () => {
+          const im = new Image();
+          im.onload  = () => resolve(im);
+          im.onerror = () => reject(new Error('Photo illisible'));
+          im.src = fr.result;
+        };
+        fr.onerror = () => reject(new Error('Photo illisible'));
+        fr.readAsDataURL(file);
+      };
       const url = URL.createObjectURL(file);
       const img = new Image();
       img.onload  = () => { URL.revokeObjectURL(url); resolve(img); };
-      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Photo illisible')); };
+      img.onerror = () => { URL.revokeObjectURL(url); viaDataUrl(); };
       img.src = url;
     } catch (e) { reject(e); }
   }), 20000, 'Photo trop lente à lire');
@@ -107,7 +118,12 @@ async function uploadPhoto(file, folder = 'sellers') {
     compressed = await compressImage(file, maxKB);
   } catch (e) {
     console.error('compressImage:', e);
-    showToast('Photo illisible. Choisissez une photo JPG ou PNG, ou reprenez-la avec l\'appareil photo.', 'error');
+    const m = String((e && e.message) || '');
+    // Aucun geste de l'utilisateur depuis l'ouverture du site : envoi parasite (fichier restauré par le navigateur) → pas de message rouge
+    if (!window._userTouched || !file || !file.size) { console.warn('uploadPhoto ignoré (aucun geste utilisateur)', e); return null; }
+    showToast(/illisible/.test(m)
+      ? 'Photo illisible (' + (file.type || 'format inconnu') + '). Choisissez une photo JPG ou PNG, ou reprenez-la avec l\'appareil photo.'
+      : 'Photo non traitée : ' + (m || 'erreur inconnue') + '. Réessayez.', 'error');
     return null;
   }
 
@@ -293,3 +309,8 @@ window.uploadPhoto = uploadPhoto
     }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
   } catch (e) {}
 })();
+
+// Marque le premier geste réel de l'utilisateur (touché, clavier)
+['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+  window.addEventListener(ev, function () { window._userTouched = true; }, { once: true, passive: true, capture: true });
+});

@@ -998,35 +998,50 @@ header p { font-size: 12px; opacity: .80; }
 <div id="homeCatSidebar" class="cat-sidebar">
   <button class="cat-sidebar-close" onclick="closeHomeSidebar()">✕</button>
 
-  <div class="cat-sidebar-section" id="notifSection">
-    <div class="cat-sidebar-title">🔔 Notifications</div>
-    <div id="notifSectionBody"></div>
+  <!-- Tiroirs : tout fermé au départ, un seul ouvert à la fois -->
+  <div class="cat-sidebar-section sb-drawer" id="sbD_notif">
+    <button type="button" class="sb-drawer-toggle" onclick="sbToggleDrawer('sbD_notif')">
+      <span>🔔 Notifications <b class="sb-count" id="sbNotifCount"></b></span><span class="sb-arrow">›</span>
+    </button>
+    <div class="sb-drawer-body" id="notifSection"><div id="notifSectionBody"></div></div>
   </div>
 
-  <div class="cat-sidebar-section">
-    <div class="cat-sidebar-title">📍 Ville</div>
-    <div class="cat-sidebar-scroll-wrap">
-      <div id="homeCatSidebarVilles" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
-      <div class="cat-sidebar-scrollbar-track"></div>
-      <div class="cat-sidebar-scrollbar-thumb"></div>
+  <div class="cat-sidebar-section sb-drawer" id="sbD_ville">
+    <button type="button" class="sb-drawer-toggle" onclick="sbToggleDrawer('sbD_ville')">
+      <span>📍 Ville</span><span class="sb-arrow">›</span>
+    </button>
+    <div class="sb-drawer-body">
+      <div class="cat-sidebar-scroll-wrap">
+        <div id="homeCatSidebarVilles" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
+        <div class="cat-sidebar-scrollbar-track"></div>
+        <div class="cat-sidebar-scrollbar-thumb"></div>
+      </div>
     </div>
   </div>
 
-  <div class="cat-sidebar-section">
-    <div class="cat-sidebar-title">📂 Sous-catégories</div>
-    <div class="cat-sidebar-scroll-wrap">
-      <div id="homeCatSidebarSubcats" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
-      <div class="cat-sidebar-scrollbar-track"></div>
-      <div class="cat-sidebar-scrollbar-thumb"></div>
+  <div class="cat-sidebar-section sb-drawer" id="sbD_subcats">
+    <button type="button" class="sb-drawer-toggle" onclick="sbToggleDrawer('sbD_subcats')">
+      <span>📂 Sous-catégories</span><span class="sb-arrow">›</span>
+    </button>
+    <div class="sb-drawer-body">
+      <div class="cat-sidebar-scroll-wrap">
+        <div id="homeCatSidebarSubcats" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
+        <div class="cat-sidebar-scrollbar-track"></div>
+        <div class="cat-sidebar-scrollbar-thumb"></div>
+      </div>
     </div>
   </div>
 
-  <div class="cat-sidebar-section cat-sidebar-section-grow">
-    <div class="cat-sidebar-title">🏪 Vendeurs</div>
-    <div class="cat-sidebar-scroll-wrap cat-sidebar-scroll-wrap-grow">
-      <div id="homeCatSidebarSellers" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
-      <div class="cat-sidebar-scrollbar-track"></div>
-      <div class="cat-sidebar-scrollbar-thumb"></div>
+  <div class="cat-sidebar-section sb-drawer" id="sbD_sellers">
+    <button type="button" class="sb-drawer-toggle" onclick="sbToggleDrawer('sbD_sellers')">
+      <span>🏪 Vendeurs</span><span class="sb-arrow">›</span>
+    </button>
+    <div class="sb-drawer-body">
+      <div class="cat-sidebar-scroll-wrap">
+        <div id="homeCatSidebarSellers" class="cat-sidebar-scroll" onscroll="_updateSidebarScrollThumb(this)"></div>
+        <div class="cat-sidebar-scrollbar-track"></div>
+        <div class="cat-sidebar-scrollbar-thumb"></div>
+      </div>
     </div>
   </div>
 
@@ -1056,6 +1071,9 @@ header p { font-size: 12px; opacity: .80; }
 <nav class="bottom-nav" id="bottomNav">
   <button class="bottom-nav-item active" data-tab="accueil" onclick="bottomNavGo('accueil')">
     <span class="bottom-nav-icon">🏠</span><span>Accueil</span>
+  </button>
+  <button class="bottom-nav-item" data-tab="vendeurs" onclick="bottomNavGo('vendeurs')">
+    <span class="bottom-nav-icon">🏪</span><span>Vendeurs</span>
   </button>
   <button class="bottom-nav-item" data-tab="grossiste" onclick="bottomNavGo('grossiste')">
     <span class="bottom-nav-icon">🏭</span><span>Grossiste</span>
@@ -1186,6 +1204,26 @@ header p { font-size: 12px; opacity: .80; }
   <div id="similarSellersBlock"></div>
 </div>
 <!-- ========== PROMOS PAGE ========== -->
+<div class="page" id="vendeursPage">
+  <div class="products-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div><div class="section-title">Vendeurs</div><div class="section-subtitle">Boutiques &amp; vendeurs</div></div>
+    </div>
+    <div id="vendeursList"></div>
+  </div>
+</div>
+
+<div class="page" id="newsPage">
+  <div class="products-page">
+    <div class="page-header">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div><div class="section-title" id="newsTitle">🆕 Nouveautés</div><div class="section-subtitle">Tous les nouveaux produits</div></div>
+    </div>
+    <div id="newsProductsList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 0 80px;"></div>
+  </div>
+</div>
+
 <div class="page" id="promosPage">
   <div class="products-page">
     <div class="page-header">

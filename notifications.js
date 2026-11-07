@@ -194,6 +194,8 @@
       b.textContent = _newsCount > 99 ? '99+' : String(_newsCount);
       b.style.display = _newsCount > 0 ? 'flex' : 'none';
     });
+    const sc = $('sbNotifCount');
+    if (sc) sc.textContent = _newsCount > 0 ? '(' + (_newsCount > 99 ? '99+' : _newsCount) + ')' : '';
   }
 
   // ---------- section « Notifications » dans le panneau ----------
@@ -215,12 +217,12 @@
     if (!_newsList.length) return '<div class="notif-empty">Aucune nouveauté pour le moment.</div>';
     const items = _newsList.slice(0, 4).map((p) => {
       const price = Number(p.price) > 0 ? String(Math.round(p.price)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA' : 'Prix négociable';
-      return '<div class="notif-news-item" onclick="notifOpenProduct(\'' + esc(p.id) + '\')">' +
+      return '<div class="notif-news-item" onclick="notifOpenNews()">' +
         '<img src="' + esc(p.image || '') + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
         '<div><b>' + esc(p.name) + '</b><span>' + price + (p.seller_name ? ' · ' + esc(p.seller_name) : '') + '</span></div></div>';
     }).join('');
-    const more = _newsCount > 4 ? '<div class="notif-empty">+ ' + (_newsCount - 4) + ' autres nouveautés</div>' : '';
-    return items + more;
+    const all = '<button type="button" class="notif-all-news" onclick="notifOpenNews()">Voir les ' + _newsCount + ' nouveauté' + (_newsCount > 1 ? 's' : '') + ' →</button>';
+    return items + all;
   }
 
   function renderNews() {
@@ -327,6 +329,31 @@
           : '<div class="notif-empty">Aucun vendeur trouvé</div>';
       } catch (e) { if (box) box.innerHTML = ''; }
     }, 300);
+  };
+  // Page spéciale : tous les nouveaux produits (depuis la dernière visite du menu)
+  window.notifOpenNews = async function () {
+    const since = seenSince();                       // à lire AVANT la fermeture du menu (qui marque « vu »)
+    if (typeof closeHomeSidebar === 'function') closeHomeSidebar();
+    showPage('newsPage');
+    const list = $('newsProductsList');
+    if (!list) return;
+    list.innerHTML = '<div class="loading" style="grid-column:1/-1;">Chargement...</div>';
+    try {
+      let q = db.from(TABLES.PRODUCTS)
+        .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, photo, description, stars, badge)')
+        .eq('is_active', true).eq('sellers.is_blocked', false).gt('created_at', since);
+      q = applyPrefsFilter(q);
+      const res = q ? await q.order('created_at', { ascending: false }).limit(60) : { data: [] };
+      if (res.error) throw res.error;
+      const data = res.data || [];
+      const t = $('newsTitle'); if (t) t.textContent = '🆕 Nouveautés' + (data.length ? ' (' + data.length + ')' : '');
+      if (!data.length) { list.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:30px;color:#888;">Aucune nouveauté pour le moment.</p>'; return; }
+      list.innerHTML = data.map((p) => _productCardHtml(p, true)).join('');
+      data.forEach((p) => { if (typeof loadProductReviewsSummary === 'function') loadProductReviewsSummary(p.id); });
+    } catch (e) {
+      console.warn('notifOpenNews:', e);
+      list.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:30px;color:#888;">Erreur de chargement.</p>';
+    }
   };
   window.notifOpenProduct = function (id) {
     if (typeof closeHomeSidebar === 'function') closeHomeSidebar();

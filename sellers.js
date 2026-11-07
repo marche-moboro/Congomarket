@@ -560,7 +560,7 @@ document.getElementById('productsList').innerHTML =
 
   let query = db
     .from(TABLES.PRODUCTS)
-    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+    .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, photo, description, stars, badge)')
     .eq('seller_category', catId)
     .eq('is_active', true)
     .eq('sellers.is_blocked', false)
@@ -1358,7 +1358,7 @@ async function loadHomeFeed() {
     for (let from = 0; from < HOME_FETCH_MAX; from += HOME_FETCH_BATCH) {
       let query = db
         .from(TABLES.PRODUCTS)
-        .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_boutique)')
+        .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, photo, description, stars, badge, position_boutique)')
         .in('seller_category', catIds)
         .eq('is_active', true)
         .eq('sellers.is_blocked', false)
@@ -1648,7 +1648,7 @@ async function getSectionRankedSellers(section, limit) {
 
     // 2) Infos vendeur + position manuelle éventuelle (peut être NULL)
     const { data: sellers } = await db.from(TABLES.SELLERS)
-      .select(`id, full_name, photo, ville, stars, badge, is_blocked, is_active, ${posField}`)
+      .select(`id, full_name, photo, description, ville, quartier, stars, badge, is_blocked, is_active, ${posField}`)
       .in('id', sellerIds)
       .eq('is_blocked', false)
       .eq('is_active', true);
@@ -2150,6 +2150,8 @@ function bottomNavGo(tab) {
 
   if (tab === 'accueil') {
     goHome();
+  } else if (tab === 'vendeurs') {
+    openVendeursPage();
   } else if (tab === 'grossiste') {
     openGrossistePage();
   } else if (tab === 'service') {
@@ -2209,7 +2211,7 @@ async function _openGroupPage(tree, title, ctx) {
 
     let query = db
       .from(TABLES.PRODUCTS)
-      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge, position_grossiste, position_service)')
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, photo, description, stars, badge, position_grossiste, position_service)')
       .in('seller_category', catIds)
       .eq('is_active', true)
       .eq('sellers.is_blocked', false)
@@ -2430,7 +2432,7 @@ async function openMainCategory(i) {
 
     const villeFilter = typeof _selectedVille !== 'undefined' ? _selectedVille : '';
     let query = db.from(TABLES.PRODUCTS)
-      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, stars, badge)')
+      .select('id, name, price, description, image, seller_id, is_active, created_at, qte_min, prix_min, qte_max, prix_max, taille, couleur, matiere, seller_category, sellers!inner(id, full_name, phone, quartier, ville, is_blocked, is_active, account_type, photo, description, stars, badge)')
       .in('seller_category', cat.ids)
       .eq('is_active', true)
       .eq('sellers.is_blocked', false)
@@ -2448,3 +2450,97 @@ async function openMainCategory(i) {
   }
 }
 window.openMainCategory = openMainCategory;
+
+
+// ================================================================
+// PAGE « VENDEURS » (bouton entre Accueil et Grossiste)
+// Liste des vendeurs Boutique & Vendeur : photo, nom, description, étoiles, avis
+// ================================================================
+let _vendeursAll = [], _vendeursReviews = {}, _vendeursShown = 0;
+const VENDEURS_PER_PAGE = 15;
+
+async function openVendeursPage() {
+  showPage('vendeursPage');
+  const list = document.getElementById('vendeursList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading">Chargement...</div>';
+  try {
+    _vendeursAll = await getSectionRankedSellers('B2');
+    _vendeursReviews = {};
+    const ids = _vendeursAll.map(s => s.id);
+    if (ids.length) {
+      const { data } = await db.from(TABLES.SELLER_REVIEWS).select('seller_id, rating').in('seller_id', ids);
+      (data || []).forEach(r => {
+        const o = _vendeursReviews[r.seller_id] || (_vendeursReviews[r.seller_id] = { sum: 0, n: 0 });
+        o.sum += Number(r.rating) || 0; o.n += 1;
+      });
+    }
+    _vendeursShown = 0;
+    list.innerHTML = '';
+    if (!_vendeursAll.length) {
+      list.innerHTML = '<p style="text-align:center;padding:30px;color:#888;">Aucun vendeur pour le moment.</p>';
+      return;
+    }
+    _appendVendeurs();
+  } catch (e) {
+    console.error('openVendeursPage error:', e);
+    list.innerHTML = '<p style="text-align:center;padding:30px;color:#888;">Erreur de chargement.</p>';
+  }
+}
+
+function _appendVendeurs() {
+  const list = document.getElementById('vendeursList');
+  const old = document.getElementById('loadMoreVendeurs');
+  if (old) old.remove();
+  const slice = _vendeursAll.slice(_vendeursShown, _vendeursShown + VENDEURS_PER_PAGE);
+  _vendeursShown += slice.length;
+  const fallback = 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200';
+  list.insertAdjacentHTML('beforeend', slice.map(s => {
+    const r = _vendeursReviews[s.id];
+    const avg = r && r.n ? r.sum / r.n : 0;
+    const avis = r && r.n
+      ? `${typeof renderStarsReadonly === 'function' ? renderStarsReadonly(avg) : '⭐'} <span style="font-size:12px;color:#666;">${avg.toFixed(1)} (${r.n} avis)</span>`
+      : '<span style="font-size:12px;color:#999;">⭐ Aucun avis pour le moment</span>';
+    const where = [s.quartier, s.ville].filter(Boolean).join(', ');
+    return `
+    <div class="seller-card" style="margin-bottom:12px;">
+      <div class="seller-card-body">
+        <img class="seller-image" src="${escapeHtml(s.photo) || fallback}" onerror="this.src='${fallback}'">
+        <div class="seller-info">
+          <h3>${escapeHtml(s.full_name)}</h3>
+          ${where ? `<p class="seller-location">📍 ${escapeHtml(where)}</p>` : ''}
+          ${s.description ? `<p class="seller-desc">${escapeHtml(s.description)}</p>` : ''}
+          <div>${avis}</div>
+        </div>
+      </div>
+      <div class="seller-actions">
+        <button class="view-btn" onclick="openSellerProducts('${s.id}','B')">Voir publications</button>
+      </div>
+    </div>`;
+  }).join(''));
+  if (_vendeursShown < _vendeursAll.length) {
+    list.insertAdjacentHTML('beforeend', `<div id="loadMoreVendeurs" style="text-align:center;padding:12px;">
+      <button onclick="_appendVendeurs()" style="background:#1677FF;color:white;border:none;padding:12px 32px;border-radius:99px;font-size:14px;font-weight:600;cursor:pointer;">Voir plus</button></div>`);
+  }
+}
+window.openVendeursPage = openVendeursPage;
+window._appendVendeurs = _appendVendeurs;
+
+
+// ================================================================
+// MENU ☰ — tiroirs : tout fermé au départ, un seul ouvert à la fois
+// ================================================================
+function sbToggleDrawer(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const wasOpen = target.classList.contains('open');
+  document.querySelectorAll('#homeCatSidebar .sb-drawer.open').forEach(d => d.classList.remove('open'));
+  if (!wasOpen) {
+    target.classList.add('open');
+    setTimeout(() => {
+      if (typeof _refreshAllSidebarScrollThumbs === 'function') _refreshAllSidebarScrollThumbs();
+      target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 30);
+  }
+}
+window.sbToggleDrawer = sbToggleDrawer;

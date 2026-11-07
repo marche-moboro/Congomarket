@@ -293,7 +293,8 @@ header p { font-size: 12px; opacity: .85; }
   box-shadow: 0 4px 14px rgba(0,0,0,.08);
 }
 /* Grille produits (catégorie / boutique) : photo nue, sans cadre ni ombre */
-#productsList .product-card {
+#productsList .product-card,
+#newsProductsList .product-card {
   box-shadow: none;
   border-radius: 10px;
   background: transparent;
@@ -303,6 +304,7 @@ header p { font-size: 12px; opacity: .85; }
 /* Photo TOUJOURS entière : hauteur naturelle (ratio respecté), plafonnée à 260px,
    jamais recadrée (contain) ; fond neutre si la photo est plus étroite que la carte. */
 #productsList .product-card img,
+#newsProductsList .product-card img,
 #homeProductsGrid .product-card img {
   height: auto !important;
   min-height: 150px !important;
@@ -1078,3 +1080,22 @@ header p { font-size: 12px; opacity: .85; }
               linear-gradient(#000 0 0) 0 50% / 100% 3px no-repeat,
               linear-gradient(#000 0 0) 0 100% / 100% 3px no-repeat;
 }
+#vendeursList{padding-bottom:80px;}
+
+/* ==================== MENU ☰ : TIROIRS ==================== */
+.cat-sidebar { overflow-y: auto; }
+.sb-drawer { margin-bottom: 0; padding-bottom: 0; }
+.sb-drawer-toggle {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  padding: 12px 4px; font-size: 13px; font-weight: 700; color: #444;
+  text-transform: uppercase; letter-spacing: .3px; text-align: left;
+}
+.sb-arrow { font-size: 18px; color: #999; transition: transform .15s ease; flex-shrink: 0; }
+.sb-drawer.open .sb-arrow { transform: rotate(90deg); }
+.sb-drawer.open .sb-drawer-toggle { color: #1677FF; }
+.sb-drawer-body { display: none; padding: 2px 0 12px; }
+.sb-drawer.open .sb-drawer-body { display: block; }
+.sb-drawer .cat-sidebar-scroll { max-height: 38vh; }
+.sb-count { color: #ff4d4f; font-weight: 800; }
+.notif-all-news { display: block; width: 100%; margin: 6px 0; background: #1677FF; color: #fff; border: none; padding: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
