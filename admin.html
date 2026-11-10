@@ -140,6 +140,7 @@
       <div class="stat-card"><div class="stat-number" id="sNotifMembers">…</div><div class="stat-label">Vendeurs / Taxis</div></div>
       <div class="stat-card"><div class="stat-number" id="sNotifVisitors">…</div><div class="stat-label">Simples visiteurs</div></div>
     </div>
+    <div id="sNotifErr" style="font-size:11px;color:#ff4d4f;margin-top:6px;"></div>
   </div>
 
   <div class="form-card" style="margin-bottom:12px;">
@@ -1194,12 +1195,14 @@ async function loadNotifCount() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
       body: JSON.stringify({ action: 'count' })
     });
-    const d = await r.json();
-    if (!d || !d.ok) throw new Error('count');
+    const d = await r.json().catch(() => null);
+    if (!d || !d.ok) throw new Error('HTTP ' + r.status + ' — ' + ((d && d.error) || 'la fonction push-subscribe n\'a pas la nouvelle version (action count)'));
     set('sNotifTotal', d.total); set('sNotifActive', d.active30);
     set('sNotifMembers', d.members); set('sNotifVisitors', d.visitors);
+    set('sNotifErr', '');
   } catch (e) {
     ['sNotifTotal','sNotifActive','sNotifMembers','sNotifVisitors'].forEach(i => set(i, '—'));
+    set('sNotifErr', 'Compteur indisponible : ' + e.message);
   }
 }
 
