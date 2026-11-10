@@ -1196,7 +1196,7 @@ async function loadNotifCount() {
       body: JSON.stringify({ action: 'count' })
     });
     const d = await r.json().catch(() => null);
-    if (!d || !d.ok) throw new Error('HTTP ' + r.status + ' — ' + ((d && d.error) || 'la fonction push-subscribe n\'a pas la nouvelle version (action count)'));
+    if (!d || !d.ok) throw new Error('HTTP ' + r.status + ' — ' + ((d && d.error && (typeof d.error === 'string' ? d.error : JSON.stringify(d.error))) || 'la fonction push-subscribe n\'a pas la nouvelle version (action count)'));
     set('sNotifTotal', d.total); set('sNotifActive', d.active30);
     set('sNotifMembers', d.members); set('sNotifVisitors', d.visitors);
     set('sNotifErr', '');
