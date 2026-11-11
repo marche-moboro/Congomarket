@@ -2132,12 +2132,7 @@ window.openTutorialOverlay = openTutorialOverlay;
 // laisser la personne choisir vendeur ou acheteur (ou juste lire la
 // présentation du site).
 function _maybeShowFirstVisitTutorial() {
-  let seen = null;
-  try { seen = localStorage.getItem(TUTORIAL_SEEN_KEY); } catch (e) {}
-  if (!seen) {
-    showPage('helpPage');
-    try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch (e) {}
-  }
+  // Désactivé : l'accueil s'ouvre directement. Les tutoriels restent accessibles via le bouton ❓ (Aide).
 }
 
 // ================================================================

@@ -394,6 +394,78 @@
     markSeen();
   };
 
+
+  // ---------- fenêtres d'accueil (visiteurs sans compte) ----------
+  // 1 s après le chargement : demande d'activation des alertes (si pas encore activées)
+  // 4 s après le chargement : proposition de créer un compte
+  // Réaffichées à chaque nouvelle visite ; après un « X », plus rien jusqu'à la prochaine visite.
+  const SS_NOTIF_CLOSED = 'mbr_gate_notif_closed';
+  const SS_ACC_CLOSED   = 'mbr_gate_acc_closed';
+  const ssGet = (k) => { try { return sessionStorage.getItem(k); } catch (e) { return null; } };
+  const ssSet = (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} };
+
+  function hasAccount() {
+    if (isMember()) return true;
+    return !!(lsGet('seller_session_token') || lsGet('livreur_session_token') ||
+              lsGet('seller_code') || lsGet('livreur_code'));
+  }
+
+  function gateShell(id, html) {
+    const old = $(id); if (old) old.remove();
+    const d = document.createElement('div');
+    d.id = id;
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:19000;display:flex;justify-content:center;padding:0 10px calc(env(safe-area-inset-bottom,0px) + 74px);pointer-events:none;';
+    d.innerHTML = '<div style="pointer-events:auto;position:relative;width:100%;max-width:440px;background:#fff;border:1px solid #e5e5e5;border-radius:16px !important;box-shadow:0 6px 28px rgba(0,0,0,.28) !important;padding:16px 16px 14px;">' +
+      '<button type="button" aria-label="Fermer" data-x style="position:absolute;top:6px;right:8px;width:34px;height:34px;border:none;background:transparent;font-size:20px;line-height:1;color:#666;cursor:pointer;">✕</button>' +
+      html + '</div>';
+    document.body.appendChild(d);
+    return d;
+  }
+
+  function showNotifGate() {
+    if (ssGet(SS_NOTIF_CLOSED) || hasAccount() || !supported()) return;
+    if (Notification.permission !== 'default') return;
+    const d = gateShell('mbrNotifGate',
+      '<div style="font-size:16px;font-weight:700;color:#222;margin:0 28px 6px 0;">🔔 Activer les alertes</div>' +
+      '<div style="font-size:13.5px;color:#555;line-height:1.5;margin-bottom:12px;">Soyez prévenu des nouveaux produits et des promotions, gratuitement.</div>' +
+      '<button type="button" data-ok style="width:100%;background:#1677FF;color:#fff;border:none;padding:13px;border-radius:12px !important;font-weight:700;font-size:15px;cursor:pointer;">Activer</button>');
+    const close = () => { ssSet(SS_NOTIF_CLOSED, '1'); d.remove(); gateAfterNotif(); };
+    d.querySelector('[data-x]').onclick = close;
+    d.querySelector('[data-ok]').onclick = async () => {
+      ssSet(SS_NOTIF_CLOSED, '1'); d.remove(); gateAfterNotif();
+      const r = await ensureSubscription(true);
+      if (r === 'granted' && typeof showToast === 'function') showToast('🔔 Alertes activées !', 'success');
+      renderSection(); refreshBadge();
+    };
+  }
+
+  let _accWaiting = false;
+  function gateAfterNotif() { if (_accWaiting) { _accWaiting = false; showAccountGate(); } }
+
+  function showAccountGate() {
+    if (ssGet(SS_ACC_CLOSED) || hasAccount()) return;
+    const p = new URLSearchParams(location.search);
+    if (p.get('produit') || p.get('inscription')) return;
+    if ($('mbrNotifGate')) { _accWaiting = true; return; }      // on attend la fermeture de la 1re fenêtre
+    const d = gateShell('mbrAccGate',
+      '<div style="font-size:16px;font-weight:700;color:#222;margin:0 28px 10px 0;">Créer mon compte</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div style="flex:1;font-size:14px;color:#333;font-weight:600;">🛒 Vendeur / Service</div>' +
+      '<button type="button" data-v style="background:#52c41a;color:#fff;border:none;padding:10px 22px;border-radius:10px !important;font-weight:700;font-size:14px;cursor:pointer;">Créer</button></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;font-size:14px;color:#333;font-weight:600;">🛵 Taxi / Transport</div>' +
+      '<button type="button" data-t style="background:#faad14;color:#fff;border:none;padding:10px 22px;border-radius:10px !important;font-weight:700;font-size:14px;cursor:pointer;">Créer</button></div>');
+    const close = () => { ssSet(SS_ACC_CLOSED, '1'); d.remove(); };
+    d.querySelector('[data-x]').onclick = close;
+    d.querySelector('[data-v]').onclick = () => { close(); if (typeof openVendeurFormDirect === 'function') openVendeurFormDirect(); };
+    d.querySelector('[data-t]').onclick = () => { close(); if (typeof openDeliveryAgentRegister === 'function') openDeliveryAgentRegister(); };
+  }
+
+  function gateStart() {
+    if (hasAccount()) { autoStart(); return; }     // comptes : comportement habituel
+    if (supported() && Notification.permission === 'granted') ensureSubscription(false).then(renderSection);
+    setTimeout(showNotifGate, 1000);
+    setTimeout(showAccountGate, 4000);
+  }
+
   // ---------- démarrage ----------
   function start() {
     if ('serviceWorker' in navigator) {
@@ -403,7 +475,7 @@
     }
     renderSection();
     refreshBadge();
-    autoStart();
+    gateStart();
     watchMembership();
     setTimeout(handleStartupLink, 900);   // laisse l'accueil se charger d'abord
   }

@@ -4,8 +4,8 @@
 // ================================================================
 
 const CACHE_STATIC = 'moboro-static-v39';
-const CACHE_DYNAMIC = 'moboro-dynamic-v39';
-const CACHE_API     = 'moboro-api-v39';
+const CACHE_DYNAMIC = 'moboro-dynamic-v35';
+const CACHE_API     = 'moboro-api-v35';
 
 // Fichiers statiques — cachés à l'installation
 const ASSETS_TO_CACHE = [

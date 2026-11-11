@@ -4360,6 +4360,21 @@ async function openIndependantVenteService() {
   showPage('termsIndependantPage');
 }
 
+// Ouverture directe du formulaire vendeur (depuis la fenêtre « Créer mon compte »), sans page de conditions
+async function openVendeurFormDirect() {
+  try {
+    const { data } = await db.from('settings').select('value').eq('key','inscription_vendeur_independant').maybeSingle();
+    if (data && data.value === 'off') {
+      document.getElementById('inscriptionBloqueeModal').style.display = 'flex';
+      return;
+    }
+  } catch (e) {}
+  _indepAccountType = 'vendeur';
+  document.getElementById('registerIndependantTitle').innerText = 'Vendeur, Grossiste & Service';
+  showPage('registerIndependantPage');
+}
+window.openVendeurFormDirect = openVendeurFormDirect;
+
 function acceptIndependantTerms() {
   showPage('registerIndependantPage');
 }
